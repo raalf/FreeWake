@@ -1,6 +1,6 @@
 #include "general.h"
 #include "PerfCode.h"
-main()
+int main()
 {
 //computes velocity due to time step file generated from Free Wake 2007 at
 //point P
@@ -281,13 +281,13 @@ printf("%lf  %lf  %lf\n",w_ind[0],w_ind[1],w_ind[2]);
 // Create Output file
 sprintf(iofile,"%s%s",OUTPUT_PATH,"velocityinfo.txt");
 
-	// checks if input file exists
-	if ((fp = fopen(iofile, "r"))== NULL)
-	{
-		printf("File could not be opened, stupid:\n");
-		exit(1);
-	}
-// Open output file and write w_ind	
+	// checks if input file exists  //commented out because it never found it
+	// if ((fp = fopen(iofile, "r"))== NULL)
+	//{
+	//	printf("File could not be opened, stupid:\n");
+	//	exit(1);
+	//}
+// Open output file and write w_ind	//might have to create file manually
  fs = fopen(iofile,"w");
  fprintf(fs,"%1f  %1f  %1f", w_ind[0],w_ind[1],w_ind[2]);
  fclose(fs);

@@ -40,7 +40,7 @@ double PitchingMoment(const GENERAL info,PANEL *panelPtr,DVE *&surfacePtr,\
 //  	Wing2 index = info.wing1[1]..info.wing2[1]
 //
 	int i,j,l,timestep=0;	// loop counter
-	int saveStep=20;	//number of steps when relaxed wake is saved
+	int saveStep=1;	//number of steps when relaxed wake is saved
 	int timestart=0;	//first timestep of relaxed wake scheme
 	int HTindex=0;		//the first DVE index of the HT
 	double CLi,CY,CYi;	//lift and side force coefficients
@@ -62,6 +62,7 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 
 	//add incicent angle increment
+	if (info.trim == 1){  //now it will only change the wing twist if trim is on, Bill 01/17/2016
 	for(i=HTpanel;i<info.nopanel;i++)
 	{
 		tempS = panelPtr[i].eps2 - panelPtr[i].eps1; //twist
@@ -73,6 +74,7 @@ int *pivot;				//holds information for pivoting D
 	}
 	//computingn the first DVE index of HT
 	HTindex *= -info.m;	HTindex += info.noelement;
+	}
 //===================================================================//
 		//DONE Update tail incidence
 //===================================================================//
@@ -191,7 +193,7 @@ int *pivot;				//holds information for pivoting D
 								//Subroutine in wing_geometry.cpp
 
 	//save information on elementary wings to file
-//	Save_Surface_DVEs(info,surfacePtr);	//Subroutine in write_output.cpp
+	Save_Surface_DVEs(info,surfacePtr);	//Subroutine in write_output.cpp
 
 //===================================================================//
 		//END generating surface Distributed-Vorticity elements

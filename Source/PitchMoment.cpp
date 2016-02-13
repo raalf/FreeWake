@@ -472,6 +472,9 @@ int *pivot;				//holds information for pivoting D
 		e_old = tempS; //save e of previous time step
 //		printf("delta e %lf\n",sqrt(deltae));
 
+//uncomment this save timestep to save each timestep (for videos)
+Save_Timestep(info,timestep,wakePtr,surfacePtr,N_force);
+											//Subroutine in write_output.cpp
 	//continue time-stepping loop as long as
 	// - e has not converged and
 	// - maximum time steps have not been reached

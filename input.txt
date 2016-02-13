@@ -9,7 +9,7 @@ Steady (1) or unsteady (2):		aerodynamics =	1
 Symmetrical geometry (yes 1, no 0):	sym =		1
 Longitudinal trim (yes 1, no 0):	trim =		0	(yes means m has to be 1)
 
-Max. number of time steps:	maxtime =	20
+Max. number of time steps:	maxtime =	3
 Width of each time step (sec):	deltime =	0.250000
 Convergence delta-span effic.:	deltae =	0.000000	(0 if onlytimestepping)
 

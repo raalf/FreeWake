@@ -622,11 +622,11 @@ printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
 	
 	fclose(MomSol);//close output file of trim iteration results
 	fclose(Performance);//close output file of performance calc's
-//printf("done\n");
-//printf("push any key and return ",PROGRAM_VERSION);
+printf("done\n");
+printf("push any key and return ",PROGRAM_VERSION);
 //scanf("%c",&answer);
-//scanf("%c",&answer);
-	//return(0);
+scanf("%c",&answer);
+	return(0);
 }
 //===================================================================//
 		//END of program

@@ -1,15 +1,20 @@
 %=========================================================================%
-%simple tool that creates a wake animation
+%simple tool that creates a wake animation gif*
 %
 %reads: timestep files
 %uses: Main_FindDVEs.exe
-%creates: wakeframes.avi
+%creates: wakeframes.gif
 %all files must be located in the output folder
 %axis, view, size, position and framerate are set at the end of the file
 %%========================================================================%
 clear
+
+%generate the wakeplot for the last timestep first!!
+
+
 laststep = input('Which timestep to plot up to?\n');
 
+sym = input('Do you want symmetry?(y/n)\n','s');
 %run wakeplot and get axis settings (to get full axis)
 figure(1);
 run wakeplot_color.m
@@ -19,11 +24,13 @@ ylimit = ylim;
 ylimit(2) = ylimit(2) + ((ylimit(2)-ylimit(1))/10);
 zlimit = zlim;
 zlimit(2) = zlimit(2) + abs((zlimit(2)-zlimit(1))/5);
+if strcmp(sym,'y')==1
+    ylimit(1) = -ylimit(2);
+end
 clf(1);
+
 %create and set up figure
-writerObj = VideoWriter('wakeframes.avi');
-writerObj.FrameRate = 5;
-open(writerObj);
+filename = 'wakeframes.gif';
 
 
 h = figure(1);
@@ -153,20 +160,29 @@ for step = 1:laststep
     cmap = flipud(cmap);
     
     %plot wing
+    clf
     hold on
     for x = 1:(numelements*numwings)
-        fill3(wing(x,1:4),wing(x,5:8),wing(x,9:12),'-k','FaceAlpha',0.6,'EdgeColor','k')
+        fill3(wing(x,1:4),wing(x,5:8),wing(x,9:12),'-k','FaceAlpha',0.6,'EdgeColor','k');
+        if strcmp(sym,'y')==1
+            fill3(wing(x,1:4),-wing(x,5:8),wing(x,9:12),'-k','FaceAlpha',0.6,'EdgeColor','k');
+        end
     end
     
+    hold off
+    hold on
     %plot wakes
     count=1;
     for instep = 1:timestep
         for x = count:(count+(numwings*n))-1
             fill3(data(x,2:5),data(x,6:9),data(x,10:13),cmap(data(x,1),:),'FaceAlpha',0.5,'EdgeColor','k')
+            if strcmp(sym,'y')==1
+                fill3(data(x,2:5),-data(x,6:9),data(x,10:13),cmap(data(x,1),:),'FaceAlpha',0.5,'EdgeColor','k')
+            end
         end
         count = count+(numwings*n);
     end
-    
+    hold off
     %modify axis
     axis('equal')
     
@@ -177,19 +193,34 @@ for step = 1:laststep
     %VIEW(AZ,EL)
     view([-23 16])
     
-    %ZOOM(factor)
-%     zoom(1)
     
     %set frame position and size
     set(h,'Position',[300 100 1200 600])
+    set(h,'renderer','painters');
+    %ZOOM(factor)
+    %     zoom(1)
     
     %record frame for movie
     %     mov(step) = getframe(gcf);
+    drawnow
+    
     frame = getframe;
-    writeVideo(writerObj,frame);
+    im = frame2im(frame);
+    
+    [imind,cm] = rgb2ind(im,256);
+    
+    if step == 1;
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf','DelayTime',0.25);
+    else
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',0.25);
+    end
     
     %set up figure for next iteration
-    clf
+    
+    
 end
-close(writerObj);
+
+fclose all
+clc
+clear
 

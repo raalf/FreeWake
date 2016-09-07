@@ -13,6 +13,7 @@ double Induced_DVE_Drag(const GENERAL info,const PANEL* panelPtr,\
 						const int rightnow,double* D_force)
 {
 //
+//
 //This function is the DVE expansion of the function Induced_Eppler_Drag
 //that computes the induced drag at the trailing edge, where
 //the spanwise bound vorticity has been collapsed into a single vortex.

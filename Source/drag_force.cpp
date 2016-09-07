@@ -12,7 +12,6 @@ double Induced_DVE_Drag(const GENERAL info,const PANEL* panelPtr,\
 						DVE* surfacePtr,DVE** wakePtr,\
 						const int rightnow,double* D_force)
 {
-//testing git
 //This function is the DVE expansion of the function Induced_Eppler_Drag
 //that computes the induced drag at the trailing edge, where
 //the spanwise bound vorticity has been collapsed into a single vortex.
@@ -217,7 +216,6 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 		  	//################################################################
 		  	//New method of moving the TE points of the index (induced DVE) points. 
 				//17 Oct 2014. Bill B
-                //
 			//This method moves the points in the freestream direction into the plane 
 				//passing through the TE of the S (inducer) having freestream direction 
 				//as the normal

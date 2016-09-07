@@ -216,6 +216,7 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 		  	//################################################################
 		  	//New method of moving the TE points of the index (induced DVE) points. 
 				//17 Oct 2014. Bill B
+                //
 			//This method moves the points in the freestream direction into the plane 
 				//passing through the TE of the S (inducer) having freestream direction 
 				//as the normal

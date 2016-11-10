@@ -10,7 +10,6 @@
 //
 //decleration of subroutines
 //
-//testing svn
 //computes induced velocity of system of surface and wake DVE's
 void DVE_Induced_Velocity(const GENERAL,const double [3],const DVE *,\
 						  DVE **,const int,double [3]);

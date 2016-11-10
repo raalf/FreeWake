@@ -624,8 +624,8 @@ printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
 	fclose(Performance);//close output file of performance calc's
 printf("done\n");
 printf("push any key and return ",PROGRAM_VERSION);
-//scanf("%c",&answer);
 scanf("%c",&answer);
+//scanf("%c",&answer);
 	return(0);
 }
 //===================================================================//

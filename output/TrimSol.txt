@@ -1,3 +1,0 @@
-cmac= 0.000000  xcg = 0.000000  ycg = 0.000000  zcg = 0.000000
-alpha      eps      CL        CDi      CMresid      CLht     CMoWing
-  1.00     0.00   0.123   0.00050859   1.#INF   -1.#IND00   -0.1000

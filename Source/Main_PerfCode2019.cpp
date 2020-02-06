@@ -1,6 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "general.h"
-#include "Perfcode.h"
+#include "PerfCode.h"
 
 int i,ii,a,a2;		//loop counters, max AOA increment
 	int k,l,m;			//loop counters

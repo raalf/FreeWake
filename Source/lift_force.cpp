@@ -77,14 +77,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,double **N_force,\
   //total induced lift and side force coefficients
   CLi = Nt_ind[0]/q;
   CYi = Nt_ind[1]/q;
-  //printf("\n");
-  //printf("CLn = \%f\t",Nt_free[0]/q);
-  //printf("CLi = %f\t",CLi);
-  //printf("CL = %f\t",CL);
-  //printf("\n"); 
-  //printf("CYn = %f\t",Nt_free[1]/q);
-  //printf("CYi = %f\t",CYi);
-  //printf("CY = %f\t",CY);
+
 //#printf("CL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf\n",CL,CLi,CY,CYi);//#
 
 }

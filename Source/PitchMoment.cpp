@@ -40,7 +40,7 @@ double PitchingMoment(const GENERAL info,PANEL *panelPtr,DVE *&surfacePtr,\
 //  	Wing2 index = info.wing1[1]..info.wing2[1]
 //
 	int i,j,l,timestep=0;	// loop counter
-	int saveStep=1;	//number of steps when relaxed wake is saved
+	int saveStep=20;	//number of steps when relaxed wake is saved
 	int timestart=0;	//first timestep of relaxed wake scheme
 	int HTindex=0;		//the first DVE index of the HT
 	double CLi,CY,CYi;	//lift and side force coefficients
@@ -62,8 +62,8 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 
 	//add incicent angle increment
-	if (info.trim == 1){  //now it will only change the wing twist if trim is on, Bill 01/17/2016
-	for(i=HTpanel;i<info.nopanel;i++)
+    if(info.trim==1)   //only if longitudinal trim routine is ON
+    {	for(i=HTpanel;i<info.nopanel;i++)
 	{
 		tempS = panelPtr[i].eps2 - panelPtr[i].eps1; //twist
 		panelPtr[i].eps1 = epsilonHT;
@@ -72,9 +72,9 @@ int *pivot;				//holds information for pivoting D
 		//adding number of spanwise DVEs of HT
 		HTindex += panelPtr[i].n;
 	}
+    }
 	//computingn the first DVE index of HT
 	HTindex *= -info.m;	HTindex += info.noelement;
-	}
 //===================================================================//
 		//DONE Update tail incidence
 //===================================================================//
@@ -193,7 +193,7 @@ int *pivot;				//holds information for pivoting D
 								//Subroutine in wing_geometry.cpp
 
 	//save information on elementary wings to file
-	Save_Surface_DVEs(info,surfacePtr);	//Subroutine in write_output.cpp
+//	Save_Surface_DVEs(info,surfacePtr);	//Subroutine in write_output.cpp
 
 //===================================================================//
 		//END generating surface Distributed-Vorticity elements
@@ -472,9 +472,6 @@ int *pivot;				//holds information for pivoting D
 		e_old = tempS; //save e of previous time step
 //		printf("delta e %lf\n",sqrt(deltae));
 
-//uncomment this save timestep to save each timestep (for videos)
-Save_Timestep(info,timestep,wakePtr,surfacePtr,N_force);
-											//Subroutine in write_output.cpp
 	//continue time-stepping loop as long as
 	// - e has not converged and
 	// - maximum time steps have not been reached

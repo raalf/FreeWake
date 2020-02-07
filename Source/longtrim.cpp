@@ -26,7 +26,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 //
 //the routine also saves the trim information to TrimSol.txt
 //furthermore saved is the spanwise lift distribution and spanwise
-//drag distribution in SpanAOA<info.alfpha>.txt where <info.alfpha> 
+//drag distribution in SpanAOA<info.alpha>.txt where <info.alpha> 
 //holds the numerical value of the current angle of attack 
 
 	int i,j,k,l,m,n=0;				//loop counter

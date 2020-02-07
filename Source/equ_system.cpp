@@ -257,6 +257,7 @@ void DVE_Resultant(const GENERAL info,const PANEL *panelPtr,\
 	  }//done with loop over spanwise elements -1
 
 	  if(panelPtr[panel].n > 1)	//panel has more than one spanwise element
+      {
 		//checking if right edge is a free tip
 	  	if(panelPtr[panel].BC2==110)
 	  	{	//kinematic condition is not being satisfied at the tips, but
@@ -298,7 +299,7 @@ void DVE_Resultant(const GENERAL info,const PANEL *panelPtr,\
 		 	//increase DVE index
 		 	element ++;
 		}//done with right side edge
-
+      }//end if(panelPtr[panel].n > 1)
     }//done loop over m, next chord location
   }//done panel, next panel
 //##########################################

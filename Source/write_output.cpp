@@ -573,8 +573,8 @@ void Save_Timestep(const GENERAL info,const int timestep,DVE **wakePtr,\
 			fprintf(fp," %16.12lf %16.12lf",\
 						wakePtr[time][span].eta,wakePtr[time][span].xsi);
 			//element half span and half chord
-			fprintf(fp," %16.12lf",\
-						wakePtr[time][span].K);
+            fprintf(fp," %16.12lf",999.999); //changed GB 2/6/20
+	//					wakePtr[time][span].K);
 			//leading-edge, mid-chord, and trailing edge sweep2
 			fprintf(fp," %16.12lf %16.12lf %16.12lf",\
 				wakePtr[time][span].phiLE*RtD,\
@@ -720,7 +720,7 @@ char filename[133];	//file path and name
 	 //writes header line
 	 fprintf(fp, "\t");
 	 for(m=0; m<info.Dsize; m++)
-		 fprintf(fp, "%ld\t",m);
+		 fprintf(fp, "%d\t",m);
 	 fprintf(fp, "\t\tR");
 
 	for(n=0; n<info.Dsize; n++)

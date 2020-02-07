@@ -12,5 +12,3 @@ compiles Main_PerfCode2019.cpp to fw
 
 executes fw
 
-
-stuff

@@ -330,7 +330,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 			printf("\n\t\t\t!!!\n");
 			printf("Airfoil %d has more than the maximum ",airfoil+1);
 			printf(" allowable number of rows (2000 < %d)\n",rows[airfoil]);
-			printf("push any key and return ",PROGRAM_VERSION);
+			printf("push any key and return ");
 			scanf("%c",&answer);
 			scanf("%c",&answer);
 			exit(0);
@@ -591,7 +591,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 		
 		CD = D/(q_inf*info.S);
 
-		fprintf(Performance,"%8.1lf %8.2lf %8.2llf %8.5lf",\
+		fprintf(Performance,"%8.1lf %8.2lf %8.2lf %8.5lf",\
 					info.alpha*RtD,     V_inf,  CL,CD);
 		fprintf(Performance," %8.3lf %8.1lf %8.2lf %8.2lf",\
 							D,    CL/CD,  V_inf*CD/CL, D*V_inf);

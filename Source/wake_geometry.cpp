@@ -7,6 +7,7 @@ void Edge_Point(const double [3],const double,const double,const double,\
 				const double,const double,const double,double [3]);
 //computes new circulation&voritcity coefficients of stretched wake DVE
 void New_vorticity_coefficients(const GENERAL,const PANEL *,DVE *,const DVE*);
+void Update_wake_vorticity(const GENERAL,const PANEL *,DVE *,const DVE*);
 
 //===================================================================//
 		//START FUNCTION Squirt_out_Wake
@@ -176,11 +177,21 @@ void Squirt_out_Wake(const GENERAL info,const PANEL *panelPtr,\
 			wakePtr[span].B = surfacePtr[element].B;
 			wakePtr[span].C = surfacePtr[element].C;
 
-			//total circulation of DVE, stays constant despite stretching
-			wakePtr[span].K = surfacePtr[element].A \
-							+ surfacePtr[element].eta\
-							* surfacePtr[element].eta/3\
-							* surfacePtr[element].C;
+            //Values retained for computing constant average circulation
+            //across each wake element during relaxation GB 2/6/20
+            wakePtr[span].A_old = surfacePtr[element].A;
+            wakePtr[span].B_eta =\
+                            surfacePtr[element].eta*surfacePtr[element].B;
+            wakePtr[span].Csqeta = surfacePtr[element].eta\
+                            *surfacePtr[element].eta*surfacePtr[element].C;
+
+            //superseded by A_old, B_Eta and CsqEta  GB 2/6/20
+            //total circulation of DVE, stays constant despite stretching
+            //wakePtr[span].K = surfacePtr[element].A \
+            //                + surfacePtr[element].eta\
+            //                * surfacePtr[element].eta/3\
+            //                * surfacePtr[element].C;
+
 
 			//computes point halfway along left edge of DVE
 			Edge_Point(wakePtr[span].xo,wakePtr[span].nu,\
@@ -793,7 +804,7 @@ void New_eta_nu_eps_psi_xsi(DVE &wakeDVE,const DVE US_DVE)
 	//if everything works => delXSI[2] = 0
 	if(delXSI2[1] < 0)
 	{
-		printf(" ohwei! around line 788, wake_geometry.cpp\n %2.2lf %2.16lf\n",delXSI2[1],delXSI2[2]);
+		printf(" ohwei! around line 805, wake_geometry.cpp\n %2.2lf %2.16lf\n",delXSI2[1],delXSI2[2]);
 				exit(0);
 	}
 
@@ -940,6 +951,52 @@ void New_wakeDVE0(const GENERAL info,DVE *wakeDVE0,const DVE *wakeDVE1)
 		//END FUNCTION New_wakeDVE0
 //===================================================================//
 
+//===================================================================//
+        //START FUNCTION Update_wake_vorticity
+//===================================================================//
+void Update_wake_vorticity(const GENERAL info,const PANEL *panePtr,\
+                                DVE *wakeDVE,const DVE *newestDVE)
+{
+//NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW
+//replaces New_vorticity_coefficients, more efficient GB 2/6/20
+// adjusts vorticity distribution in wake strips in order to compensate
+//for stretching of wake DVE's.  In an irrotational flwow, the average
+//circulation remains constant in the wake.
+//1/2eta_i*Int{(A+eta*B+eta^2*C) dy} = const !!!
+//This also means that Gamma1 and Gamma2 (left and right edge) remain constant!
+//This means A remains constant, B and C scale with eta and eta^2, respectively
+//
+//input:
+//    info         - general information
+//    wakeDVE      - wake DVE of one timestep
+//    newestDVE    - if steady airloads, the integrated ciruculation, the k-value,
+//                  has the uniform value of the first post-trailing edge element
+//                  for all DVEs  of one span location.
+//
+//output:
+// updated circulation and vorticity coefficients of stretched wakeDVE
+
+
+    int i;              //span indices of DVEs
+    double tempS;       //temporary scalar
+    
+    //assign new coefficients
+     for(i=0;i<info.nospanelement;i++)
+     {
+         tempS = 1/wakeDVE[i].eta;
+         wakeDVE[i].A = newestDVE[i].A_old;
+         wakeDVE[i].B = newestDVE[i].B_eta*tempS;
+         wakeDVE[i].C = newestDVE[i].Csqeta*tempS*tempS;
+    }
+
+ 
+
+}
+//===================================================================//
+        //END FUNCTION Update_wake_vorticity
+//===================================================================//
+
+/*/ NOT USED ANYMORE GB 2/6/20
 //===================================================================//
 		//START FUNCTION New_vorticity_coefficients
 //===================================================================//
@@ -1154,31 +1211,7 @@ void New_vorticity_coefficients(const GENERAL info,const PANEL *panePtr,\
 	}//loop over panels
 
 
-/*//////////////////
-char filename[133];	//file path and name
- FILE *fp;
 
-	//creates file name timestep##.txt ## is number of timestep
-	sprintf(filename,"%s%s",OUTPUT_PATH,"test.txt");
-
-	 fp = fopen(filename, "a");
-
-	fprintf(fp, "\n");
-
-	for(row=0;row<size;row++)
- 	{
-		 //row number
-		fprintf(fp, "\n%d\t",row);
-		for(col=0;col<size;col++)
-		{
-			fprintf(fp, "%.10lf\t",D[row][col]);
-		}
- 		//n-th element of R
-		fprintf(fp, "\t\t%.10lf \t%.10lf \t%.10lf \t%.10lf",R[row],wakeDVE[row/2].eta,wakeDVE[row/2].K,newestDVE[row/2].K);
- 	}
-// 	fclose(fp);
-
-//*/////////////////
 
 	//solving equation system with gaussian elimination
  	GaussSolve(D,R,size,BC);	//subroutine in gauss.cpp
@@ -1193,31 +1226,13 @@ char filename[133];	//file path and name
 					   					wakeDVE[i].eta*wakeDVE[i].eta;
 	}
 
-/*//////////////////
-//char filename[133];	//file path and name
-// FILE *fp;
-
-	//creates file name timestep##.txt ## is number of timestep
-//	sprintf(filename,"%s%s",OUTPUT_PATH,"test.txt");
-//
-//	 fp = fopen(filename, "a");
-
-	fprintf(fp, "\n");
-
-	for(i=0;i<info.nospanelement;i++)
- 	{
-			fprintf(fp, "A %.10f\tB %.10lf\tC %.10lf\n",wakeDVE[i].A,wakeDVE[i].B,wakeDVE[i].C);
-	}
- 	fclose(fp);
-
-//*/////////////////
-
 	//Free memory
 	FREE2D(&D,size,size);
 	FREE1D(&R,size);
 	FREE1D(&BC,size);
 
 }
+*/
 //===================================================================//
 		//END FUNCTION New_vorticity_coefficients
 //===================================================================//

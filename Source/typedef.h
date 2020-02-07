@@ -115,7 +115,13 @@ struct DVE
 						//t.e.vortex:   Gamma =-A-B*y-C*y^2
 						//with y=-eta .. eta
 
-	double K;			//total circulation of DVE K = A +1/3*eta^2*C
+	//double K;			//total circulation of DVE K = A +1/3*eta^2*C
+    
+    double A_old, B_eta, Csqeta;    //replaces K-approach to compute new
+                        //spanwise circulation distribution
+                        //average circulation is maintained, that is
+                        //A remains constant and B and C scale with spanwise
+                        //stretching of wakeDVEs  GB 2-6-20
 
 	double xo[3];		//DVE referece point in global ref.frame
 						//It is located midspan and midchord

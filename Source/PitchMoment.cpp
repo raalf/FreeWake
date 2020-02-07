@@ -327,14 +327,14 @@ int *pivot;				//holds information for pivoting D
 			 j=timestep;
 //			for(i=0;i<=timestep;i++)
 			i=timestep;
-			New_vorticity_coefficients(info,panelPtr,wakePtr[i],wakePtr[j]);
+			Update_wake_vorticity(info,panelPtr,wakePtr[i],wakePtr[j]);
 	 	}								//subroutine in wake_geometry.cpp
 		else //unsteady airloads, varying integrated circulation, k
 		{ //for(i=0;i<=timestep;i++)
 		  {
 			i=timestep;
 			j=i;
-			New_vorticity_coefficients(info,panelPtr,wakePtr[i],wakePtr[j]);
+			Update_wake_vorticity(info,panelPtr,wakePtr[i],wakePtr[j]);
 		  }									//subroutine in wake_geometry.cpp
 		}
 //*/
@@ -376,13 +376,13 @@ int *pivot;				//holds information for pivoting D
 		{	//location have equally large amount of integrated circulation
 			 j=timestep;
 			for(i=0;i<=timestep;i++)
-			New_vorticity_coefficients(info,panelPtr,wakePtr[i],wakePtr[j]);
+			Update_wake_vorticity(info,panelPtr,wakePtr[i],wakePtr[j]);
 		}								//subroutine in wake_geometry.cpp
 		else //unsteady airloads, varying integrated circulation, k
 		{ for(i=0;i<=timestep;i++)
 		  {
 			j=i;
-			New_vorticity_coefficients(info,panelPtr,wakePtr[i],wakePtr[j]);
+			Update_wake_vorticity(info,panelPtr,wakePtr[i],wakePtr[j]);
 		  }									//subroutine in wake_geometry.cpp
 		}
 //*///===================================================================//
@@ -418,13 +418,13 @@ int *pivot;				//holds information for pivoting D
 		{	//location have equally large amount of integrated circulation
 			 j=timestep;
 			for(i=0;i<=timestep;i++)
-			New_vorticity_coefficients(info,panelPtr,wakePtr[i],wakePtr[j]);
+			Update_wake_vorticity(info,panelPtr,wakePtr[i],wakePtr[j]);
 	 	}								//subroutine in wake_geometry.cpp
 		else //unsteady airloads, varying integrated circulation, k
 		{ for(i=0;i<=timestep;i++)
 		  {
 			j=i;
-			New_vorticity_coefficients(info,panelPtr,wakePtr[i],wakePtr[j]);
+			Update_wake_vorticity(info,panelPtr,wakePtr[i],wakePtr[j]);
 		  }									//subroutine in wake_geometry.cpp
 		}
 ///*/

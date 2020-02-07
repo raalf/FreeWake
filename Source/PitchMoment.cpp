@@ -73,8 +73,10 @@ int *pivot;				//holds information for pivoting D
 		HTindex += panelPtr[i].n;
 	}
     }
+
 	//computingn the first DVE index of HT
 	HTindex *= -info.m;	HTindex += info.noelement;
+
 //===================================================================//
 		//DONE Update tail incidence
 //===================================================================//
@@ -530,7 +532,7 @@ int *pivot;				//holds information for pivoting D
 		CLhti += N_force[i][1];
 	}
 
-	//non-dimensional
+    //non-dimensional
 	CLht *= qc*cmac;  CLhti *= qc*cmac;	if(info.sym==1) {CLht*=2; CLhti*=2;}
 
 //===================================================================//

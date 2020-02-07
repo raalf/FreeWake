@@ -222,15 +222,6 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	while (ch!='=');
 	//reads number of chordwise lifting lines
 	fscanf(fp,"%d", &info.m);
-	if(info.trim==1)   //longitudinal trim routine
-	{
-		info.m=1;
-	  printf("Running Longitudinal Trim Version \n ");
-	  printf("\t\t\t\tThat means m=1!!\n");
-	  printf("\n\n\t\t\t!!!ONLY TWO WINGSS!!\n");
-	  printf("\t\tThat means one main wing and one horizontal tail!!\n");
-	}
-
 	
 	// read number of airfoils
 	//find the '='-sign in input file before m

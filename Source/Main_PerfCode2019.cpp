@@ -150,15 +150,6 @@ printf("========================================================================
 	//for 'nopanel'-number panels
 	ALLOC1D(&panelPtr,info.nopanel);
 
-
-//printf("\n\n\t\t!!!Only ONE CHORDWISE ROW OF SURFACE DVES!!\n");
-//printf("\t\t\t\tThat means m=1!!\n");
-//printf("\n\n\t\t\t!!!ONLY TWO WINGSS!!\n");
-//printf("\t\tThat means one main wing and one horizontal tail!!\n");
-//printf("\t\t\t\tG.B. 8-8-2007\n");
-//info.m=1;  //no. of chordwise surface DVEs fixed to one, G.B. 3-5-2007
-
-
 	//reads from input file panel information.
 	//For each panel in panelPtr:
 	//	x2[]		-x,y,z coordinates of leading edge corners
@@ -170,7 +161,6 @@ printf("========================================================================
 	//	n 			-number of elements in chord direction
 	//  left, right	-neighboring panels
 	Panel_Info_from_File(panelPtr, info);	//Subroutine in read_input.cpp
-
 
 //===================================================================//
 		//END read general and panel info from file 'input.txt'

@@ -143,6 +143,11 @@ info.flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 //						   info.m,info.nopanel);
 //						   //Subroutine in read_input.cpp
 
+	// Define input filename, input.txt by default
+	//sprintf(info.inputfilename,"%s","inputs/Baseline.txt"); //Call to inputs folder
+	sprintf(info.inputfilename,"%s","input.txt");
+
+
 	General_Info_from_File(info,alpha1,alpha2,alphastep);
 						   //Subroutine in read_input.cpp
 

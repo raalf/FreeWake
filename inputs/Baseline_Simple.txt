@@ -64,7 +64,7 @@ Neighbouring panels (0 for none) left: 0 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond.
 6	0.00	0.000	.8	.000	10
 xright	yright	zright	chord	epsilon	Bound.Cond.
-6	1.2	0.00	0.6	.000	100
+6.2	1.2	0.00	0.6	.000	100
 
 
 %<- special identifier

@@ -31,21 +31,16 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	FILE *fp;		//input file
 
 	char ch;		//generic character
-	//char filename;		//generic character
-
-	//printf("Please enter filename:\n");
-	//scanf("%s",&filename);
-	//printf("The filename you have entered is: %s",filename);
 
 	// checks if input file exists
-	if ((fp = fopen("input.txt", "r"))== NULL) {
+	if ((fp = fopen(info.inputfilename, "r"))== NULL) {
 		printf("Input file could not be opened:\n");
 		scanf("%c",&ch);
 		exit(1);
 	}
-
+	
 	//opens input file
-	fp = fopen("input.txt", "r");
+	fp = fopen(info.inputfilename, "r");
 
 //=============================================================================
 
@@ -270,14 +265,14 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 
 
 	// checks if input file exists
-	if ((fp = fopen("input.txt", "r"))== NULL) {
+	if ((fp = fopen(info.inputfilename, "r"))== NULL) {
 		printf("Input file could not be opened:\n");
 		scanf("%c",&ch);
 		exit(1);
 	}
 
 	//opens input file
-	fp = fopen("input.txt", "r");
+	fp = fopen(info.inputfilename, "r");
 
 	//read in loop over number of panels (info.nopanel)
 	for (i=0;i<info.nopanel;i++)
@@ -403,14 +398,14 @@ void VT_Fus_Info(GENERAL &info,\
 
 
 	// checks if input file exists
-	if ((fp = fopen("input.txt", "r"))== NULL) {
+	if ((fp = fopen(info.inputfilename, "r"))== NULL) {
 		printf("Input file could not be opened:\n");
 		scanf("%c",&ch);
 		exit(1);
 	}
 
 	//opens input file
-	fp = fopen("input.txt", "r");
+	fp = fopen(info.inputfilename, "r");
 	
 	//find the '%'-sign at beginning of V-tail info
 	do	ch = fgetc(fp);

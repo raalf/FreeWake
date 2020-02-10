@@ -31,6 +31,11 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	FILE *fp;		//input file
 
 	char ch;		//generic character
+	//char filename;		//generic character
+
+	//printf("Please enter filename:\n");
+	//scanf("%s",&filename);
+	//printf("The filename you have entered is: %s",filename);
 
 	// checks if input file exists
 	if ((fp = fopen("input.txt", "r"))== NULL) {

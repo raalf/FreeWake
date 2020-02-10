@@ -2,7 +2,6 @@
 #include "general.h"
 #include "PerfCode.h"
 
-bool flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 
 int i,ii,a,a2;		//loop counters, max AOA increment
 	int k,l,m;			//loop counters
@@ -103,7 +102,8 @@ printf("\n\tPerformance Code based on FreeWake 2015 (includes stall model)\n\n")
 printf("\t\tRunning Version %s \n ",PROGRAM_VERSION);
 printf("===========================================================================\n ");
 
-	
+info.flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
+
 
 	//Input/output files
 	FILE *AD;			//airfoil data file
@@ -290,7 +290,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 //	int airfoil=0;			//airfoil index
 //	char ch;
 
-	if (flagVICOUS){ // Skip if Vicous is turned off
+	if (info.flagVICOUS){ // Skip if Vicous is turned off
 
 	//initializing profile
 	for(airfoil=0;airfoil<info.noairfoils;airfoil++)
@@ -445,7 +445,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 
 		tempS = 1/info.nu;	//inverse of kin. viscosity
 
-	if (flagVICOUS){
+	if (info.flagVICOUS){
 		i=0;		//intitaliing span index counter
 		m=0;		//index of leading edge DVE
 		for(k=0;k<info.nopanel;k++)  //loop over panels
@@ -490,7 +490,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 	//===============================================================//
 		Dvt=0;	//initialize profile drag variables
 
-	if (flagVICOUS){
+	if (info.flagVICOUS){
 		for(i=0;i<info.noVT;i++)  //loop over surface DVEs
 		{
 			
@@ -517,7 +517,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 	//===============================================================//
 		Dfuselage=0;		//initializing
 
-	if (flagVICOUS){
+	if (info.flagVICOUS){
 		tempS = V_inf*delFus/info.nu;	//almost local Re#
 
 		//loop over fuselae sections
@@ -555,7 +555,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
     //===============================================================//
         //adjusting total CL for stalled sections
     //===============================================================//
-		if (flagVICOUS){
+		if (info.flagVICOUS){
 		i=0;		//intitaliing span index counter
 		m=0;		//index of leading edge DVE
         tempS=0;        //initializing temporary CL holder

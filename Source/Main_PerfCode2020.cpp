@@ -2,6 +2,8 @@
 #include "general.h"
 #include "PerfCode.h"
 
+bool flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
+
 int i,ii,a,a2;		//loop counters, max AOA increment
 	int k,l,m;			//loop counters
 	int HTpanel;		//index of first HT panel
@@ -287,7 +289,9 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 //	int rows[15];				//numbers of rows of airfoil file
 //	int airfoil=0;			//airfoil index
 //	char ch;
-	
+
+	if (flagVICOUS){ // Skip if Vicous is turned off
+
 	//initializing profile
 	for(airfoil=0;airfoil<info.noairfoils;airfoil++)
 	for(i=0;i<2000;i++)
@@ -337,6 +341,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 			fscanf(AD,"%lf", &profile[airfoil][i][4]); //cm
 		}
 		fclose(AD);
+	}
 	}
 
 //===================================================================//
@@ -430,14 +435,17 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 		//induced drag
 		Di = CDi*info.S*q_inf;
 printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
+
 	//===============================================================//
 		//computing wing/horizontal tail profile drag
 	//===============================================================//
+
 		Dprofile=0; Dht=0;	CMo=0;//initialize  variables
 		CDprofile=0;
 
 		tempS = 1/info.nu;	//inverse of kin. viscosity
 
+	if (flagVICOUS){
 		i=0;		//intitaliing span index counter
 		m=0;		//index of leading edge DVE
 		for(k=0;k<info.nopanel;k++)  //loop over panels
@@ -472,7 +480,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 
 		//set new wing-zero lift moment to values of previous AOA
 		info.CMoWing = CMo;
-
+	}
 	//===============================================================//
 		//DONE computing wing/horizontal tail profile drag
 	//===============================================================//
@@ -482,6 +490,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 	//===============================================================//
 		Dvt=0;	//initialize profile drag variables
 
+	if (flagVICOUS){
 		for(i=0;i<info.noVT;i++)  //loop over surface DVEs
 		{
 			
@@ -497,6 +506,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 			Dvt += cd*VTarea[i];	  //h-tail drag
 		}
 		Dvt*=q_inf;  //multiplying with dyn. pressure
+	}
 
 	//===============================================================//
 		//END computing vertical-tail profile drag
@@ -507,6 +517,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 	//===============================================================//
 		Dfuselage=0;		//initializing
 
+	if (flagVICOUS){
 		tempS = V_inf*delFus/info.nu;	//almost local Re#
 
 		//loop over fuselae sections
@@ -521,7 +532,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 			Dfuselage += cd*FusSectS[i];
 		}
 		Dfuselage *=q_inf*1.;  //dyn. pressure and correction for pressure drag	
-		
+	}	
 	//===============================================================//
 		//END computing fuselage drag
 	//===============================================================//
@@ -544,7 +555,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
     //===============================================================//
         //adjusting total CL for stalled sections
     //===============================================================//
-
+		if (flagVICOUS){
 		i=0;		//intitaliing span index counter
 		m=0;		//index of leading edge DVE
         tempS=0;        //initializing temporary CL holder
@@ -568,7 +579,10 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
         
         CLinviscid=CL;		//inviscid CL without stall correction
 		CL=tempS;        //reassigning CL
-        
+    } else{
+		CLinviscid=CL;	// Creating CLinviscid
+		//When viscous corrections are off dont need to re-assign CL
+    }
     //===============================================================//
         //DONE adjusting total CL for stalled sections
     //===============================================================//

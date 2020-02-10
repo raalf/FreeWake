@@ -1,0 +1,79 @@
+Input file for FreeWake 2020
+Format may not work with older versions
+Units: in m/N/sec
+Please note that the program uses equal, number and : signs as special recognizers!
+The results are written to the sub-directory output'
+This file is created as a baseline case to compare between programs and versions
+
+Relaxed wake (yes 1, no 0):		relax =		1
+Steady (1) or unsteady (2):		aerodynamics =	1
+Symmetrical geometry (yes 1, no 0):	sym =		1
+Longitudinal trim (yes 1, no 0):	trim =		1	(yes means m has to be 1)
+
+Max. number of time steps:	maxtime =	20
+Width of each time step (sec):	deltime =	0.250000
+Convergence delta-span effic.:	deltae =	0.005000	(0 if onlytimestepping)
+
+Freestream velocity (leave value 1):	Uinf =		1.0
+AOA beginning, end, step size [deg]:	alpha=		6 10 2
+Sideslip angle [deg]:			beta =		0.0
+Density:				density =	1.225
+Kinematic viscosity:			nu =		1.420000e-05
+
+Reference area:			S =	10.05
+Reference span:			b =	15
+
+Mean aerodynamic chord:		cmac =	0.67
+Aircraft weight (N):		W =	3000.0
+CG location (x y z):		cg =    0 0 0
+CMo of wing:			CMo =	-0.150000000
+
+No. of wings (max. 5):		wings =		2
+No. of panels:			panels =	3
+No. of chordwise lifting lines: m =		3
+No. of airfoils (max. 15):	airfoils =	10
+
+Panel boundary conditions:
+	Symmetry line - 	10
+	Between panels - 	220
+	Free end - 		100
+
+Defines leading edge of wing, all measured in metres:
+
+Panel #:1. Number of spanwise elements (n) = 2 Airfoil number = 2
+Neighbouring panels (0 for none) left: 0 right: 2
+xleft	yleft	zleft	chord	epsilon	Bound.Cond.
+0.000	0.000	0.000   1.0     2.000	10
+xright	yright	zright	chord	epsilon	Bound.Cond.
+0.075	1.5	0.0	0.9	1.000	220
+
+Panel #:2. Number of spanwise elements (n) = 10 Airfoil number = 2
+Neighbouring panels (0 for none) left: 1 right: 0
+xleft	yleft	zleft	chord	epsilon	Bound.Cond.
+0.075	1.5	0.0	0.9	1.000	220
+xright	yright	zright	chord	epsilon	Bound.Cond.
+0.15	7.5	0.0	0.3	-5.00	100
+
+
+
+Panel #:3. Number of spanwise elements (n) = 4 Airfoil number = 5
+Neighbouring panels (0 for none) left: 0 right: 0
+xleft	yleft	zleft	chord	epsilon	Bound.Cond.
+6	0.00	0.000	.8	.000	10
+xright	yright	zright	chord	epsilon	Bound.Cond.
+6	1.2	0.00	0.6	.000	100
+
+
+%<- special identifier
+Vertical tail information:
+Number of panels (max 5) = 0
+no.	chord	area	airfoil
+
+Fuselage information:
+Number of sections (max 20) =	0
+Width of each section =		0.000
+Panel where transition occurs =	0
+No.	Diamter
+
+Interference drag = 0.0%
+##############

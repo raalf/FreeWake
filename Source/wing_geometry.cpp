@@ -6,7 +6,8 @@ void Trailing_Edge_Generation\
 					(const PANEL, const GENERAL, const BOUND_VORTEX*,\
 					 BOUND_VORTEX *, int &);
 //identifies edges of separate wings
-void Wing_Generation(const PANEL*,int,int[5],int[5],int[5],int[5]);
+void Wing_Generation(const PANEL*,int,int[5],int[5],int[5],int[5],\
+                     int[5],int[5]);
 //generates surface DVE elements
 void Surface_DVE_Generation(const GENERAL,const PANEL *,DVE *);
 //moves wing by delta x every time step,
@@ -292,7 +293,8 @@ double tempS, tempA[3],tempA1[3];	//temporary scalar, array
 		//identifies separate wings
 //===================================================================//
 void Wing_Generation(const PANEL* panelPtr,const int nopanel,\
-					 int wing1[5],int wing2[5],int panel1[5],int panel2[5])
+					 int wing1[5],int wing2[5],int panel1[5],int panel2[5],\
+                     int dve1[5], int dve2[5])
 {
 	//identifies the separate wings and their span indices of their tips
 	//
@@ -307,8 +309,10 @@ void Wing_Generation(const PANEL* panelPtr,const int nopanel,\
 	//	panel1[wing]- index of left panel of wing "wing"
 	//	panel2[wing]- index of right panel of wing "wing"
 	//				panel1 and panel2 added G.B. 11-5-06
+    //    dve1[wing]- index of first dve of wing "wing"
+    //    dve2[wing]- index of last dve of wing "wing" added GB 2-9-20
 
-int k,span=0,wing=0;						//loop counters, k=0..(panel.n-1)
+int k,span=0,wing=0,index=0;				//loop counters, k=0..(panel.n-1)
 
 	//identifies left edges (edge 1) of wings
 	for(k=0;k<nopanel;k++)
@@ -318,9 +322,11 @@ int k,span=0,wing=0;						//loop counters, k=0..(panel.n-1)
 		{
 			wing1[wing]=span;
 			panel1[wing]=k;
+            dve1[wing]=index;
 			wing++;			//advance to next wing
 		}
 		span += panelPtr[k].n; //move to next panel
+        index += panelPtr[k].n*panelPtr[k].m; //index to first dve of next panel
 	}
 
 //identifies right edges (edge 2) of wings
@@ -328,18 +334,26 @@ int k,span=0,wing=0;						//loop counters, k=0..(panel.n-1)
 	//initialize
 	wing = 0;
 	span = -1;
+    index = -1;
 
 	for(k=0;k<nopanel;k++)
 	{
 		span += panelPtr[k].n; //move to next panel
+        index += panelPtr[k].n*panelPtr[k].m; //index to first dve of next
 		//looks at panels left edge (edge 1)
 		if(panelPtr[k].right==0)
 		{
 			wing2[wing]=span;
 			panel2[wing]=k;
+            dve2[wing]=index;
 			wing++;			//advance to next wing
 		}
 	}
+//    for(k=0;k<info.nowing;k++)
+//    {
+//       printf("  wing[%d] dve1 %d  dve2 %d panel1 %d panel2 %d\n",k,info.dve1[k],info.dve2[k],info.panel1[k],info.panel2[k]);
+//    } //###
+
 }
 //===================================================================//
 		//END FUNCTION Wing_Generation

@@ -42,7 +42,7 @@ double PitchingMoment(const GENERAL info,PANEL *panelPtr,DVE *&surfacePtr,\
 	int i,j,l,timestep=0;	// loop counter
 	int saveStep=20;	//number of steps when relaxed wake is saved
 	int timestart=0;	//first timestep of relaxed wake scheme
-	int HTindex=0;		//the first DVE index of the HT
+ //GB 2-9-20 	int HTindex=0;		//the first DVE index of the HT
 	double CLi,CY,CYi;	//lift and side force coefficients
 	double e_old;		//span efficiency of previous time step
 	double deltae;		//square of delta_e of curent and previous time step
@@ -61,21 +61,22 @@ int *pivot;				//holds information for pivoting D
 		//Update tail incidence
 //===================================================================//
 
-	//add incicent angle increment
+    //add incicent angle increment
     if(info.trim==1)   //only if longitudinal trim routine is ON
-    {	for(i=HTpanel;i<info.nopanel;i++)
+//    {	for(i=HTpanel;i<info.nopanel;i++) changed GB 2-10-20
+    {    for(i=info.panel1[1];i<=info.panel2[1];i++)
 	{
 		tempS = panelPtr[i].eps2 - panelPtr[i].eps1; //twist
 		panelPtr[i].eps1 = epsilonHT;
 		panelPtr[i].eps2 = epsilonHT+tempS;
 
 		//adding number of spanwise DVEs of HT
-		HTindex += panelPtr[i].n;
+ //GB 2-9-20 		HTindex += panelPtr[i].n;
 	}
     }
-
+ 
 	//computingn the first DVE index of HT
-	HTindex *= -info.m;	HTindex += info.noelement;
+ //GB 2-9-20 	HTindex *= -info.m;	HTindex += info.noelement;
 
 //===================================================================//
 		//DONE Update tail incidence
@@ -526,7 +527,8 @@ int *pivot;				//holds information for pivoting D
 	//computing lift forces of HT
 	CLht =0; //initializing
 	CLhti=0; //initializing
-	for(i=HTindex;i<info.noelement;i++)
+ //GB 2-9-20   for(i=HTindex;i<info.noelement;i++)
+    for(i=info.dve1[1];i<=info.dve2[1];i++)
 	{
 		CLht  += N_force[i][0];
 		CLhti += N_force[i][1];

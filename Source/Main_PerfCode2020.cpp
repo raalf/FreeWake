@@ -260,7 +260,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 
 		//identifies separate wings
 		Wing_Generation(panelPtr,info.nopanel,info.wing1,info.wing2,\
-						info.panel1,info.panel2);
+						info.panel1,info.panel2,info.dve1,info.dve2);
 									//Subroutine in wing_geometry.cpp
 
 //===================================================================//
@@ -414,6 +414,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 			panelPtr[i].u2[0]= info.U[0];
 			panelPtr[i].u2[2]= info.U[2];
 		}
+        
 	//===============================================================//
 		//compute induced drag and lift distribution
 	//===============================================================//

@@ -129,7 +129,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 			S[i] = 0;  //area of current spanwise strip
 			
 			//adding up chordal values of one spanwise location (indexed i)
-			for(m=0;m<info.m;m++)
+			for(m=0;m<panelPtr[k].m;m++)
 			{
 				j=n+m*panelPtr[k].n;
 				cn[i] += (N_force[j][4]+N_force[j][5]);
@@ -147,7 +147,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 			i++;  //next span index 
 			n++;	//index of next leading edge DVE 
 		}
-		n += panelPtr[k].n*(info.m-1);  //index of next LE DVE of next panel
+		n += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 	}
 
 
@@ -197,7 +197,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		//more info on element
 		fprintf(spaninfo," %16.12lf %16.12lf %16.12lf %16.12lf %16.12lf %16.12lf",\
 				surfacePtr[m].A,surfacePtr[m].B,surfacePtr[m].C,S[i],\
-				surfacePtr[m].eta*2,surfacePtr[m].xsi*2*info.m);
+				surfacePtr[m].eta*2,surfacePtr[m].xsi*2*panelPtr[k].m);
 		fprintf(spaninfo," %16.12lf %16.12lf %16.12lf",\
 				surfacePtr[m].nu*RtD,surfacePtr[m].epsilon*RtD,\
 				surfacePtr[m].psi*RtD);
@@ -208,7 +208,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		i++;  //next span index 
 		m++;	//index of next leading edge DVE 
 	  } 
-	  m += panelPtr[k].n*(info.m-1);  //index of next LE DVE of next panel
+	  m += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 	}
 
 

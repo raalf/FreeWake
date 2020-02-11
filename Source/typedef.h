@@ -31,7 +31,8 @@ struct GENERAL
 	int trim;			//longitudinal trim flag (=1 for trimming, =0 no trim; =1 m=1!)
 	int nowing;			//number of separated wings
 	int wing1[5],wing2[5];//span index of edges 1 (left) and 2 (right) of wing
-	int panel1[5], panel2[5];//indices of panels at left and right edge of wing
+	int panel1[5],panel2[5];//indices of panels at left and right edge of wing
+    int dve1[5],dve2[5];//indices of first and last dve of wing
 						//G.B. 11-5-06
 	int noairfoils;		//no. of airfoils used G.B. 8-9-07
 	

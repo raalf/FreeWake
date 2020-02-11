@@ -64,36 +64,7 @@ double tempA[3],tempB[3],tempS;
 double tempProj[3],tempTE[3];
 int type;					//type of wake DVE
 DVE tempDVE;				//temporary DVE
-Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 
-
-	ALLOC1D(&FluegelPtr,info.nowing);
-
-//===================================================================//
-		//START determining first and last panel of each wing
-		//also first and last DVE index of each wing
-//===================================================================//
-// Fluegel/Wing routine was added for multiple wing configurations
-// Not too efficient to redo it everytime drag is computed, but it is
-//late February 2006 and my son is due in about two months and I need
-//to get this god damn thesis done!!  G.B.
-
-	index=0;		//initializing
-
-	for(wing=0;wing<info.nowing;wing++)
-	{
-		//the first DVE index of current wing
-		FluegelPtr[wing].dve1 = index;
-		index += (info.wing2[wing] - info.wing1[wing]+1)*info.m;
-
-		//the last DVE index of current wing
-		FluegelPtr[wing].dve2 = index-1;
-	}//next wing
-
-//===================================================================//
-		//DONE determining first and last panel of each wing
-		//also first and last DVE index of each wing
-//===================================================================//
 
 //#############################################################################
 //							FORCE LOOP - START
@@ -113,8 +84,9 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 	for (index = panelPtr[panel].TE1; index <= panelPtr[panel].TE2; index++)
 	{
 		//increase wing index to next wing
-		if(index>FluegelPtr[wing].dve2) wing++;
+        if(index>info.dve2[wing]) wing++;
 
+        //###
 		//drag force direction
 		eD[0] = surfacePtr[index].U[0];
 		eD[1] = surfacePtr[index].U[1];
@@ -206,8 +178,7 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 		  //loop over trailing edge elements of current panel
 		  for (s = panelPtr[p].TE1; s <= panelPtr[p].TE2; s++)
 		  {
-
-			if(s>=FluegelPtr[wing].dve1 && s<=FluegelPtr[wing].dve2)
+             if(s>=info.dve1[wing] && s<=info.dve2[wing])
 			{
 			//DVE 's' (the inducer) and DVE 'index' (the induced one) are
 			//of the same wing
@@ -426,13 +397,13 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 	for(panel=0;panel<info.nopanel;panel++)
 	{
 		//smallest index of panel-1
-		index=panelPtr[panel].TE2-panelPtr[panel].n*info.m;
+		index=panelPtr[panel].TE2-panelPtr[panel].n*panelPtr[panel].m;
 
 	  	//loop over trailing edge elements of current panel
 	  	for(k=panelPtr[panel].TE1;k<=panelPtr[panel].TE2;k++)
 	  	{
 			//drag per DVE is saved in tempS
-			tempS = D_force[span]*info.density/info.m;
+			tempS = D_force[span]*info.density/panelPtr[panel].m;
 
 			//loop over elements of one span location, from TE to LE
 			for(i=k;i>index;i-=panelPtr[panel].n)

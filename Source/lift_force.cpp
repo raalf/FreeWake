@@ -143,19 +143,28 @@ double N_free;				//magnitude free stream norm. forces/density
 double tempA[3],tempAA[3], tempS;
 double **U1,**Uo,**U2;		//mid-chord velocities of upstream DVE
 
-if(info.m>1) //if more than one lifting line
-{	//allocating temporary memory for the induced velocity of upstream DVE
+//if(info.m>1) //if more than one lifting line  //removed GB 2-9-20
+//{	//allocating temporary memory for the induced velocity of upstream DVE
 	//needed for averaging velocity induced at lifting lines
-	ALLOC2D(&U1,info.nospanelement,3);
-	ALLOC2D(&Uo,info.nospanelement,3);
-	ALLOC2D(&U2,info.nospanelement,3);
-}
+//	ALLOC2D(&U1,info.nospanelement,3);
+//	ALLOC2D(&Uo,info.nospanelement,3);
+//	ALLOC2D(&U2,info.nospanelement,3);
+//}
 
 //loop over number of panels
 for (i=0;i<info.nopanel;i++)
 {
+  if(panelPtr[i].m>1) //if more than one lifting line
+  {    //allocating temporary memory for the induced velocity of upstream DVE
+        //needed for averaging velocity induced at lifting lines
+        //added GB 2-9-20
+        ALLOC2D(&U1,panelPtr[i].n,3);
+        ALLOC2D(&Uo,panelPtr[i].n,3);
+        ALLOC2D(&U2,panelPtr[i].n,3);
+  }
+
   //loop over number of chordwise elements 'info.m'
-  for (j=0;j<info.m;j++)
+  for (j=0;j<panelPtr[i].m;j++)
   {
 	 //loop over number of spanwise elements 'n'
 	 for (k=0;k<panelPtr[i].n;k++)
@@ -268,7 +277,8 @@ for (i=0;i<info.nopanel;i++)
 			DVE_Induced_Velocity(info,tempA,surfacePtr,wakePtr,timestep,w2);
 					 					//subroutine in induced_velocity.cpp
 
-			if(info.m>1)//if more than one lifting line, compute and store
+// removed GB 2-9-20     if(info.m>1)//if more than one lifting line, compute and store
+            if(panelPtr[i].m>1)//if more than one lifting line, compute and store
 			{			//velocities at half-chord loaction for averaging later
 			  xoLE[0] = surfacePtr[l].xo[0];
 			  xoLE[1] = surfacePtr[l].xo[1];
@@ -420,16 +430,24 @@ for (i=0;i<info.nopanel;i++)
 		N_force[l][3] = dot(R,eS);		//inducd side force
 
 		l++; //increment elementary wing index l=0..(noelement-1)
-	 }	//End loop over k
-  }	//End loop over j
-} //End loop over i
+	 }	//End loop over k - loop over span of panel
+  }	//End loop over j - loop over chord of panel
+    
+  if(panelPtr[i].m>1)
+  {    //temporary variable of induced velocity of upstream DVE
+      // added GB 2-9-20
+        FREE2D(&U1,panelPtr[i].n,3);
+        FREE2D(&Uo,panelPtr[i].n,3);
+        FREE2D(&U2,panelPtr[i].n,3);
+  }
+} //End loop over i - loop over panels
 
-if(info.m>1)
-{	//temporary variable of induced velocity of upstream DVE
-	FREE2D(&U1,info.nospanelement,3);
-	FREE2D(&Uo,info.nospanelement,3);
-	FREE2D(&U2,info.nospanelement,3);
-}
+//if(info.m>1)  //removed GB 2-9-20
+//{	//temporary variable of induced velocity of upstream DVE
+//	FREE2D(&U1,info.nospanelement,3);
+//	FREE2D(&Uo,info.nospanelement,3);
+//	FREE2D(&U2,info.nospanelement,3);
+//}
 
 }
 //===================================================================//
@@ -494,7 +512,8 @@ double tempA[3], tempS;
 for (i=0;i<info.nopanel;i++)
 {
   //loop over number of chordwise elements 'info.m'
-  for (j=0;j<info.m;j++)
+//removed GB 2-9-20  for (j=0;j<info.m;j++)
+  for (j=0;j<panelPtr[i].m;j++)
   {
 	 eta  =	elementPtr[l].eta;
 	 eta8=eta*0.8;

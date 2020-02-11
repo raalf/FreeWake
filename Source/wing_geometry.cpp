@@ -1,6 +1,3 @@
-//generates elementary wings of a panel
-void Elementary_Wings_Generation\
-					(const PANEL, const GENERAL, BOUND_VORTEX *, int &);
 //generates trailing edge vortex elements of a panel
 void Trailing_Edge_Generation\
 					(const PANEL, const GENERAL, const BOUND_VORTEX*,\
@@ -14,171 +11,6 @@ void Surface_DVE_Generation(const GENERAL,const PANEL *,DVE *);
 void Move_Wing(const GENERAL, DVE*);
 //moves flexible wing by delta x every time step,
 void Move_Flex_Wing(const GENERAL, DVE*);
-
-//===================================================================//
-		//FUNCTION Elementary_Wings_Generation
-		//generates elementary wings of panel 'j'
-//===================================================================//
-
-void Elementary_Wings_Generation(const PANEL panel,const GENERAL info,\
-								 BOUND_VORTEX* elementPtr, int &l)
-{
-	//devides panel 'j' into elementary wings and computes some basic
-	//elementary wing properties.
-	//input:
-	// 	For panel 'j'(in panel):
-	//	x1[], x2[]	-x,y,z coordinates of leading edge corners
-	//	c1,c2		-chord length of panel sides
-	//	eps1, eps2	-incident angle of panel sides
-	//	u1[], u2[]	-local free stream velocity variation at panel sides
-	//				 (for rotating wings}
-	//	n 			-number of elementary wings in span direction
-	//
-	//  info.m		-number of elementary wings in chord direction
-	//  info.U		-free stream velocity
-	//
-	//	l			-elementary wing index, incremented by one at end
-	//				 of loop 'k' over number of spanwise elementary wings.
-	//				 Hence, l = 0 .. (noelement-1)
-	//
-	//ouput:
-	//definition of elementary wing properties.
-	// 	For each elementary wing in elementPtr:
-	//	xo[]		-midspan location of bound vortex in global ref.frame
-	//	xA[]		-control point location in global ref. frame
-	//	normal[]	-surface normal at control point in global ref. frame
-	//  chord		-midspan chord of element
-	//	eta			-half span of elementary wing
-	//	phi 		-sweep of elementary wing
-	//	nu			-dihedral of elementary wing
-	//	u[3]		-local free stream velocity at mid span
-	//				 of elementary wing in global ref.frame.
-
-int j,k;							//loop counters, j=0..(info.m-1), k=0..(n-1)
-double phi,nu,eta;  				//panel sweep, dihedral, span
-double x1[3],x2[3];					//panel left and right leading edge points
-double xquart1[3], xquart2[3];		//1/4c points of panel edge 1 and 2
-double xquart[3];					//panel 1/4c vector
-double tempS, tempA[3],tempA1[3];	//temporary scalar, array
-double deleps,delchord1,delchord2;
-double ceps,seps;					//cosine and sine of incident
-
-//xquart: vector between 1/4 chord points of panel edges
-scalar(panel.x1,-1,tempA);	//negates x1
-vsum(panel.x2,tempA,xquart); //x_l.e. = x1/4_2-x1/4_1
-tempS= sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]);
-											//panel span
-nu = asin(xquart[2]/tempS);					//leading edge dihedral
-deleps = (panel.eps2-panel.eps1)/panel.n;	//spanwise incident increments
-delchord1 = panel.c1/info.m;				//chordwise increment left side
-delchord2 = panel.c2/info.m;				//chordwise increment right side
-
-//computing the left leading edge point of panel
-x1[0] = panel.x1[0]-0.25*panel.c1*cos(panel.eps1);
-x1[1] = panel.x1[1]-0.25*panel.c1*sin(panel.eps1)*sin(nu);
-x1[2] = panel.x1[2]+0.25*panel.c1*sin(panel.eps1)*cos(nu);
-
-//computing the right leading edge point of panel
-x2[0] = panel.x2[0]-0.25*panel.c2*cos(panel.eps2);
-x2[1] = panel.x2[1]-0.25*panel.c2*sin(panel.eps2)*sin(nu);
-x2[2] = panel.x2[2]+0.25*panel.c2*sin(panel.eps2)*cos(nu);
-
-//loop over number of chordwise elements 'info.m'
-for (j=0;j<info.m;j++)
-{
-//########	NEW ELEMENT GENERATION
-//######## 		G.B. JUNE 8,03
-
-	tempS = (0.25+j);
-
-	//computing 1/4 chord locations of panel edge 1
-	//value stored in xquart1
-	xquart1[0] = x1[0]+delchord1*tempS*cos(panel.eps1);
-	xquart1[1] = x1[1]+delchord1*tempS*sin(panel.eps1)*sin(nu);
-	xquart1[2] = x1[2]-delchord1*tempS*sin(panel.eps1)*cos(nu);
-
-	//computing 1/4 chord locations of panel edge 2
-	//value stored in xquart2
-	xquart2[0] = x2[0]+delchord2*tempS*cos(panel.eps2);
-	xquart2[1] = x2[1]+delchord2*tempS*sin(panel.eps2)*sin(nu);
-	xquart2[2] = x2[2]-delchord2*tempS*sin(panel.eps2)*cos(nu);
-
-	//xquart: vector between 1/4 chord points of panel edges
-	scalar(xquart1,-1,tempA);	//negates xquart1
-	vsum(xquart2,tempA,xquart); //x1/4 = x1/4_2-x1/4_1
-
-	phi = asin(xquart[0]/norm2(xquart));//1/4-chord line sweep
-	tempS= sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]);
-										//panel span
-	eta = tempS/panel.n*0.5;		    	//halfspan of elementary wings
-
-//loop over number of spanwise elements 'n'
-	for (k=0;k<panel.n;k++)
-	{
-		elementPtr[l].phi = phi;	// elementary wing sweep
-		elementPtr[l].nu = nu;		// elementary wing dihedral
-		elementPtr[l].eta = eta;	// elementary wing halfspan
-
-		tempS= (0.5+k)/panel.n;
-
-		//computes mid span point of 1/4chord line
-		scalar(xquart,tempS,tempA);
-		vsum(xquart1, tempA, elementPtr[l].xo);
-
-		//chord length at midspan of elementary wing
-		elementPtr[l].chord = delchord1+(delchord2-delchord1)*tempS;
-
-		//computes local free stream velocity at xo location
-		//varies along span in case of rotating wings
-		scalar(panel.u2,tempS,tempA);		//u2/n*(.5+k)
-		scalar(panel.u1,(1-tempS),tempA1);	//-u1(1/n*(.5+k)-1)
-		vsum(tempA,tempA1,elementPtr[l].u);	//u2+(u2-u1)/n*(.5+k)
-
-		tempS = panel.eps1 + (0.5+k)*deleps;  //local incident angle
-		ceps  = cos(tempS);
-		seps  = sin(tempS);
-
-		//computes surface normal vector
-		elementPtr[l].normal[0] =  seps;
-		elementPtr[l].normal[1] = -ceps*sin(nu);
-		elementPtr[l].normal[2] =  ceps*cos(nu);
-
-		tempS = elementPtr[l].chord*0.5;
-		//control point loation at mid-span of 3/4 chord line
-		elementPtr[l].xA[0] = elementPtr[l].xo[0] + tempS*ceps;
-		elementPtr[l].xA[1] = elementPtr[l].xo[1] + tempS*seps*sin(nu);
-		elementPtr[l].xA[2] = elementPtr[l].xo[2] - tempS*seps*cos(nu);
-
-
-		//KHH small angle approach,
-		//ctrl. point lies in shed vortex sheet 1/2chord aft of bound vortex
-		//added 6/15/03 G.B.
-		if (info.linear == 1)
-		{
-			elementPtr[l].xA[0]=elementPtr[l].xo[0]+elementPtr[l].chord*0.5;
-			elementPtr[l].xA[1]=elementPtr[l].xo[1];
-			elementPtr[l].xA[2]=elementPtr[l].xo[2];
-		}
-
-//#printf("x1: 	  %lf  %lf  %lf  \n",x1[0],x1[1],x1[2]);
-//#printf("x2: 	  %lf  %lf  %lf  \n",x2[0],x2[1],x2[2]);
-//#printf("x1/4left: %lf  %lf  %lf  \n",xquart1[0],xquart1[1],xquart1[2]);
-//#printf("x1/4righ: %lf  %lf  %lf  \n",xquart2[0],xquart2[1],xquart2[2]);
-//#printf("x1/4: %lf  %lf  %lf  \n",elementPtr[l].xo[0],elementPtr[l].xo[1],elementPtr[l].xo[2]);
-//#printf("xA  : %lf  %lf  %lf  \n",elementPtr[l].xA[0],elementPtr[l].xA[1],elementPtr[l].xA[2]);
-//#printf("norm: \t%lf\t%lf\t%lf\t%lf\n\n",elementPtr[l].normal[0],elementPtr[l].normal[1],elementPtr[l].normal[2],norm2(elementPtr[l].normal));
-
-		l++; //increment elementary wing index l=0..(noelement-1)
-	}	//End loop over k
-}	//End loop over j
-
-/*for (j=0;j<info.noelement;j++)
-	printf(" %f\t",(elementPtr[j].nu));
-##*/
-}
-//===================================================================//
-		//END FUNCTION Elementary_Wings_Generation
-//===================================================================//
 
 //===================================================================//
 		//FUNCTION Trailing_Edge_Generation
@@ -273,7 +105,7 @@ double tempS, tempA[3],tempA1[3];	//temporary scalar, array
 		//KHH small angle approach,
 		//ctrl. point lies in shed vortex sheet 3/4chord aft of bound vortex
 		//added 6/24/03 G.B.
-		if ((info.linear == 1)  && (info.m == 1))
+		if ((info.linear == 1)  && (panel.m == 1))
 		{
 			trailedgePtr[l].xo[0]=elementPtr[l].xo[0]+elementPtr[l].chord*.75;
 			trailedgePtr[l].xo[1]=elementPtr[l].xo[1];
@@ -423,8 +255,8 @@ double delX[3];		//vector from center of leading edge to control point
 		//1/4chord line dihedral
 		nu = asin(xquart[2]/tempS);
 
-		delchord1 = panelPtr[i].c1/info.m;	//chordwise increment left side
-		delchord2 = panelPtr[i].c2/info.m;	//chordwise increment right side
+		delchord1 = panelPtr[i].c1/panelPtr[i].m;	//chordwise increment left side
+		delchord2 = panelPtr[i].c2/panelPtr[i].m;	//chordwise increment right side
 		delchord  = (delchord2-delchord1)/panelPtr[i].n;//chord/span increment
 
 		//tangent of change in sweep angle of each chordwise row
@@ -448,7 +280,8 @@ double delX[3];		//vector from center of leading edge to control point
 																	*cos(nu);
 
 		//loop over number of chordwise elements 'info.m'
-		for (m=0;m<info.m;m++)
+//removed GB 2-9-20		for (m=0;m<info.m;m++)
+        for (m=0;m<panelPtr[i].m;m++)
 		{
 			tempS = (0.25+m); //leading edge location/chord, 1/4c of spanwise row
 
@@ -520,8 +353,7 @@ double delX[3];		//vector from center of leading edge to control point
 				//*************************************************************
 				//dihedral angle, nu, tan(nu)=-(ny)/(nz)
 				if(fabs(surfacePtr[l].normal[2]) > DBL_EPS)
-				{
-				  tempS=-atan(surfacePtr[l].normal[1]/surfacePtr[l].normal[2]);
+				{ tempS=-atan(surfacePtr[l].normal[1]/surfacePtr[l].normal[2]);
 				  if (surfacePtr[l].normal[2] < 0)  tempS += Pi;//|nu|>Pi/2
 				}
 				else  //tan(nu) -> infinity  -> |nu| = Pi/2
@@ -576,7 +408,7 @@ double delX[3];		//vector from center of leading edge to control point
 
 				l++;		//next surface-DVE
 			}//END loop over number of spanwise elements 'n'
-		}//loop over number of chordwise elements 'info.m'
+		}//loop over number of chordwise elements 'panel.m'
 	}//END loop over number of panels
 
 	//##this part has been added 2/9/05 G.B.
@@ -588,8 +420,9 @@ double delX[3];		//vector from center of leading edge to control point
 		for(wing=0;wing<info.nowing;wing++)
 		{
 			//index of last DVE of this wing (located at tip and trail. edge)
-			l = k + (info.wing2[wing]-info.wing1[wing]+1)*info.m - 1;
-
+			//removed GB 2-9-20 l = k + (info.wing2[wing]-info.wing1[wing]+1)*info.m - 1;
+            l=info.dve2[wing];
+            
 			//is the wing symmetrical or not?
 			if(info.sym == 1)	//decay factor is 1% of tip-element half-span
 				singfct = 0.01*surfacePtr[l].eta;
@@ -836,7 +669,8 @@ double tempA[3];
 		for(wing=0;wing<info.nowing;wing++)
 		{
 			//index of last DVE of this wing (located at tip and trail. edge)
-			l = k + (info.wing2[wing]-info.wing1[wing]+1)*info.m - 1;
+            //removed GB 2-9-20 l = k + (info.wing2[wing]-info.wing1[wing]+1)*info.m - 1;
+            l=info.dve2[wing];
 
 			//is the wing symmetrical or not?
 			if(info.sym == 1)	//decay factor is 1% of tip-element half-span

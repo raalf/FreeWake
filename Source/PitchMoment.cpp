@@ -71,12 +71,12 @@ int *pivot;				//holds information for pivoting D
 		panelPtr[i].eps2 = epsilonHT+tempS;
 
 		//adding number of spanwise DVEs of HT
- //GB 2-9-20 		HTindex += panelPtr[i].n;
+ //removed GB 2-9-20 		HTindex += panelPtr[i].n;
 	}
     }
  
 	//computingn the first DVE index of HT
- //GB 2-9-20 	HTindex *= -info.m;	HTindex += info.noelement;
+ //removed GB 2-9-20 	HTindex *= -info.m;	HTindex += info.noelement;
 
 //===================================================================//
 		//DONE Update tail incidence
@@ -91,102 +91,10 @@ int *pivot;				//holds information for pivoting D
 //The following part is a strongly abreviated part of Horstmann's 
 //multiple lifting line method.  It doesn't work anymore, but the 
 //information is needed for the relaxed wake part.
+//         NO MORE HORSTMANN, ALL REMOVED GB 2-9-20
 //===================================================================//
 //*******************************************************************//
 //===================================================================//
-
-
-//===================================================================//
-		//START generation of elementary wings
-//===================================================================//
-	//devides panels into elementary wings and computes some basic
-	//elementary wing properties.
-	//input:
-	// 	For each panel in panelPtr:
-	//	x1[], x2[]	-x,y,z coordinates of leading edge corners
-	//	c1,c2		-chord length of panel sides
-	//	eps1, eps2	-incident angle of panel sides
-	//	u1[], u2[]	-local free stream veloocity at panel sides
-	//				 (for rotating wings}
-	//	n 			-number of elementary wings in span direction
-	//
-	//ouput:
-	//definition of elementary wing properties.
-	// 	For each elementary wing in elementPtr:
-	//	xo[]		-midspan location of bound vortex in global ref.frame
-	//	xA[]		-control point location in global ref. frame
-	//	normal[]	-surface normal at control point in global ref. frame
-	//	eta			-half span of elementary wing
-	//	phi 		-sweep of elementary wing
-	//	nu			-dihedral of elementary wing
-	//	u[3]		-local free stream velocity at element midspan
-	//				 in global ref. frame, varies for rotating wings
-	//	BC			-boundary conditions
-	//
-	//allocates mememory for elements information in 'elementPtr'
-	ALLOC1D(&elementPtr,info.noelement);
-
-	l=0;	//initialize elementary wing index
-			//index is incremented by one at end of loop
-			//'k' over number of spanwise elementary wings.
-			// Hence, l = 0 .. (noelement-1)
-
-	//loop over number of panels
-	for (i=0;i<info.nopanel;i++)
-	{	//generates elementary wings of current panel 'j'
-		Elementary_Wings_Generation(panelPtr[i],info,elementPtr,l);
-									//Subroutine in wing_geometry.cpp
-	}	//End loop over i
-
-//===================================================================//
-		//END generation of elementary wings
-//===================================================================//
-
-//===================================================================//
-		//START vorticity distribution
-//===================================================================//
-	//allocates mememory for R and D
-	ALLOC1D(&R,info.Dsize);
-	ALLOC2D(&D,info.Dsize,info.Dsize);
-
-	//initializing D
-	for(i=0; i<info.Dsize; i++)
-	for(j=0; j<info.Dsize; j++)
-		D[i][j]=0.0;
-
-	//Assembles and solves an equation system that defines the
-	//vorticity distribution across each elementary wing.  For each
-	//elementary wing, the vorticity distribution is given with:
-	//			gamma(i) = A + B*etai + C*etai^2
-	//the function returns the coefficients A, B, C for each elem. wing
-	Vorticity_Distribution(info, panelPtr, elementPtr, D, R);
-									//Subroutine in equ_system.cpp
-//===================================================================//
-		//END vorticity distribution
-//===================================================================//
-
-//===================================================================//
-//*******************************************************************//
-//===================================================================//
-//
-//					END	HORSTMANN METHOD (fixed wake)
-//
-//===================================================================//
-//*******************************************************************//
-//===================================================================//
-
-//===================================================================//
-//*******************************************************************//
-//*******************************************************************//
-//===================================================================//
-//
-//					HERE STARTS THE RELAXED WAKE PART
-//
-//===================================================================//
-//*******************************************************************//
-//*******************************************************************//
-//===================================================================//
-
 
 //===================================================================//
 		//START generating surface Distributed-Vorticity Elements
@@ -201,9 +109,6 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 		//END generating surface Distributed-Vorticity elements
 //===================================================================//
-
-	//frees allocated mememory only used for KHH part
-	FREE1D(&elementPtr,info.noelement);
 
 	//allocate memory for relaxed wake part
 	ALLOC1D(&pivot,info.Dsize);							//pivoting array
@@ -221,14 +126,32 @@ int *pivot;				//holds information for pivoting D
 	for(j=0; j<info.nospanelement; j++)		D_force[j] = 0;
 
 //===================================================================//
-		//START generating new kinematic conditions for D matrix
+		//START generating D matrix
 //===================================================================//
-
-	//The new kinematic conditions due to the DVE is being recomputed.
-	//The boundary conditions, as they were computed previously don't
+    
+	//1. Assembyly of upper 2/3 of D-matrix using the boundary conditions
+    //between the panels/elements
+    //The new kinematic conditions due to the DVE is being recomputed.
+	//2. The boundary conditions, as they were computed previously don't
 	//change.
+    //3. Decompose D-matrix in upper-lower diagonal matrices for faster
+    //solving
+    
+    //allocates mememory for R and D
+    ALLOC1D(&R,info.Dsize);
+    ALLOC2D(&D,info.Dsize,info.Dsize);
 
-	//assemble new lower 1/3 of D-matrix
+    //initializing D
+    for(i=0; i<info.Dsize; i++)
+    for(j=0; j<info.Dsize; j++)
+        D[i][j]=0.0;
+    
+    //1. assembly of first part of D, boundary cond. of
+    //DVE within each panel
+    DVE_BoundaryCond(surfacePtr,panelPtr,info,D);
+                        //subroutine in equ_system.cpp
+
+    //2. assemble new lower 1/3 of D-matrix
 	DVE_KinCond(surfacePtr,info,panelPtr,D);
 										//Subroutine in equ_system.cpp
 

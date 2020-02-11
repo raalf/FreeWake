@@ -42,7 +42,8 @@ void Squirt_out_Wake(const GENERAL info,const PANEL *panelPtr,\
 	for(k=0;k<info.nopanel;k++)
 	{
 		//forwards surface-DVE index to trailing egde elements
-		element += panelPtr[k].n*(info.m-1);
+//removed GB 2-9-20		element += panelPtr[k].n*(info.m-1);
+        element += panelPtr[k].n*(panelPtr[k].m-1);
 
 		//loop over number of spanwise elements of current panel
 		for(j=0;j<panelPtr[k].n;j++)
@@ -477,7 +478,8 @@ ALLOC3D(&uright,info.nowing,rightnow+1,3);
 	for(k=0;k<info.nopanel;k++)
 	{
 		//forwards surface-DVE index to trailing egde elements
-		element += panelPtr[k].n*(info.m-1);
+//removed GB 2-9-20		element += panelPtr[k].n*(info.m-1);
+        element += panelPtr[k].n*(panelPtr[k].m-1);
 
 		//loop over number of spanwise elements of current panel
 		for(j=0;j<panelPtr[k].n;j++)

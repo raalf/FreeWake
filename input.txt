@@ -16,7 +16,7 @@ Width of each time step (sec):	deltime =	0.250000
 Convergence delta-span effic.:	deltae =	0.005	(0 if onlytimestepping)
 
 Freestream velocity (leave value 1):	Uinf =		1.0
-AOA beginning, end, step size [deg]:	alpha=		3 6 3
+AOA beginning, end, step size [deg]:	alpha=		3 3 3
 Sideslip angle [deg]:			beta =		0.0
 Density:				density =	1.225
 Kinematic viscosity:			nu =		1.420000e-05

@@ -280,12 +280,19 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 		//find the '#'-sign at beginning of panel info
 		do	ch = fgetc(fp);
 		while (ch!='#');
+        
+        //find the '='-sign in first line of panel info
+        do    ch = fgetc(fp);
+        while (ch!='=');
+        //reads number of spanwise elements n
+        fscanf(fp,"%d", &(panelPtr[i].n));
 
-		//find the '='-sign in first line of panel info
-		do	ch = fgetc(fp);
-		while (ch!='=');
-		//reads number of spanwise elements n
-		fscanf(fp,"%d", &(panelPtr[i].n));
+		//find the '='-sign in first line of panel info  added GB 2-9-20
+//		do	ch = fgetc(fp);
+//		while (ch!='=');
+		//reads number of chordwise elements m
+//		fscanf(fp,"%d", &(panelPtr[i].m));
+        panelPtr[i].m = info.m;  //temporary
 
 		//find nest '='-sign in first line of panel info
 		do	ch = fgetc(fp);
@@ -356,14 +363,16 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 	//corner of the panels.  added 8/12/05 G.B.
 
 	//the first panel
-	panelPtr[0].TE1 = panelPtr[0].n*(info.m-1);			//the left DVE @ TE
+//GB2-9-20	panelPtr[0].TE1 = panelPtr[0].n*(info.m-1);	//the left DVE @ TE
+    panelPtr[0].TE1 = panelPtr[0].n*(panelPtr[0].m-1);  //the left DVE @ TE
 	panelPtr[0].TE2 = panelPtr[0].TE1 + panelPtr[0].n-1;//the right DVE @ TE
 
 	//loop over number of panels (info.nopanel)
 	for (i=1;i<info.nopanel;i++)
 	{
 		//the left DVE @ TE
-		panelPtr[i].TE1 = panelPtr[i-1].TE2 + 1 + panelPtr[i].n*(info.m-1);
+//GB 2-9-20	panelPtr[i].TE1 = panelPtr[i-1].TE2 + 1 + panelPtr[i].n*(info.m-1);
+        panelPtr[i].TE1 = panelPtr[i-1].TE2 + 1 + panelPtr[i].n*(panelPtr[i].m-1);
 		//the right DVE @ TE
 		panelPtr[i].TE2 = panelPtr[i].TE1 + panelPtr[i].n-1;
 	}

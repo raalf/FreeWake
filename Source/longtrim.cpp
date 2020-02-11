@@ -64,7 +64,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		//pitching moment computation - Step 0
 	//===========================================//
 
-	//computed the residual moment coefficient of wing and tail
+    //computed the residual moment coefficient of wing and tail
 	CM_resid = PitchingMoment\
 				(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
 				HTpanel,info.RefPt,CLht,CLhti,\

@@ -6,7 +6,6 @@ bool flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 
 int i,ii,a,a2;		//loop counters, max AOA increment
 	int k,l,m;			//loop counters
-	int HTpanel;		//index of first HT panel
 	
 	//drag variables
 	double *cn,cd;		//section normal and drag force coefficients
@@ -233,11 +232,14 @@ printf("========================================================================
 	//	BC			-boundary conditions
 	//
 	// The total number of elementary wings is m*Sum(panelPtr.n)
-	info.nospanelement=0;					//initlizes noelement
+	info.noelement=0;					//initlizes noelement
+    info.nospanelement=0;                    //initlizes nospanelement
 	for (i=0;i<info.nopanel;i++)			//loop over number of panels
-		info.nospanelement +=panelPtr[i].n;	//adds no. of spanwise elements
-	info.noelement=info.nospanelement*info.m;//the total number of el. wings
-	info.Dsize=3*info.noelement;
+    {
+        info.noelement +=panelPtr[i].n*panelPtr[i].m;//adds no. of elements
+        info.nospanelement +=panelPtr[i].n;    //adds no. of spanwise elements
+    }
+    info.Dsize=3*info.noelement;
 
 //===================================================================//
 		//END generation of elementary wings
@@ -264,17 +266,8 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 		//START determining panel index which belong to HT
 //===================================================================//
 
-	i = info.wing1[1]/info.m;  //number of elements in spanwise direction
-
-	HTpanel = 0; //starting with the first panel (index 0)
-
-	//subtract no. of spanwise elements until the first HT panel is reached
-	do{
-		i-=panelPtr[HTpanel].n;
-		HTpanel ++;
-	}
-	while(i>0);
-
+//Removed HTpanel since info.panel1[1] holds this value GB 2-10-20
+    
 //===================================================================//
 		//DONE determining panel index which belong to HT
 //===================================================================//
@@ -406,7 +399,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 		info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
 		info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta);
 
-		//new free stream velocities at panel edges
+        //new free stream velocities at panel edges
 			//ATTENTION: NO SPANWISE VELOCITY VARIATION !!!
 		for(i=0;i<info.nopanel;i++)
 		{
@@ -416,11 +409,10 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 			panelPtr[i].u2[0]= info.U[0];
 			panelPtr[i].u2[2]= info.U[2];
 		}
-
 	//===============================================================//
 		//compute induced drag and lift distribution
 	//===============================================================//
-		LongitudinalTrim(info,panelPtr,surfacePtr,HTpanel,cn,\
+		LongitudinalTrim(info,panelPtr,surfacePtr,info.panel2[1],cn,\
 						 CL,CDi,MomSol); //Subroutine in longtrim.cpp
 	//===============================================================//
 		//DONE compute induced drag and lift distribution
@@ -452,21 +444,21 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 		{
 		  for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
 		  {
-			Re = V_inf*2*surfacePtr[m].xsi*tempS*info.m;	//Reynolds number
+			Re = V_inf*2*surfacePtr[m].xsi*tempS*panelPtr[k].m;	//Reynolds number
 			airfoil = surfacePtr[m].airfoil;		//airfoil number
 
 			//computing section drag and moment coefficient
 			cd=SectionDrag(profile[airfoil],Re,cn[i],rows[airfoil],cm,m);
 							//in drag_force.cpp
-			Dprofile += cd*surfacePtr[m].S*info.m; //wing drag
+			Dprofile += cd*surfacePtr[m].S*panelPtr[k].m; //wing drag
 
 			//adding section moment coefficients (*S*chord)
-			CMo += cm*surfacePtr[m].S*surfacePtr[m].xsi*2*info.m*info.m;
+			CMo += cm*surfacePtr[m].S*surfacePtr[m].xsi*2*panelPtr[k].m*panelPtr[k].m;
 			
 			i++;  //next span index 
 			m++;	//index of next leading edge DVE 
 		  }
-		  m += panelPtr[k].n*(info.m-1);  //index of next LE DVE of next panel
+		  m += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 		}
 	
 		Dprofile*=q_inf; Dht*=q_inf;  //multiplying with dyn. pressure
@@ -564,13 +556,13 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 		  for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
 		  {
             //adding local normal force: lift/roh = cn*area*cos(dihedral)
-            tempS += cn[i]*(surfacePtr[m].S*info.m)\
+            tempS += cn[i]*(surfacePtr[m].S*panelPtr[k].m)\
                     *cos(surfacePtr[m].nu);
 
  			i++;  //next span index 
 			m++;	//index of next leading edge DVE 
 		  }
-		  m += panelPtr[k].n*(info.m-1);  //index of next LE DVE of next panel
+		  m += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 		}
 
         tempS = tempS/info.S*2; //normalizing force/roh to overall CL

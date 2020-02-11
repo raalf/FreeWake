@@ -57,7 +57,9 @@ struct PANEL
 
 	int left, right;	//left and right panel neighbors. 0 -> free end
     int n;				//number of spanwise elementary wings
+    int m;              //number of chordwise elementary wings GB 2-9-20
 	int airfoil;		//airfoil file number G.B. 8-9-07
+    int airfoil1, airfoil2; //airfoil on left (1) and right (2) edge GB 2-9-20
 
     int TE1,TE2;		//indices of left and right DVE @ TE of the panel
 						//added 8/12/05 G.B.

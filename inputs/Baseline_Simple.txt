@@ -32,7 +32,7 @@ CMo of wing:			CMo =	-0.150000000
 
 No. of wings (max. 5):		wings =		2
 No. of panels:			panels =	3
-No. of chordwise lifting lines: m =		3
+No. of chordwise lifting lines: m =		1
 No. of airfoils (max. 15):	airfoils =	10
 
 Panel boundary conditions:

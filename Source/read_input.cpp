@@ -13,6 +13,9 @@ void VT_Fus_Info(GENERAL &,double [5],double [5], int [5],\
 //This subroutine reads in the data of a particular timestep
 void Read_Timestep(int,DVE *,DVE **);
 
+void Read_Camber_from_File(GENERAL &);
+
+
 //===================================================================//
 		//START OF General_Info_from_File
 //===================================================================//
@@ -721,4 +724,92 @@ void Read_Timestep(const int timestep,DVE *surfaceDVE,DVE **wakeDVE)
 }
 //===================================================================*///
 		//END OF Read_Timestep
+//===================================================================//
+
+
+//===================================================================//
+		//START OF Read_Camber_from_File
+//===================================================================//
+
+void Read_Camber_from_File(GENERAL &info)
+{
+	// The function Read_Camber_from_file reads the camber file provided 
+	// in the input file. 
+	// 
+	// Camber file format:
+	// 		The camber file should be a list of x/c and y/c from x/c = 0 to y/c = 1.
+	// 		The first line of the camber file is a header
+	// 		The header file is only for user info and not used by the program.
+	// 		There must not be extra lines that the end of the file!
+	//
+	// D.F.B. in Braunschweig, Germany, 2020
+
+	FILE *fp;		//input file pointer
+
+	int i,j,k;		//generic counters
+	int rows;		//row counters
+	char ch; 		//generic character
+	double temp;	//generic double
+	char camberfilename[126];
+
+	sprintf(camberfilename,"%s%s","inputs/camber/","PSU94-097.camb");
+	//sprintf(camberfilename,"%s%s","inputs/camber/","9413camb.dat");
+	
+	// checks if camber file exists
+	if ((fp = fopen(camberfilename, "r"))== NULL) {
+		printf("Camber file could not be opened:\n");
+		scanf("%c",&ch);
+		exit(1);
+	}
+	
+	// ---- Determine the number of rows in the camber file ----
+	//opens camber file
+	fp = fopen(camberfilename, "r");
+	rows = 0;
+	do	{
+		ch = fgetc(fp);
+		if(ch == '\n'){
+		rows++;}
+		}
+	while (ch!=EOF);
+	fclose(fp);
+
+	// Preallocate the size of the camber arrays
+	double camber_x[rows];
+	double camber_y[rows];
+	j = 0;
+	k = 0;
+
+	// ---- Read in the camber data ----
+	fp = fopen(camberfilename, "r");
+
+	// Skip the header
+	do	
+	ch = fgetc(fp);
+	while (ch!='\n');
+
+	//Read in the camber data
+	for (i = 0; fscanf(fp, "%lf", &temp) != EOF; i++){
+		if ( i % 2 == 0){
+		camber_x[j] = temp; // First column is the x data
+		j++;}
+		else{
+		camber_y[k] = temp; // Second column is the y data
+		k++;}
+	}
+	
+	//closes camber file
+	fclose(fp);
+
+
+	// Testing code for printing the read camber data and size of array
+	//for(i=0; i<rows;i++){
+	//printf("%f \t %f \n",camber_x[i],camber_y[i]);
+	//}
+	//size_t n = sizeof(camber_x)/sizeof(camber_x[0]);
+	//printf("Size of camber_x is %d\n",n);
+}
+
+//===================================================================//
+		//END OF Read_Camber_from_File
 //===================================================================//

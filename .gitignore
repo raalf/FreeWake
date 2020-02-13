@@ -42,5 +42,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Output txt files
+# Output files
 /output/*.txt
+/output/*.py

@@ -172,7 +172,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	fprintf(spaninfo,"%6s %16s %16s %16s %16s %16s %16s %16s",\
 	"index","xo","yo","zo","cn","cl","cy","cd");
 	fprintf(spaninfo," %16s %16s %16s %16s %16s %16s %16s %16s %16s %16s\t#\n",\
-	"A","B","C","S","span","chord","nu","epsilon","psi","phiLE");
+	"A_TE","B_TE","C_TE","S","span","chord","nu","epsilon","psi","phiLE");
 
 //	for(i=0;i<info.nospanelement;i++)
 	i=0;		//intitaliing span index counter
@@ -183,7 +183,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	  {
 		if(i==info.wing1[1]) 
 					fprintf(spaninfo,"HT\n");  //separates HT data
-		
+		j=m+(panelPtr[k].n*(panelPtr[k].m-1));
 		//surface element index
 		fprintf(spaninfo,"%6d",i);
 		//coord. of ref point
@@ -196,7 +196,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 
 		//more info on element
 		fprintf(spaninfo," %16.12lf %16.12lf %16.12lf %16.12lf %16.12lf %16.12lf",\
-				surfacePtr[m].A,surfacePtr[m].B,surfacePtr[m].C,S[i],\
+				surfacePtr[j].A,surfacePtr[j].B,surfacePtr[j].C,S[i],\
 				surfacePtr[m].eta*2,surfacePtr[m].xsi*2*panelPtr[k].m);
 		fprintf(spaninfo," %16.12lf %16.12lf %16.12lf",\
 				surfacePtr[m].nu*RtD,surfacePtr[m].epsilon*RtD,\

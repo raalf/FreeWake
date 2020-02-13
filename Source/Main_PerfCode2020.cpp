@@ -150,6 +150,8 @@ info.flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	General_Info_from_File(info,alpha1,alpha2,alphastep);
 						   //Subroutine in read_input.cpp
 
+	//Read_Camber_from_File(info);
+
 	info.AR = info.b*info.b/info.S;  //reference aspect ratio
 
 	//allocates mememory for panel information in 'panelPtr'

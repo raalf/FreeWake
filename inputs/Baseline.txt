@@ -5,7 +5,7 @@ Please note that the program uses equal, number and : signs as special recognize
 The results are written to the sub-directory output'
 This file is created as a baseline case to compare between programs and versions
 
-Relaxed wake (yes 1, no 0):		relax =		1
+Relaxed wake (yes 1, no 0):		relax =		0
 Steady (1) or unsteady (2):		aerodynamics =	1
 Symmetrical geometry (yes 1, no 0):	sym =		1
 Longitudinal trim (yes 1, no 0):	trim =		0	(yes means m has to be 1)

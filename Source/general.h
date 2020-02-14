@@ -16,6 +16,7 @@
 #define OUTPUT_PATH "output/"
 #define PROGRAM_VERSION "FreeWake2020_dev"
 #define AIRFOIL_PATH "airfoils/"
+#define CAMBER_PATH "inputs/camber/"
 
 
 //global Variables

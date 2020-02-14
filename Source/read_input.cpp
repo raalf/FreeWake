@@ -14,10 +14,10 @@ void VT_Fus_Info(GENERAL &,double [5],double [5], int [5],\
 void Read_Timestep(int,DVE *,DVE **);
 
 //reads in the camber data from the inputs/camber folder
-void Read_Camber_from_File(GENERAL &, double ***, int &, int &);
+void Read_Airfoil_or_Camber(GENERAL &, double ***, int &, int &, const int);
 
 //computes array size for camberPtr
-void Camber_Array_Size(GENERAL &,int *,int *);
+void Airfoil_or_Camber_Array_Size(GENERAL &,int *,int *, const int);
 
 
 //===================================================================//
@@ -731,32 +731,52 @@ void Read_Timestep(const int timestep,DVE *surfaceDVE,DVE **wakeDVE)
 //===================================================================//
 
 //===================================================================//
-		//START OF Read_Camber_from_File
+		//START OF Read_Airfoil_or_Camber
 //===================================================================//
 
-void Read_Camber_from_File(GENERAL &info, double ***camberPtr, int &cambRow,int &cambCol)
+void Read_Airfoil_or_Camber(GENERAL &info, double ***dataPtr, int &Row,int &Col, int idxFOILCAMB)
 {
-	// The function Read_Camber_from_file reads the camber file provided 
-	// in the input file. 
+	// The function Read_Airfoil_or_Camber reads the airfoil or camber files
+	// indicated in the input file. 
 	// 
-	// Camber file format:
-	// 		The camber file should be a list of x/c and y/c from x/c = 0 to y/c = 1.
+	// File format:
 	// 		The first line of the camber file is a header
 	// 		The header file is only for user info and not used by the program.
 	// 		There must not be extra lines that the end of the file!
-	//		The filename should be camber#.camb where # matches the airfoil number
 	//
+	//
+	//	Airfoil file format:
+	// 		The airfoil file should have columns AoA, cl, cd, Re, cm
+	//		Please do not include extra columns
+	//
+	// Camber file format:
+	// 		The camber file should be a list of x/c and y/c from x/c = 0 to y/c = 1.
+	//		The filename should be camber#.camb where # matches the airfoil number
+
 	// Function inputs: 
 	//		General info structure for the panelPtr
-	//		camberPtr - 3D array pointer for camber data
-	//		cambRow - integer of the first dimension of camberPtr
-	//		cambCol - integer of the second dimension of camberPtr
+	//		dataPtr - 3D array pointer for airfoil or camber data
+	//		Row - integer of the first dimension of dataPtr
+	//		Col - integer of the second dimension of dataPtr
+	//		idxFOILCAMB - indicated if this is looking at airfoil data or camber data
+	//					idxFOILCAMB = 1 for Airfoil, idxFOILCAMB = 2 for Camber
+
 	//
+	// Airfoil data ouput:
+	//	
+	// 	dataPtr[Row][Col][0-5]
+	//	dataPtr[][][0] = angle of attack
+	//	camber[][][1] = cl
+	//	camber[][][2] = cd
+	//	camber[][][3] = Re
+	//	camber[][][4] = cm,
+	//
+	//	
 	// Camber data output:
 	// 		The camber data is formated in the same way as the airfoil data is
-	// 		is read to be consistant.
-	// 	camber[Camber Number][Largest Length of Camber Data][0 or 1]
-	//	camber[][][0] is camber x locations, camber[][][1] is camber y location
+	// 		to be consistant.
+	// 	dataPtr[Row][Col][0 or 1]
+	//	dataPtr[][][0] is camber x locations, dataPtr[][][1] is camber y location
 	//
 	//	Note that only the camber data of the airfoils specified in the input are read
 	// 	in and the rest of the data is set to 0.
@@ -768,76 +788,88 @@ void Read_Camber_from_File(GENERAL &info, double ***camberPtr, int &cambRow,int 
 	int i,j,k,q;	//generic counters
 	char ch; 		//generic character
 	double temp;	//generic double
-	char camberfilename[126];
+	char filename[126]; //char for filename (max 126 length)
 	
 
-	// Initialize the camber array with all zeros
-	for (i = 0; i < cambRow; ++i){
-		for (j = 0; j < cambCol; ++j){
-				camberPtr[i][j][0] = 0;
-				camberPtr[i][j][1] = 0;
+	// Initialize the dataPtr array with all zeros
+	for (k = 0; i < Row; ++i){
+		for (j = 0; j < Col; ++j){
+				dataPtr[i][j][0] = 0;
+				dataPtr[i][j][1] = 0;
 		}
 	}
 
 
-	// ---- Read in the camber data and assigned to camber array ----
-	//Iterate through each panel (only grabing camber data that is needed)
+	// ---- Read in the data and assigned to dataPtr array ----
+	// Iterate through each panel (only grabing data that is needed)
 	for (q=0;q<info.nopanel;q++){ 
 	j = 0;
 	k = 0;
 
-	// Assign the camber filename
-	sprintf(camberfilename,"%s%d%s","inputs/camber/camber",panelPtr[q].airfoil+1,".camb");
+	// Create the appropriate filename
+	if (idxFOILCAMB == 1){
+		sprintf(filename,"%s%s%d%s",AIRFOIL_PATH,"airfoil",panelPtr[q].airfoil+1,".dat");}
+	else if (idxFOILCAMB == 2){
+		sprintf(filename,"%s%s%d%s",CAMBER_PATH,"camber",panelPtr[q].airfoil+1,".camb");}
+	else{
+		printf("Function Camber_Array_Size need 1 or 2.\n 1: airfoils, 2: camber");
+		exit(1);
+	}
 
-	// checks if camber file exists
-	if ((fp = fopen(camberfilename, "r"))== NULL) {
-		printf("Camber file '%s' could not be opened.\n",camberfilename);
+	// Check if file exists
+	if ((fp = fopen(filename, "r"))== NULL) {
+		printf("Camber file '%s' could not be opened.\n",filename);
 		scanf("%c",&ch);
 		exit(1);
 	}
 
-	// Open camber file
-	fp = fopen(camberfilename, "r");
+	// Open file
+	fp = fopen(filename, "r");
 
 	// Skip the header
 	do	
 	ch = fgetc(fp);
 	while (ch!='\n');
 
-	// Read in the camber data
+	// Apply data to the dataPtr
 	for (i = 0; fscanf(fp, "%lf", &temp) != EOF; i++){
-		if ( i % 2 == 0){
-		camberPtr[panelPtr[q].airfoil][j][0] = temp; // First column is the x data
-		j++;}
-		else{
-		camberPtr[panelPtr[q].airfoil][k][1] = temp; // Second column is the y data
-		k++;}
-
+		if (idxFOILCAMB == 1){
+			if (j == 5){j = 0;k++;}} // 5 columns if reading in airfoil data
+		else if (idxFOILCAMB == 2){
+			if (j == 2){j = 0;k++;}} // 2 columns if reading in camber data
+		dataPtr[panelPtr[q].airfoil][k][j] = temp;
+		j++;
 	}
 	
-	//closes camber file
+	// Close camber file
 	fclose(fp);
 	}
 }
 
 //===================================================================//
-		//END OF Read_Camber_from_File
+		//END OF Read_Airfoil_or_Camber
 //===================================================================//
 
 //===================================================================//
-		//START OF Camber_Array_Size
+		//START OF Airfoil_or_Camber_Array_Size
 //===================================================================//
 
-void Camber_Array_Size(GENERAL &info,int *cambRow,int *cambCol)
+void Airfoil_or_Camber_Array_Size(GENERAL &info,int *dataRow,int *dataCol, int idxFOILCAMB)
 {
-	// The function Camber_Array_Size determines that size of the array
-	// needed to hold all the camber data. This assumes that there is a
+	// The function Airfoil_or_Camber_Array_Size determines that size of the array
+	// needed to hold all the airfoil or camber data. This assumes that there is a
 	// camber file associated with each airfoil file.
 	//
 	// Function inputs:
 	//		General info structure for the panelPtr
-	//		*cambRow - integer point of the first dimension of camberPtr
-	//		*cambCol - integer pointer of the second dimension of camberPtr
+	//		*dataRow - integer point of the first dimension of dataPtr
+	//		*dataCol - integer pointer of the second dimension of dataPtr
+	//		idxFOILCAMB - indicated if this is looking at airfoil data or camber data
+	//					idxFOILCAMB = 1 for Airfoil, idxFOILCAMB = 2 for Camber
+	//
+	// Function outputs:
+	//		Updated *dataRow and *dataCol with the required array size for the airfoil
+	//		or camber data.
 
 	// D.F.B. in Braunschweig, Germany, Feb. 2020
 
@@ -845,7 +877,7 @@ void Camber_Array_Size(GENERAL &info,int *cambRow,int *cambCol)
 
 	int j,q;		//generic counters
 	char ch; 		//generic character
-	char camberfilename[126];
+	char filename[126];
 	int row = 0;	//row counter
 	int col = 0;	//column counter
 
@@ -853,20 +885,28 @@ void Camber_Array_Size(GENERAL &info,int *cambRow,int *cambCol)
 	for (q=0;q<info.nopanel;q++){
 	j = 0;
 
-	// Get camber filename
-	sprintf(camberfilename,"%s%d%s","inputs/camber/camber",panelPtr[q].airfoil+1,".camb");
+	// Create the appropriate filename
+	if (idxFOILCAMB == 1){
+		sprintf(filename,"%s%s%d%s",AIRFOIL_PATH,"airfoil",panelPtr[q].airfoil+1,".dat");}
+	else if (idxFOILCAMB == 2){
+		sprintf(filename,"%s%s%d%s",CAMBER_PATH,"camber",panelPtr[q].airfoil+1,".camb");}
+	else{
+		printf("Function Camber_Array_Size need 1 or 2.\n 1: airfoils, 2: camber");
+		exit(1);
+	}
 
 	// Determine the number of rows required
 	if (panelPtr[q].airfoil>row){row = panelPtr[q].airfoil;}
 
-	// Checks if camber file exists
-	if ((fp = fopen(camberfilename, "r"))== NULL) {	
+	// Checks if the file exists
+	if ((fp = fopen(filename, "r"))== NULL) {	
 		scanf("%c",&ch);
+		printf("Could not file the file: %s",filename);
 		exit(1);
 	}
 
-	// Open the camber file and count the rows of data (including header)
-	fp = fopen(camberfilename, "r");
+	// Open the file and count the rows of data (including header)
+	fp = fopen(filename, "r");
 	do	{
 		ch = fgetc(fp);
 		if(ch == '\n'){
@@ -880,10 +920,10 @@ void Camber_Array_Size(GENERAL &info,int *cambRow,int *cambCol)
 	}
 
 	// Assign pointer values for output
-	*cambCol = col;
-	*cambRow = row+1;		
+	*dataCol = col;
+	*dataRow = row+1;		
 }
 
 //===================================================================//
-		//END OF Camber_Array_Size
+		//END OF Airfoil_or_Camber_Array_Size
 //===================================================================//

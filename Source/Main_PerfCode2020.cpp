@@ -37,6 +37,9 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	double ***camberPtr; // Point for the 3D array of camber data
 	int cambRow = 0;	//Counter for rows of camber data
 	int cambCol = 0;	//Counter for column of camber data
+	double ***airfoilPtr; // Point for the 3D array of camber data
+	int airfoilRow = 0;	//Counter for rows of camber data
+	int airfoilCol = 0;	//Counter for column of camber data
 
 	//V-tail and fuselage	
 	//max of 5 VT panesl!!
@@ -174,13 +177,11 @@ info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	//  left, right	-neighboring panels
 	Panel_Info_from_File(panelPtr, info);	//Subroutine in read_input.cpp
 
-
 	// Read in the camber data
-	Camber_Array_Size(info, &cambRow, &cambCol);
+	Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
 	ALLOC3D(&camberPtr,cambRow,cambCol,2);
-	Read_Camber_from_File(info, camberPtr,cambRow, cambCol);
-	//for (int jt = 0; jt < cambCol; ++jt){printf("%f \t %f\n",camberPtr[6][jt][0]);}
-	
+	Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
+
 //===================================================================//
 		//END read general and panel info from file 'input.txt'
 //===================================================================//
@@ -302,6 +303,11 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 //	char ch;
 
 	if (info.flagVISCOUS){ // Skip if flagVISCOUS is turned off
+
+	// Read in airfoil data
+	Airfoil_or_Camber_Array_Size(info, &airfoilRow, &airfoilCol, 1);
+	ALLOC3D(&airfoilPtr,airfoilRow,airfoilCol,5);
+	Read_Airfoil_or_Camber(info, airfoilPtr,airfoilRow, airfoilCol,1);
 
 	//initializing profile
 	for(airfoil=0;airfoil<info.noairfoils;airfoil++)
@@ -635,6 +641,7 @@ printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
 	FREE1D(&surfacePtr,info.noelement);
 	FREE1D(&cn,info.noelement);
 	FREE3D(&camberPtr,cambRow,cambCol,2);
+	FREE3D(&airfoilPtr,airfoilRow,airfoilCol,5);
 	
 	fclose(MomSol);//close output file of trim iteration results
 	fclose(Performance);//close output file of performance calc's

@@ -461,18 +461,20 @@ double SectionDrag(double **profiledata, double Re,double &cl,int airfoilCol,\
 
 	//HiRe,LoRe max and min Re# of airfoil data
 
+	// Updated 2-14-20 by D.F.B. in Braunschweig, Germany
+	// 	Now uses the new airfoil format and doesn't need number of rows
+
 	int index,index1,index2;				//index of largest CL of Re#<RE, index of CL>cl of Re#<RE
 											//index of CL>cl of Re#>RE
 	double Re1,Re2;							//Re# above and below Re of interest
 	//High and low Re in input file
 
-
-		// Calcualte how many rows in the airfoil file	
+	// Calcualte how many rows in the airfoil file	
 	int rows = 0;
 	for(int i = 0; i<airfoilCol;++i){
 		if (profiledata[i][3] < DBL_EPS){break;}
 		++rows;
-		}
+	}
 
 	double HiRe=profiledata[rows-1][3];
 	double LoRe=profiledata[0][3];
@@ -480,7 +482,6 @@ double SectionDrag(double **profiledata, double Re,double &cl,int airfoilCol,\
 	double cm1,cm2;				//moment coefficients for interpolation
 	double tempS;
 //###
-
 
 
 

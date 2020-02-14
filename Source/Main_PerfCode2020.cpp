@@ -98,18 +98,12 @@ int main()
 //	 - fixed pitching moment routine
 //
 
-printf("===========================================================================\n ");
-printf("\n\tPerformance Code based on FreeWake 2015 (includes stall model)\n\n");
-printf("\t\tRunning Version %s \n ",PROGRAM_VERSION);
-printf("===========================================================================\n ");
+	printf("===========================================================================\n ");
+	printf("\n\tPerformance Code based on FreeWake 2015 (includes stall model)\n\n");
+	printf("\t\tRunning Version %s \n ",PROGRAM_VERSION);
+	printf("===========================================================================\n ");
 
-info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
-
-
-	//Input/output files
-	FILE *AD;			//airfoil data file
-	FILE *MomSol;		//output file of trim solutions
-	FILE *Performance;	//output file for performance results
+	info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 
 //printf("Do you want to start %s? y for YES ",PROGRAM_VERSION);
 //scanf("%c",&answer);
@@ -258,16 +252,22 @@ info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 		//END generation of elementary wings
 //===================================================================//
 
-//allocating memory
-ALLOC1D(&surfacePtr,info.noelement);	//surface DVE
-ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
+	//allocating memory
+	ALLOC1D(&surfacePtr,info.noelement);	//surface DVE
+	ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 
 //===================================================================//
 		//START wing generation
 //===================================================================//
 
-		//identifies separate wings
-		Wing_Generation(panelPtr,info.nopanel,info.wing1,info.wing2,\
+	// Read in the camber data. Subroutines in read_input.cpp
+	Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
+	ALLOC3D(&camberPtr,cambRow,cambCol,2);
+	Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
+
+
+	//identifies separate wings
+	Wing_Generation(panelPtr,info.nopanel,info.wing1,info.wing2,\
 						info.panel1,info.panel2,info.dve1,info.dve2);
 									//Subroutine in wing_geometry.cpp
 
@@ -289,13 +289,12 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 		//Read in airfoil data files
 //===================================================================//
 	if (info.flagVISCOUS){ // Skip if flagVISCOUS is turned off
-
 	// Read in airfoil data
 	Airfoil_or_Camber_Array_Size(info, &airfoilRow, &airfoilCol, 1);
 	ALLOC3D(&airfoilPtr,airfoilRow,airfoilCol,5);
 	Read_Airfoil_or_Camber(info, airfoilPtr,airfoilRow, airfoilCol,1);
-	//for (int jt = 0; jt < airfoilCol; ++jt){printf("%f\t%f\n",airfoilPtr[5][jt][0],airfoilPtr[5][jt][1]);}
 	}	
+// Moved reading airfoils to functions, D.F.B. 2-14-20	
 //===================================================================//
 		//DONE Reading in airfoil data files
 //===================================================================//
@@ -386,7 +385,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 
 		//induced drag
 		Di = CDi*info.S*q_inf;
-printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
+		printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 
 	//===============================================================//
 		//computing wing/horizontal tail profile drag
@@ -480,7 +479,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 	//===============================================================//
 		//START computing fuselage drag
 	//===============================================================//
-		Dfuselage=0;		//initializing
+	Dfuselage=0;		//initializing
 
 	if (info.flagVISCOUS){
 		tempS = V_inf*delFus/info.nu;	//almost local Re#
@@ -496,7 +495,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 			
 			Dfuselage += cd*FusSectS[i];
 		}
-		Dfuselage *=q_inf*1.;  //dyn. pressure and correction for pressure drag	
+		Dfuselage *=q_inf*1.;  //dyn. pressure and correcting pressure drag	
 	}	
 	//===============================================================//
 		//END computing fuselage drag
@@ -505,9 +504,9 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 	//===============================================================//
 		//START total drag
 	//===============================================================//
-		D = Di+Dprofile+Dht+Dvt+Dfuselage+Dmisc;
-		Dint = D * IFdrag;  //interference drag is a fraction of total
-		D += Dint;
+	D = Di+Dprofile+Dht+Dvt+Dfuselage+Dmisc;
+	Dint = D * IFdrag;  //interference drag is a fraction of total
+	D += Dint;
 	//===============================================================//
 		//END computing total drag
 	//===============================================================//
@@ -526,28 +525,29 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
         tempS=0;        //initializing temporary CL holder
 		for(k=0;k<info.nopanel;k++)  //loop over panels
 		{
-		  for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
-		  {
-            //adding local normal force: lift/roh = cn*area*cos(dihedral)
-            tempS += cn[i]*(surfacePtr[m].S*panelPtr[k].m)\
-                    *cos(surfacePtr[m].nu);
+		  	for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
+		  	{
+            	//adding local normal force: lift/roh = cn*area*cos(dihedral)
+            	tempS += cn[i]*(surfacePtr[m].S*panelPtr[k].m)\
+                	    *cos(surfacePtr[m].nu);
 
- 			i++;  //next span index 
-			m++;	//index of next leading edge DVE 
-		  }
-		  m += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
-		}
+ 				i++;  //next span index 
+				m++;	//index of next leading edge DVE 
+		  	}
+		  	m += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
+			}
 
-        tempS = tempS/info.S*2; //normalizing force/roh to overall CL
-        printf("check output of new, for stall corrected CL = %lf  old was %lf",tempS, CL);
-        printf("  both values should be the same (at least very similar) if no stall\n");
+        	tempS = tempS/info.S*2; //normalizing force/roh to overall CL
+        	printf("check output of new, for stall corrected CL = %lf  old was %lf",tempS, CL);
+        	printf("  both values should be the same (at least very similar) if no stall\n");
         
-        CLinviscid=CL;		//inviscid CL without stall correction
-		CL=tempS;        //reassigning CL
-    } else{
+        	CLinviscid=CL;		//inviscid CL without stall correction
+			CL=tempS;        //reassigning CL
+    	
+    	} else{
 		CLinviscid=CL;	// Creating CLinviscid
 		//When viscous corrections are off dont need to re-assign CL
-    }
+    	}
     //===============================================================//
         //DONE adjusting total CL for stalled sections
     //===============================================================//
@@ -576,7 +576,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 		//END write to Performance file
 	//===============================================================//
 
-printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
+		printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
 
 
 	}//end loop over 'a' angle of attack

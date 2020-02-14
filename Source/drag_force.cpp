@@ -2,7 +2,7 @@
 double Induced_DVE_Drag(const GENERAL,const PANEL*,DVE*,DVE**,\
 												const int,double*);
 //computes section drag of surface DVE
-double SectionDrag(double [600][5], double,double &,int,double &,const int);
+double SectionDrag(double ***, double,double &,int,double &,const int);
 
 //===================================================================//
 	//START Induced_DVE_Drag computation - Drag along trailing edge
@@ -436,14 +436,14 @@ DVE tempDVE;				//temporary DVE
 //================================================================================================================
 // SectionDrag
 //================================================================================================================
-double SectionDrag(double profiledata[600][5], double Re,double &cl,int rows,\
+double SectionDrag(double **profiledata, double Re,double &cl,int airfoilCol,\
 					double &cm,const int section)
 {
 	//input:
 	//profiledata	airfoil data of airfoil in use
 	//Re			Re# of interest
 	//cl			cl of interest
-	//rows			number of rows in airfoil data input file
+	//airfoilCol	max number of rows in airfoil data file
 	//section		index of wing section whose profile drag is computed
 	//
 	//
@@ -465,12 +465,25 @@ double SectionDrag(double profiledata[600][5], double Re,double &cl,int rows,\
 											//index of CL>cl of Re#>RE
 	double Re1,Re2;							//Re# above and below Re of interest
 	//High and low Re in input file
+
+
+		// Calcualte how many rows in the airfoil file	
+	int rows = 0;
+	for(int i = 0; i<airfoilCol;++i){
+		if (profiledata[i][3] < DBL_EPS){break;}
+		++rows;
+		}
+
 	double HiRe=profiledata[rows-1][3];
 	double LoRe=profiledata[0][3];
 	double m,cd,cd1,cd2;			//interpolation slope, overall and part interpolation results
 	double cm1,cm2;				//moment coefficients for interpolation
 	double tempS;
 //###
+
+
+
+
 //printf("rows %d lowRen %lf HighRe %lf\n",rows,LoRe,HiRe);
 		if(LoRe<Re && HiRe>Re)  //Re# of interest falls into interval of available airfoil data
 		{

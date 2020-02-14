@@ -7,7 +7,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	int k,l,m;			//loop counters
 	
 	//drag variables
-	double *cn,cd;		//section normal and drag force coefficients
+	double *cn,cd;			//section normal and drag force coefficients
 	double cm,CMo;			//section, total zero-lift moment coefficient
 	double cd1,cd2,cm1,cm2;	//section values of panel edge 1 and 2 for interpolation; GB 2-14-20
 	double CL,CD,CDi=0;		//aircraft lift, total and induced drag coefficients
@@ -24,43 +24,36 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	double Dint=0,Dmisc=0;	//interference, miscillanuous drags
 	
 	double V_inf=0,q_inf=0; //free stream velocity and dynamic pressure
-	double Re;			//Reynolds number
-	
-	// Airfoil related variables
-	double profile[20][2000][5];				//array holding airfoil data 
-		//[airfoil#][row in input file][0=alfa,1=cl,2=cd,3=Re,4=cm]
-		//array is sorted Re# ascending, CL of each Re# ascending
-		//max no. of airfoils = 20; max no. of points per airfoil = 2000 numbers increased G.b. 5/16/11
-	int rows[20];				//numbers of rows of airfoil file numbers increased G.b. 5/16/11
-	int airfoil=0;			//airfoil index
+	double Re;				//Reynolds number
 
 	// Camber related variables
-	double ***camberPtr; // Point for the 3D array of camber data
-	int cambRow = 0;	//Counter for rows of camber data
-	int cambCol = 0;	//Counter for column of camber data
-	double ***airfoilPtr; // Point for the 3D array of camber data
-	int airfoilRow = 0;	//Counter for rows of camber data
-	int airfoilCol = 0;	//Counter for column of camber data
+	double ***camberPtr; 	// Point for the 3D array of camber data
+	int cambRow = 0;		//Counter for rows of camber data
+	int cambCol = 0;		//Counter for column of camber data
+	// Airfoil related variables
+	double ***airfoilPtr; 	// Point for the 3D array of camber data
+	int airfoilRow = 0;		//Counter for rows of camber data
+	int airfoilCol = 0;		//Counter for column of camber data
+	int airfoil=0;			//airfoil index
 
 	//V-tail and fuselage	
 	//max of 5 VT panesl!!
 	double VTchord[5],VTarea[5];	//chord and aera of VT panel
 	int VTairfoil[5];
 	//max of 20 fuselage sections
-	double FusSectS[20];		//fuselage section area
-	double delFus;				//width of each section
-	int FusLT;					//fuselage section where turbulent
-	double IFdrag;				//interfernce drag fraction
+	double FusSectS[20];	//fuselage section area
+	double delFus;			//width of each section
+	int FusLT;				//fuselage section where turbulent
+	double IFdrag;			//interfernce drag fraction
 
 
 	double tempS;
 	char answer ;
-	char filename[137];	//file path and name
+	char filename[137];		//file path and name
 
 	//Input/output files
-	FILE *AD;			//airfoil data file
-	FILE *MomSol;		//output file of trim solutions
-	FILE *Performance;	//output file for performance results
+	FILE *MomSol;			//output file of trim solutions
+	FILE *Performance;		//output file for performance results
 
 
 
@@ -295,14 +288,6 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 //===================================================================//
 		//Read in airfoil data files
 //===================================================================//
-//	double profile[15][500][5];				//array holding airfoil data 
-		//[airfoil#][row in input file][0=alfa,1=cl,2=cd,3=Re,4=cm]
-		//array is sorted Re# ascending, CL of each Re# ascending
-		//max no. of airfoils = 15; max no. of points per airfoil = 500
-//	int rows[15];				//numbers of rows of airfoil file
-//	int airfoil=0;			//airfoil index
-//	char ch;
-
 	if (info.flagVISCOUS){ // Skip if flagVISCOUS is turned off
 
 	// Read in airfoil data
@@ -310,59 +295,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 	ALLOC3D(&airfoilPtr,airfoilRow,airfoilCol,5);
 	Read_Airfoil_or_Camber(info, airfoilPtr,airfoilRow, airfoilCol,1);
 	//for (int jt = 0; jt < airfoilCol; ++jt){printf("%f\t%f\n",airfoilPtr[5][jt][0],airfoilPtr[5][jt][1]);}
-
-	//initializing profile
-	for(airfoil=0;airfoil<info.noairfoils;airfoil++)
-	for(i=0;i<2000;i++)
-	for(ii=0;ii<5;ii++)
-			profile[airfoil][i][ii]=0;
-
-	//read airfoil data	
-	for(airfoil=0;airfoil<info.noairfoils;airfoil++)
-	{
-		//creates file name airfoil##.dat ## is the number of the airfoil
-		sprintf(filename,"%s%s%d%s",AIRFOIL_PATH,"airfoil",airfoil+1,".dat");
-
-		// checks if airfoil file exists
-		if ((AD = fopen(filename, "r"))== NULL) {
-			printf("Airfoil file %d could not be opened:\n",airfoil+1);
-			exit(1);
-		}
-
-		//opens airfoil file
-		AD = fopen(filename, "r");
-		
-		//read in number of rows
-		do	
-		answer = fgetc(AD);
-		while (answer!='=');
-		//reads relaxed wake flag
-		fscanf(AD,"%d", &rows[airfoil]);
-		if(rows[airfoil]>2000)
-		{
-			printf("\n\t\t\t!!!\n");
-			printf("Airfoil %d has more than the maximum ",airfoil+1);
-			printf(" allowable number of rows (2000 < %d)\n",rows[airfoil]);
-			printf("push any key and return ");
-			scanf("%c",&answer);
-			scanf("%c",&answer);
-			exit(0);
-		}
-		
-		//read in airfoil data, row by row
-		for(i=0;i<rows[airfoil];i++)
-		{
-			fscanf(AD,"%lf", &profile[airfoil][i][0]); //angle of attack
-				profile[airfoil][i][0] *=DtR;	//conversion to radians
-			fscanf(AD,"%lf", &profile[airfoil][i][1]); //cl
-			fscanf(AD,"%lf", &profile[airfoil][i][2]); //cd
-			fscanf(AD,"%lf", &profile[airfoil][i][3]); //Re
-			fscanf(AD,"%lf", &profile[airfoil][i][4]); //cm
-		}
-		fclose(AD);
-	}
-	}
-
+	}	
 //===================================================================//
 		//DONE Reading in airfoil data files
 //===================================================================//
@@ -478,13 +411,13 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 			//GB 2-14-20
 			airfoil = surfacePtr[m].airfoil[0];		//airfoil number, panel edge 1
 			//computing section drag and moment coefficient based on panel edge 1
-			cd1= SectionDrag(profile[airfoil],Re,cn[i],rows[airfoil],cm,m);
+			cd1= SectionDrag(airfoilPtr[airfoil],Re,cn[i],airfoilCol,cm,m);
 			cm1 = cm; //zero-lift moment of panel edge 1 airfoil
 
 							//in drag_force.cpp
 			airfoil = surfacePtr[m].airfoil[1];		//airfoil number, panel edge 2
 			//computing section drag and moment coefficient based on panel edge 2
-			cd2 = SectionDrag(profile[airfoil],Re,cn[i],rows[airfoil],cm,m);
+			cd2 = SectionDrag(airfoilPtr[airfoil],Re,cn[i],airfoilCol,cm,m);
 			cm2 = cm; //zero-lift moment of panel edge 2 airfoil
 
 			cd = cd1+surfacePtr[m].ratio*(cd2-cd1); //weighted cd based on span location 
@@ -532,7 +465,7 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
  
 			//computing the section drag coefficient, cl=0
 			tempS =0;
-			cd=SectionDrag(profile[airfoil],Re,tempS,rows[airfoil],cm,i+info.noelement);
+			cd=SectionDrag(airfoilPtr[airfoil],Re,tempS,airfoilCol,cm,i+info.noelement);
 				//subroutine in drag_force.cpp
 		
 			Dvt += cd*VTarea[i];	  //h-tail drag

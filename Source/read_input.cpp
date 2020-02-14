@@ -14,7 +14,7 @@ void VT_Fus_Info(GENERAL &,double [5],double [5], int [5],\
 void Read_Timestep(int,DVE *,DVE **);
 
 //reads in the camber data from the inputs/camber folder
-void Read_Camber_from_File(GENERAL &, double ***);
+void Read_Camber_from_File(GENERAL &, double ***, int &, int &);
 
 //computes array size for camberPtr
 void Camber_Array_Size(GENERAL &,int *,int *);
@@ -734,7 +734,7 @@ void Read_Timestep(const int timestep,DVE *surfaceDVE,DVE **wakeDVE)
 		//START OF Read_Camber_from_File
 //===================================================================//
 
-void Read_Camber_from_File(GENERAL &info, double ***camberPtr)
+void Read_Camber_from_File(GENERAL &info, double ***camberPtr, int &cambRow,int &cambCol)
 {
 	// The function Read_Camber_from_file reads the camber file provided 
 	// in the input file. 
@@ -746,7 +746,12 @@ void Read_Camber_from_File(GENERAL &info, double ***camberPtr)
 	// 		There must not be extra lines that the end of the file!
 	//		The filename should be camber#.camb where # matches the airfoil number
 	//
-	// Function inputs: CamberPTr
+	// Function inputs: 
+	//		General info structure for the panelPtr
+	//		camberPtr - 3D array pointer for camber data
+	//		cambRow - integer of the first dimension of camberPtr
+	//		cambCol - integer of the second dimension of camberPtr
+	//
 	// Camber data output:
 	// 		The camber data is formated in the same way as the airfoil data is
 	// 		is read to be consistant.
@@ -756,30 +761,28 @@ void Read_Camber_from_File(GENERAL &info, double ***camberPtr)
 	//	Note that only the camber data of the airfoils specified in the input are read
 	// 	in and the rest of the data is set to 0.
 	//	
-	// D.F.B. in Braunschweig, Germany, 2020
+	// D.F.B. in Braunschweig, Germany, Feb. 2020
 
 	FILE *fp;		//input file pointer
 
 	int i,j,k,q;	//generic counters
-	int rows;		//row counters
 	char ch; 		//generic character
 	double temp;	//generic double
 	char camberfilename[126];
 	
 
 	// Initialize the camber array with all zeros
-	for (i = 0; i < 7; ++i){
-		for (j = 0; j < 56; ++j){
+	for (i = 0; i < cambRow; ++i){
+		for (j = 0; j < cambCol; ++j){
 				camberPtr[i][j][0] = 0;
 				camberPtr[i][j][1] = 0;
 		}
 	}
 
-	//sizeof(camberPtr)/sizeof(camberPtr[0]);
-	//printf("camberPtr: %d",sizeof(camberPtr)/sizeof(camberPtr[0]));
 
 	// ---- Read in the camber data and assigned to camber array ----
-	for (q=0;q<info.nopanel;q++){
+	//Iterate through each panel (only grabing camber data that is needed)
+	for (q=0;q<info.nopanel;q++){ 
 	j = 0;
 	k = 0;
 
@@ -793,6 +796,7 @@ void Read_Camber_from_File(GENERAL &info, double ***camberPtr)
 		exit(1);
 	}
 
+	// Open camber file
 	fp = fopen(camberfilename, "r");
 
 	// Skip the header
@@ -800,7 +804,7 @@ void Read_Camber_from_File(GENERAL &info, double ***camberPtr)
 	ch = fgetc(fp);
 	while (ch!='\n');
 
-	//Read in the camber data
+	// Read in the camber data
 	for (i = 0; fscanf(fp, "%lf", &temp) != EOF; i++){
 		if ( i % 2 == 0){
 		camberPtr[panelPtr[q].airfoil][j][0] = temp; // First column is the x data
@@ -814,66 +818,54 @@ void Read_Camber_from_File(GENERAL &info, double ***camberPtr)
 	//closes camber file
 	fclose(fp);
 	}
-
-	
-	// Testing code for printing the read camber data and size of array
-	/*puts("0===================");
-	for(i=0; i<rows;i++){
-	printf("%f \t %f \n",camberPtr[0][i][0],camberPtr[0][i][1]);
-	}
-	puts("5===================");
-	for(i=0; i<rows;i++){
-	printf("%f \t %f \n",camberPtr[5][i][0],camberPtr[5][i][1]);
-	}
-	puts("6===================");
-	for(i=0; i<rows;i++){
-	printf("%f \t %f \n",camberPtr[6][i][0],camberPtr[6][i][1]);
-	}
-	//size_t n = sizeof(camber_x)/sizeof(camber_x[0]);
-	//printf("Size of camber_x is %d\n",n);
-	*/
 }
 
 //===================================================================//
 		//END OF Read_Camber_from_File
 //===================================================================//
 
-
-
 //===================================================================//
 		//START OF Camber_Array_Size
 //===================================================================//
 
-void Camber_Array_Size(GENERAL &info,int *cambNum,int *cambRows)
+void Camber_Array_Size(GENERAL &info,int *cambRow,int *cambCol)
 {
-	// The function Read_Camber_from_file reads the camber file provided 
-	// in the input file. 
+	// The function Camber_Array_Size determines that size of the array
+	// needed to hold all the camber data. This assumes that there is a
+	// camber file associated with each airfoil file.
+	//
+	// Function inputs:
+	//		General info structure for the panelPtr
+	//		*cambRow - integer point of the first dimension of camberPtr
+	//		*cambCol - integer pointer of the second dimension of camberPtr
 
-	// D.F.B. in Braunschweig, Germany, 2020
+	// D.F.B. in Braunschweig, Germany, Feb. 2020
 
 	FILE *fp;		//input file pointer
 
-	int i,j,k,q;	//generic counters
+	int j,q;		//generic counters
 	char ch; 		//generic character
 	char camberfilename[126];
-	int max = 0;
-	int row = 0;
+	int row = 0;	//row counter
+	int col = 0;	//column counter
 
+	// For loop to iterate over each panel
 	for (q=0;q<info.nopanel;q++){
 	j = 0;
+
+	// Get camber filename
 	sprintf(camberfilename,"%s%d%s","inputs/camber/camber",panelPtr[q].airfoil+1,".camb");
 
-	if (panelPtr[q].airfoil>max)
-	{
-		max = panelPtr[q].airfoil;
-	}
+	// Determine the number of rows required
+	if (panelPtr[q].airfoil>row){row = panelPtr[q].airfoil;}
 
-	// checks if camber file exists
+	// Checks if camber file exists
 	if ((fp = fopen(camberfilename, "r"))== NULL) {	
 		scanf("%c",&ch);
 		exit(1);
 	}
 
+	// Open the camber file and count the rows of data (including header)
 	fp = fopen(camberfilename, "r");
 	do	{
 		ch = fgetc(fp);
@@ -882,11 +874,14 @@ void Camber_Array_Size(GENERAL &info,int *cambNum,int *cambRows)
 		}
 	while (ch!=EOF);
 
-	if (j>row){row=j;}
+	// Set the column size to the length of the largest camber file
+	if (j>col){col=j;}
 	fclose(fp);
 	}
-	*cambRows = row;
-	*cambNum = max+1;		
+
+	// Assign pointer values for output
+	*cambCol = col;
+	*cambRow = row+1;		
 }
 
 //===================================================================//

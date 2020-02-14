@@ -33,6 +33,11 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	int rows[20];				//numbers of rows of airfoil file numbers increased G.b. 5/16/11
 	int airfoil=0;			//airfoil index
 
+	// Camber related variables
+	double ***camberPtr; // Point for the 3D array of camber data
+	int cambRow = 0;	//Counter for rows of camber data
+	int cambCol = 0;	//Counter for column of camber data
+
 	//V-tail and fuselage	
 	//max of 5 VT panesl!!
 	double VTchord[5],VTarea[5];	//chord and aera of VT panel
@@ -169,16 +174,13 @@ info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	//  left, right	-neighboring panels
 	Panel_Info_from_File(panelPtr, info);	//Subroutine in read_input.cpp
 
-	//double* camberPtr = Read_Camber_from_File(info); //Subroutine in read_input.cpp
-	//double camber[15][2000][2];
-	int cambNum = 0;
-	int cambRows = 0;
-	//Camber_Array_Size(info);
-	Camber_Array_Size(info, &cambNum, &cambRows);
-	double ***camberPtr;
-	ALLOC3D(&camberPtr,cambNum,cambRows,2);
-	Read_Camber_from_File(info, camberPtr);
 
+	// Read in the camber data
+	Camber_Array_Size(info, &cambRow, &cambCol);
+	ALLOC3D(&camberPtr,cambRow,cambCol,2);
+	Read_Camber_from_File(info, camberPtr,cambRow, cambCol);
+	//for (int jt = 0; jt < cambCol; ++jt){printf("%f \t %f\n",camberPtr[6][jt][0]);}
+	
 //===================================================================//
 		//END read general and panel info from file 'input.txt'
 //===================================================================//
@@ -632,7 +634,7 @@ printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
 	FREE1D(&panelPtr,info.nopanel);
 	FREE1D(&surfacePtr,info.noelement);
 	FREE1D(&cn,info.noelement);
-	FREE3D(&camberPtr,cambNum,cambRows,2);
+	FREE3D(&camberPtr,cambRow,cambCol,2);
 	
 	fclose(MomSol);//close output file of trim iteration results
 	fclose(Performance);//close output file of performance calc's

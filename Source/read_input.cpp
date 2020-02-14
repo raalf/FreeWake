@@ -338,6 +338,11 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 			&(panelPtr[i].BC1));
 		panelPtr[i].eps1 *=DtR;	//changes deg. to radians
 
+		//read in airfoil on edge 1 GB 2-14-20
+		//fscanf(fp," %d",&(panelPtr[i].airfoil1);
+		panelPtr[i].airfoil1 = panelPtr[i].airfoil; // temporary airfoil asigment GB 2-14-2
+	
+
 		panelPtr[i].u1[0]=0; panelPtr[i].u1[1]=0; panelPtr[i].u1[2]=0;
 
 		//find the beginning of the fifth line of panel info
@@ -356,7 +361,11 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 			&(panelPtr[i].BC2));
 		panelPtr[i].eps2 *=DtR;						//changes deg. to radians
 
-			panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;
+		//read in airfoil on edge 2 GB 2-14-20
+		//fscanf(fp," %d",&(panelPtr[i].airfoil2);
+		panelPtr[i].airfoil2 = panelPtr[i].airfoil; // temporary airfoil asigment GB 2-14-20
+	
+		panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;
 
 		vsum(panelPtr[i].u1,info.U,panelPtr[i].u1);	//adds undisturbed free
 		vsum(panelPtr[i].u2,info.U,panelPtr[i].u2);	//stream vel.

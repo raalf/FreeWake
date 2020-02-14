@@ -9,6 +9,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	//drag variables
 	double *cn,cd;		//section normal and drag force coefficients
 	double cm,CMo;			//section, total zero-lift moment coefficient
+	double cd1,cd2,cm1,cm2;	//section values of panel edge 1 and 2 for interpolation; GB 2-14-20
 	double CL,CD,CDi=0;		//aircraft lift, total and induced drag coefficients
 	double CLinviscid=0;	//inviscid CL without stall correction
 	double CDprofile=0;		//wing profile drag coefficient
@@ -462,11 +463,24 @@ printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
 		  for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
 		  {
 			Re = V_inf*2*surfacePtr[m].xsi*tempS*panelPtr[k].m;	//Reynolds number
-			airfoil = surfacePtr[m].airfoil;		//airfoil number
 
-			//computing section drag and moment coefficient
-			cd=SectionDrag(profile[airfoil],Re,cn[i],rows[airfoil],cm,m);
+
+			//interpolation of airfoil drag between airfoil of panel edge 1 and 2
+			//GB 2-14-20
+			airfoil = surfacePtr[m].airfoil[0];		//airfoil number, panel edge 1
+			//computing section drag and moment coefficient based on panel edge 1
+			cd1= SectionDrag(profile[airfoil],Re,cn[i],rows[airfoil],cm,m);
+			cm1 = cm; //zero-lift moment of panel edge 1 airfoil
+
 							//in drag_force.cpp
+			airfoil = surfacePtr[m].airfoil[1];		//airfoil number, panel edge 2
+			//computing section drag and moment coefficient based on panel edge 2
+			cd2 = SectionDrag(profile[airfoil],Re,cn[i],rows[airfoil],cm,m);
+			cm2 = cm; //zero-lift moment of panel edge 2 airfoil
+
+			cd = cd1+surfacePtr[m].ratio*(cd2-cd1); //weighted cd based on span location 
+			cm = cm1+surfacePtr[m].ratio*(cm2-cm1); //weighted cmo based on span location 
+
 			Dprofile += cd*surfacePtr[m].S*panelPtr[k].m; //wing drag
 
 			//adding section moment coefficients (*S*chord)

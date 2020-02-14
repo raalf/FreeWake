@@ -52,17 +52,18 @@ struct PANEL
     double c1, eps1;	//panel side 1 chord and incident angle
     double u1[3];		//free stream velocity variation at panel side 1
 	int BC1;			//boundary condition at panel side 1
+    int airfoil1;       //airfoil at panel side 1  added GB 2-14-20
 
     double x2[3];		//panel side 2 leading edge coordinates
     double c2, eps2;	//panel side 2 chord and incident angle
     double u2[3];		//free stream velocity variation at panel side 2
 	int BC2;			//boundary condition at panel side 2
+    int airfoil2;       //airfoil at panel side 2   added GB 2-14-20
 
 	int left, right;	//left and right panel neighbors. 0 -> free end
     int n;				//number of spanwise elementary wings
     int m;              //number of chordwise elementary wings GB 2-9-20
 	int airfoil;		//airfoil file number G.B. 8-9-07
-    int airfoil1, airfoil2; //airfoil on left (1) and right (2) edge GB 2-9-20
 
     int TE1,TE2;		//indices of left and right DVE @ TE of the panel
 						//added 8/12/05 G.B.
@@ -156,7 +157,8 @@ struct DVE
 	double u1[3],u2[3];	//freestream velocities in x1 and x2  added 10-29-06 G.B.
 	double xTE[3],TEvc[3]; //center point at and vector along trailing edge of previous
 						//timestep
-	int airfoil;		//airfoil file number G.B. 8-9-07
+	int airfoil[2];		//airfoil file number G.B. 8-9-07; two airfoiils of panel edges 1 and 2 GB 2-14-20
+	double ratio;		//interpolation ratio from left (=0) to right side (=1) GB 2-14-20
 };
 
 // definition of type wing//

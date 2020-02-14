@@ -250,7 +250,7 @@ double delX[3];		//vector from center of leading edge to control point
 		vsum(panelPtr[i].x2,tempA,xquart); //x_l.e. = x1/4_2-x1/4_1
 
 		//panel span
-		tempS= sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]);
+		tempS = sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]); 
 
 		//1/4chord line dihedral
 		nu = asin(xquart[2]/tempS);
@@ -385,7 +385,12 @@ double delX[3];		//vector from center of leading edge to control point
 
 				//DVE half span, eta
 				surfacePtr[l].eta = 0.5*xsiLE[1];
-				
+
+				//GB 2-14-20
+				//interpolation ratio for airfoil and camber, =0 at panel1 and =1 at panel2
+				//ratio = [span location of X0]/[panel span] reduces to:
+				surfacePtr[l].ratio = (n+0.5)/panelPtr[i].n;
+
 				//DVE leading edge sweep
 				tempS = xsiLE[0]/xsiLE[1]; //tan(phi)=xsi/eta
 				surfacePtr[l].phiLE = atan(tempS);
@@ -401,8 +406,11 @@ double delX[3];		//vector from center of leading edge to control point
 				surfacePtr[l].S = 4* surfacePtr[l].eta*surfacePtr[l].xsi;
 
 				//DVE assign airfoil number to element
-				surfacePtr[l].airfoil = panelPtr[i].airfoil;
-
+				//two airfoils to interpolate between panel edge 1 and 2
+				//GB 2-14-20
+				surfacePtr[l].airfoil[0] = panelPtr[i].airfoil1;
+				surfacePtr[l].airfoil[1] = panelPtr[i].airfoil2;
+				
 //printf("phiLE %2.4lf phiTE %2.4lf phi0 %2.4lf \n",\
 //surfacePtr[l].phiLE*RtD,surfacePtr[l].phiTE*RtD,surfacePtr[l].phi0*RtD);
 

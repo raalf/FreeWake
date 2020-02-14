@@ -4,7 +4,7 @@
 struct GENERAL
 {
 	char inputfilename[126]; 
-	bool flagVICOUS; // Turn on/off viscous corrections (O = OFF, 1 = ON)
+	bool flagVISCOUS; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	double Uinf;		//free stream velocity
 	double alpha, beta;	//angle of attack, sideslip angle
 	double S, b,AR;		//reference area, span, aspect ratio

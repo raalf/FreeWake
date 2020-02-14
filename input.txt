@@ -32,7 +32,7 @@ CMo of wing:			CMo =	-0.150000000
 No. of wings (max. 5):		wings =		2
 No. of panels:			panels =	3
 No. of chordwise lifting lines: m =		3
-No. of airfoils (max. 15):	airfoils =	10
+No. of airfoils (max. 15):	airfoils =	2
 
 Panel boundary conditions:
 	Symmetry line - 	10
@@ -41,14 +41,14 @@ Panel boundary conditions:
 
 Defines leading edge of wing, all measured in metres:
 
-Panel #:1. Number of spanwise elements (n) = 3 Airfoil number = 2
+Panel #:1. Number of spanwise elements (n) = 3 Airfoil number = 6
 Neighbouring panels (0 for none) left: 0 right: 2
 xleft	yleft	zleft	chord	epsilon	Bound.Cond.
 0.000	0.000	0.000   1.0     2.000	10
 xright	yright	zright	chord	epsilon	Bound.Cond.
 0.075	1.5	0.1	0.9	1.000	220
 
-Panel #:2. Number of spanwise elements (n) = 2 Airfoil number = 2
+Panel #:2. Number of spanwise elements (n) = 2 Airfoil number = 7
 Neighbouring panels (0 for none) left: 1 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond.
 0.075	1.5	0.1	0.9	1.000	220
@@ -58,7 +58,7 @@ xright	yright	zright	chord	epsilon	Bound.Cond.
 
 
 
-Panel #:3. Number of spanwise elements (n) = 3 Airfoil number = 5
+Panel #:3. Number of spanwise elements (n) = 3 Airfoil number = 7
 Neighbouring panels (0 for none) left: 0 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond.
 6	0.00	0.000	.8	.000	10

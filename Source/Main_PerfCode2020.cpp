@@ -150,7 +150,6 @@ info.flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	General_Info_from_File(info,alpha1,alpha2,alphastep);
 						   //Subroutine in read_input.cpp
 
-	//Read_Camber_from_File(info);
 
 	info.AR = info.b*info.b/info.S;  //reference aspect ratio
 
@@ -169,6 +168,16 @@ info.flagVICOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	//	n 			-number of elements in chord direction
 	//  left, right	-neighboring panels
 	Panel_Info_from_File(panelPtr, info);	//Subroutine in read_input.cpp
+
+	//double* camberPtr = Read_Camber_from_File(info); //Subroutine in read_input.cpp
+	//double camber[15][2000][2];
+	int cambNum = 0;
+	int cambRows = 0;
+	//Camber_Array_Size(info);
+	Camber_Array_Size(info, &cambNum, &cambRows);
+	double ***camberPtr;
+	ALLOC3D(&camberPtr,cambNum,cambRows,2);
+	Read_Camber_from_File(info, camberPtr);
 
 //===================================================================//
 		//END read general and panel info from file 'input.txt'
@@ -623,6 +632,7 @@ printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
 	FREE1D(&panelPtr,info.nopanel);
 	FREE1D(&surfacePtr,info.noelement);
 	FREE1D(&cn,info.noelement);
+	FREE3D(&camberPtr,cambNum,cambRows,2);
 	
 	fclose(MomSol);//close output file of trim iteration results
 	fclose(Performance);//close output file of performance calc's

@@ -843,7 +843,8 @@ void Read_Airfoil_or_Camber(GENERAL &info, double ***dataPtr, int &Row,int &Col,
 	// Apply data to the dataPtr
 	for (i = 0; fscanf(fp, "%lf", &temp) != EOF; i++){
 		if (idxFOILCAMB == 1){
-			if (j == 5){j = 0;k++;}} // 5 columns if reading in airfoil data
+			if (j == 5){j = 0;k++;} // 5 columns if reading in airfoil data
+			if (j == 0){temp*=DtR;}} // conver aoa to radians			
 		else if (idxFOILCAMB == 2){
 			if (j == 2){j = 0;k++;}} // 2 columns if reading in camber data
 		dataPtr[panelPtr[q].airfoil][k][j] = temp;

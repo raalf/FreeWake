@@ -309,6 +309,7 @@ ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
 	Airfoil_or_Camber_Array_Size(info, &airfoilRow, &airfoilCol, 1);
 	ALLOC3D(&airfoilPtr,airfoilRow,airfoilCol,5);
 	Read_Airfoil_or_Camber(info, airfoilPtr,airfoilRow, airfoilCol,1);
+	//for (int jt = 0; jt < airfoilCol; ++jt){printf("%f\t%f\n",airfoilPtr[5][jt][0],airfoilPtr[5][jt][1]);}
 
 	//initializing profile
 	for(airfoil=0;airfoil<info.noairfoils;airfoil++)

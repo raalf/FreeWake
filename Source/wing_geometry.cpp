@@ -227,6 +227,7 @@ void Surface_DVE_Generation(const GENERAL info,const PANEL* panelPtr,\
 //	u[3]		-velocity at xA in global ref.frame.
 //  singfct		-rate at which singularity at edge of vortex sheet decays
 //				 ## singfct added 2/8/05 G.B.
+//	ratio 		-interpolation ratio between left and right edge a panel 14/2/20 G.B.
 
 int i,m,n,wing;			//loop counters
 int l=0;			//l => suface DVE counter,

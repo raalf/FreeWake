@@ -758,7 +758,7 @@ for(panel=0;panel<info.nopanel;panel++)			//loop over panels
 //                    2 - circul. slope equal to neighboring el. wing
 //    Third Digit:    0 - undefined circulation curvature
 //                    1 - zero circulation curvature
-//                    2 - circul. curvature equal to neighboring el. wing
+//                    s - circul. curvature equal to neighboring el. wing
 //
 // BC = 100 - gamma = 0
 // BC = 110 - gamma = 0 AND gamma' = 0  (free tip)

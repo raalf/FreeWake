@@ -12,9 +12,7 @@ void Move_Wing(const GENERAL, DVE*);
 //moves flexible wing by delta x every time step,
 void Move_Flex_Wing(const GENERAL, DVE*);
 //moves DVEs according do the input camber line
-void Apply_Camber(double[3],double ***, double, int, double);
-
-void Apply_Camber2(const PANEL*, double[3], double[3] ,double ***, int, int, double,double *,double *,double *,double *);
+void Apply_Camber(const PANEL*, double[3], double[3] ,double ***, int, int, double,double *,double *,double *,double *);
 //===================================================================//
 		//FUNCTION Trailing_Edge_Generation
 		//generates trailing edge vortex elements of panel 'j'
@@ -247,7 +245,7 @@ double delTANphi;	//tan(phiLE-phiTE)
 double delX[3];		//vector from center of leading edge to control point
 double eps1,eps2;
 double chord1,chord2;
-int flagCAMBER = 0;
+bool flagCAMBER = 0;
 
 	//loop over number of panels
 	for (i=0;i<info.nopanel;i++)
@@ -302,8 +300,8 @@ int flagCAMBER = 0;
 			x2[1] = x2LE[1]+delchord2*tempS*sin(panelPtr[i].eps2)*sin(nu);
 			x2[2] = x2LE[2]-delchord2*tempS*sin(panelPtr[i].eps2)*cos(nu);
 
-			if(flagCAMBER!=0){
-			Apply_Camber2(panelPtr,x1,x2,camberPtr, m, i, nu, &eps1, &eps2, &chord1, &chord2);
+			if(info.flagCAMBER){
+			Apply_Camber(panelPtr,x1,x2,camberPtr, m, i, nu, &eps1, &eps2, &chord1, &chord2);
 			}
 
 			//computing vector along LE of current spanwise row of DVEs
@@ -321,7 +319,7 @@ int flagCAMBER = 0;
 			{
 				tempS = (0.5+n);
 
-				if(flagCAMBER!=0){
+				if(info.flagCAMBER){
 					surfacePtr[l].xsi=0.5*(chord1+tempS*(chord2-chord1)/panelPtr[i].n);
 					surfacePtr[l].epsilon = eps1 + tempS*(eps2-eps1)/panelPtr[i].n;
 				} else{
@@ -764,55 +762,10 @@ double delx[3];
 //===================================================================//
 
 
-
-//===================================================================//
-		//START FUNCTION Apply_Camber
-//===================================================================//
-void Apply_Camber(double x[3], double ***camberPtr, double xbyc, int camberNum, double c)
-{
-	// Apply_Camber moves the DVEs according to the input camber line.
-	//for(int i=0;i<10;i++){printf("Camber: %f\t%f\n",camberPtr[5][i][0],camberPtr[5][i][1]);}
-	//
-	// panelptr.airfoil1, panelptr.airfoil2 and x/c	
-	//printf("camber1: %d\tcamber2: %d\txbyc: %d\n",camber1,camber2,xbyc);
-	//Move the left LE panel based on the camberline
-
-
-	int i; //Generic counter
-	double tempZ;
-
-	i = 0;
-	do{i++;}
-	while(camberPtr[camberNum][i][0]<xbyc);
-
-	tempZ = camberPtr[camberNum][i-1][1] + ((xbyc-camberPtr[camberNum][i-1][0])*\
-			(camberPtr[camberNum][i][1]-camberPtr[camberNum][i-1][1])/\
-			(camberPtr[camberNum][i][0]-camberPtr[camberNum][i-1][0]));
-
-	x[2] +=(tempZ*c); 
-	/*
-	printf("camberNum is: %d and xbyc %f\n",camberNum,xbyc);
-	printf("i = %d which is at x/c %f\n",i,camberPtr[camberNum][i][0]);
-	printf("\ntempZ1 = %f\n",tempZ);
-
-	for(i=0;i<5;i++){printf("Camber %d: %f\t%f\n",i,camberPtr[camberNum][i][0],camberPtr[camberNum][i][1]);}
-
-	//Move the right LE panel based on the camberline
-	//printf("%f\t%f\t%f\t%f\t%f\t%f\n", x1[0],x1[1],x1[2],x2[0],x2[1],x2[2]);
-	*/
-
-	//compute a local epsilon between on the angle between the LE front 2 points
-	//and the TE center point
-
-}
-//===================================================================//
-		//END FUNCTION Apply_Camber
-//===================================================================//
-
 //===================================================================//
 		//START FUNCTION Apply_Camber 
 //===================================================================//
-void Apply_Camber2(const PANEL* panelPtr, double x1[3], double x2[3], \
+void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	double ***camberPtr, int m, int i, double nu, \
 	double *eps1, double *eps2, double *chord1, double *chord2)
 {

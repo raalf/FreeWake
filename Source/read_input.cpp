@@ -72,9 +72,17 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	//find the '='-sign in input file before steady flag
 	do	ch = fgetc(fp);
 	while (ch!='=');
-	//reads flag for steady/unsteady aerodynamics
+	//reads flag for viscous aerodynamics
 	fscanf(fp,"%d",&tempI);
 	info.flagVISCOUS=tempI;
+
+	//read camber (=1)/no camber (=0) flag  added D.F.B. 2-18-20
+	//find the '='-sign in input file before steady flag
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads flag for camber
+	fscanf(fp,"%d",&tempI);
+	info.flagCAMBER=tempI;
 
 	// read symmetrical geometry flag
 	//(sym =1 -> symmetrical conditions, =0 -> asymmetrical)

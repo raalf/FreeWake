@@ -103,7 +103,7 @@ int main()
 	printf("\t\tRunning Version %s \n ",PROGRAM_VERSION);
 	printf("===========================================================================\n ");
 
-	info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
+	//info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 
 //printf("Do you want to start %s? y for YES ",PROGRAM_VERSION);
 //scanf("%c",&answer);
@@ -278,17 +278,18 @@ int main()
 		//Read in airfoil and camber data files
 //===================================================================//
 
-	// Read in the camber data. Subroutines in read_input.cpp
-	Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
-
-	ALLOC3D(&camberPtr,cambRow,cambCol,2);
-	Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
+	if(info.flagCAMBER){ //Skip if flagCAMBER is turned off
+		// Read in the camber data. Subroutines in read_input.cpp
+		Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
+		ALLOC3D(&camberPtr,cambRow,cambCol,2);
+		Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
+	}
 
 	if (info.flagVISCOUS){ // Skip if flagVISCOUS is turned off
-	// Read in airfoil data
-	Airfoil_or_Camber_Array_Size(info, &airfoilRow, &airfoilCol, 1);
-	ALLOC3D(&airfoilPtr,airfoilRow,airfoilCol,5);
-	Read_Airfoil_or_Camber(info, airfoilPtr,airfoilRow, airfoilCol,1);
+		// Read in airfoil data. Subroutines in read_input.cpp
+		Airfoil_or_Camber_Array_Size(info, &airfoilRow, &airfoilCol, 1);
+		ALLOC3D(&airfoilPtr,airfoilRow,airfoilCol,5);
+		Read_Airfoil_or_Camber(info, airfoilPtr,airfoilRow, airfoilCol,1);
 	}	
 // Moved reading airfoils to functions, D.F.B. 2-14-20	
 //===================================================================//

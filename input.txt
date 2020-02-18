@@ -8,7 +8,8 @@ The results are written to the sub-directory output'
 
 Relaxed wake (yes 1, no 0):		relax =		1
 Steady (1) or unsteady (2):		aerodynamics =	1
-Viscous solutions (1) or inviscid (0)  viscous = 	0
+Viscous solutions (1) or inviscid (0)  viscous = 	1
+Using camber (1) or no camber (0)  camber = 	0
 Symmetrical geometry (yes 1, no 0):	sym =		1
 Longitudinal trim (yes 1, no 0):	trim =		0	
 

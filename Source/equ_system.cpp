@@ -743,20 +743,20 @@ for(panel=0;panel<info.nopanel;panel++)			//loop over panels
 //===================================================================//
 // THIS METHOD IS USED FOR FreeWake  GB 2-9-20
 //assembles first part of D matrix that is the boundary conditions of
-//the elementary wings.  Within a panel, two conditions exists tht are
+//the elementary wings.  Within a panel, two conditions exists that are
 //continuous vorticity magnitude and slope in spanwise direction.
 //Across the panel boundaries the following conditions exist and are
 //defined in panelPtr[j].BC1 and panelPtr[j].BC2 with a three digit
 //number:
 //
 //    Panel Boundary Conditions:
-//    First Digit:     0 - undefined circulation strength
+//    First Digit:    0 - undefined circulation strength
 //                    1 - zero circulation (free end)
 //                    2 - circul. strength equal to neighboring el. wing
-//    Second Digit:     0 - undefined circulation slope
+//    Second Digit:   0 - undefined circulation slope
 //                    1 - zero slope in circulation
 //                    2 - circul. slope equal to neighboring el. wing
-//    Third Digit:     0 - undefined circulation curvature
+//    Third Digit:    0 - undefined circulation curvature
 //                    1 - zero circulation curvature
 //                    2 - circul. curvature equal to neighboring el. wing
 //
@@ -779,6 +779,8 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 
 for(panel=0;panel<info.nopanel;panel++)            //loop over panels
     {
+ //printf("panel %d  m %d right %d\n",panel,panelPtr[panel].m,panelPtr[panel].right);  //####
+
         //if it exists, the panel to the "right" is determined
         //then the index difference of the neighboring elementary wings
         //of the two panels is determined.

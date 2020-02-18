@@ -128,7 +128,7 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 		//START generating D matrix
 //===================================================================//
-    
+ 
 	//1. Assembyly of upper 2/3 of D-matrix using the boundary conditions
     //between the panels/elements
     //The new kinematic conditions due to the DVE is being recomputed.
@@ -155,6 +155,14 @@ int *pivot;				//holds information for pivoting D
 	DVE_KinCond(surfacePtr,info,panelPtr,D);
 										//Subroutine in equ_system.cpp
 
+ //for(i=0; i<info.Dsize; i++)
+ //{
+ //	printf("\ni=%d  ",i);
+ //   for(j=0; j<info.Dsize; j++)
+  //      printf("%lf  ",D[i][j]);
+ //}
+//printf("\n");
+    
 	//decompose D-matrix into lower/upper matrix,
 	//l/u coefficients saved in D -- WARNING: original D-values lost!!
 	//pivot holds the pivoting information of D

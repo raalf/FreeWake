@@ -165,11 +165,6 @@ int main()
 	//  left, right	-neighboring panels
 	Panel_Info_from_File(panelPtr, info);	//Subroutine in read_input.cpp
 
-	// Read in the camber data
-	Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
-	ALLOC3D(&camberPtr,cambRow,cambCol,2);
-	Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
-
 //===================================================================//
 		//END read general and panel info from file 'input.txt'
 //===================================================================//
@@ -260,12 +255,6 @@ int main()
 		//START wing generation
 //===================================================================//
 
-	// Read in the camber data. Subroutines in read_input.cpp
-	Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
-	ALLOC3D(&camberPtr,cambRow,cambCol,2);
-	Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
-
-
 	//identifies separate wings
 	Wing_Generation(panelPtr,info.nopanel,info.wing1,info.wing2,\
 						info.panel1,info.panel2,info.dve1,info.dve2);
@@ -286,8 +275,15 @@ int main()
 //===================================================================//
 
 //===================================================================//
-		//Read in airfoil data files
+		//Read in airfoil and camber data files
 //===================================================================//
+
+	// Read in the camber data. Subroutines in read_input.cpp
+	Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
+
+	ALLOC3D(&camberPtr,cambRow,cambCol,2);
+	Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
+
 	if (info.flagVISCOUS){ // Skip if flagVISCOUS is turned off
 	// Read in airfoil data
 	Airfoil_or_Camber_Array_Size(info, &airfoilRow, &airfoilCol, 1);
@@ -367,7 +363,7 @@ int main()
 			panelPtr[i].u2[0]= info.U[0];
 			panelPtr[i].u2[2]= info.U[2];
 		}
-        
+
 	//===============================================================//
 		//compute induced drag and lift distribution
 	//===============================================================//
@@ -376,6 +372,7 @@ int main()
 	//===============================================================//
 		//DONE compute induced drag and lift distribution
 	//===============================================================//
+
 
 	//===============================================================//
 		//computing free stream values

@@ -32,7 +32,7 @@ main()
 	printf("The timestep file needs to be located in the ");
 	printf("current directory.\n");
 	printf("The user must have python installed as this used matplotlib.\n\n");
-	printf("Please enter number of timestep");
+	printf("Please enter number of timestep ");
 	printf("whose wake needs to be plotted: ");
 	scanf("%d",&timestep);
 

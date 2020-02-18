@@ -165,11 +165,6 @@ int main()
 	//  left, right	-neighboring panels
 	Panel_Info_from_File(panelPtr, info);	//Subroutine in read_input.cpp
 
-	// Read in the camber data
-	Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
-	ALLOC3D(&camberPtr,cambRow,cambCol,2);
-	Read_Airfoil_or_Camber(info, camberPtr,cambRow, cambCol,2);
-
 //===================================================================//
 		//END read general and panel info from file 'input.txt'
 //===================================================================//
@@ -372,7 +367,7 @@ int main()
 		//compute induced drag and lift distribution
 	//===============================================================//
 		LongitudinalTrim(info,panelPtr,surfacePtr,info.panel2[1],cn,\
-						 CL,CDi,MomSol); //Subroutine in longtrim.cpp
+						 CL,CDi,MomSol,camberPtr); //Subroutine in longtrim.cpp
 	//===============================================================//
 		//DONE compute induced drag and lift distribution
 	//===============================================================//

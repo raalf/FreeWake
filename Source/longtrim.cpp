@@ -1,9 +1,9 @@
 void LongitudinalTrim(GENERAL,PANEL *,DVE *,int,double *&,double &,\
-						double &,FILE *);
+						double &,FILE *,double ***);
 
 void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpanel,\
 						double *&cn,double &CL,double &CDi,\
-						FILE *MomSol)
+						FILE *MomSol,double ***camberPtr)
 {
 // This program finds longitudinal trim solutions for twin wing configurations
 //
@@ -68,7 +68,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	CM_resid = PitchingMoment\
 				(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
 				HTpanel,info.RefPt,CLht,CLhti,\
-				N_force,D_force,CL,CDi);//Subroutine in PitchMoment.cpp
+				N_force,D_force,CL,CDi,camberPtr);//Subroutine in PitchMoment.cpp
 
 	//adding zero lift of wing	
 	CM_resid += info.CMoWing;
@@ -94,7 +94,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		CM_resid = PitchingMoment\
 					(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
 					HTpanel,info.RefPt,CLht,CLhti,\
-					N_force,D_force,CL,CDi);//Subroutine in PitchMoment.cpp
+					N_force,D_force,CL,CDi,camberPtr);//Subroutine in PitchMoment.cpp
 
 		//adding zero lift of wing	
 		CM_resid += info.CMoWing;

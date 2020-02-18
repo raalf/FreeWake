@@ -2,14 +2,14 @@
 double PitchingMoment(const GENERAL,PANEL *,const double,DVE *&,\
 						const double,const int,const double [3],\
 						double &,double &,double **&,double *&,\
-						double &,double &);
+						double &,double &,double ***);
 
 double PitchingMoment(const GENERAL info,PANEL *panelPtr,DVE *&surfacePtr,\
 						const double cmac, const double epsilonHT,\
 						const int HTpanel,const double xCG[3],\
 						double &CLht,double &CLhti,\
 						double **&N_force,double *&D_force,\
-						double &CL,double &CDi_finit)
+						double &CL,double &CDi_finit, double ***camberPtr)
 {
 //this routine computes the pitching moment of a given configuration.
 //The moment is computed about the point xCG, which moves with the wing
@@ -100,7 +100,7 @@ int *pivot;				//holds information for pivoting D
 		//START generating surface Distributed-Vorticity Elements
 //===================================================================//
 
-	Surface_DVE_Generation(info,panelPtr,surfacePtr);
+	Surface_DVE_Generation(info,panelPtr,surfacePtr,camberPtr);
 								//Subroutine in wing_geometry.cpp
 
 	//save information on elementary wings to file

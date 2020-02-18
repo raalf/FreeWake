@@ -320,7 +320,9 @@ bool flagCAMBER = 0;
 				tempS = (0.5+n);
 
 				if(info.flagCAMBER){
+					//half-chord length at midspan of DVE using camber info
 					surfacePtr[l].xsi=0.5*(chord1+tempS*(chord2-chord1)/panelPtr[i].n);
+					//temporary incidence angle at half span of DVE using camber info
 					surfacePtr[l].epsilon = eps1 + tempS*(eps2-eps1)/panelPtr[i].n;
 				} else{
 					//half-chord length at midspan of DVE
@@ -769,36 +771,52 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	double ***camberPtr, int m, int i, double nu, \
 	double *eps1, double *eps2, double *chord1, double *chord2)
 {
-	// Apply_Camber moves the DVEs according to the input camber line.
-	//for(int i=0;i<10;i++){printf("Camber: %f\t%f\n",camberPtr[5][i][0],camberPtr[5][i][1]);}
+	// The function Apply_Camber determines changed the LE panel points to follow
+	// 		the curvature of the camber line.
 	//
-	// panelptr.airfoil1, panelptr.airfoil2 and x/c	
-	//printf("camber1: %d\tcamber2: %d\txbyc: %d\n",camber1,camber2,xbyc);
-	//Move the left LE panel based on the camberline
+	// Function inputs:
+	//		PANEL* panelPtr -Panel structure for the panelPtr
+	//		x1,x2 			-x,y,z position of the left (1) and right (2) panel LE pts
+	//		camberptr 		-camber ptr holding all of the camber data
+	//		m 				-chorwise row of interest
+	//		i 				-panelPtr of interest
+	//		nu 				-dihedral angle of panel
+	//		eps1, eps2 		-(see output) 
+	//		chord1, chord2 	-(see output)
+	//
+	// Function outputs:
+	//		x1,x2 			-updated left and right panel LE points
+	//		eps1, eps2 		-updated left and right edge epsilon angles with camber
+	//		chord1,chord2 	-updated left and right edge chord lengths with camber
+	//
+	// NOTE (1) indicated left and (2) indicated right for the above variables
 
-	int j; //Generic counter
-	double tempZ1, tempZ2;
-	double tempZTE1, tempZTE2;
-	double tempx1[3],tempx2[3];
-	//double eps1, eps2;
-	//double tempc1, tempc2;
-	double leftZ, rightZ;
+	// D.F.B. in Braunschweig, Germany, Feb. 2020
 
+	int j; 	//Generic counter
+	double tempZ1, tempZ2; 		//Z LE offsets
+	double tempZTE1, tempZTE2;	//Z TE offsets
+	double tempx1[3],tempx2[3];	//Local reference frame LE pts
+	double leftZ, rightZ;		//Delta Z from LE to TE
 
+	// Bring the inputted x1 and x2 into the local DVE ref frame
 	Glob_Star(x1,nu,panelPtr[i].eps1,0,tempx1);
 	Glob_Star(x2,nu,panelPtr[i].eps2,0,tempx2);
 
-
+	//First consider LE left side
+	// Seach for index where (current m)/(total m) is nearest the camber data
 	j = 0;
 	do{j++;}
 	while(camberPtr[panelPtr[i].airfoil1][j][0]<(double(m)/double(panelPtr[i].m)));
 
+	//Calculate the z/c by linearly interpolate the using the above define index 
 	tempZ1 = camberPtr[panelPtr[i].airfoil1][j-1][1] + ((double(m)/double(panelPtr[i].m)-camberPtr[panelPtr[i].airfoil1][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
+	//Scale z/c from camber data to the chordlength of the edge
 	tempx1[2] +=(tempZ1*panelPtr[i].c1); 
 
-
+	//Repeat for TE left side
 	j = 0;
 	do{j++;}
 	while(camberPtr[panelPtr[i].airfoil1][j][0]<(double(m+1)/double(panelPtr[i].m)));
@@ -807,6 +825,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
 
+	//Repeat for LE right side
 	j = 0;
 	do{j++;}
 	while(camberPtr[panelPtr[i].airfoil2][j][0]<(double(m)/double(panelPtr[i].m)));
@@ -816,6 +835,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 			(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
 	tempx2[2] +=(tempZ2*panelPtr[i].c2); 
 
+	//Repeat for TE right side
 	j = 0;
 	do{j++;}
 	while(camberPtr[panelPtr[i].airfoil2][j][0]<(double(m+1)/double(panelPtr[i].m)));
@@ -825,41 +845,22 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 		(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
 
 
+	//Calculate delta z from LE to TE on left edge and on right edge
+	leftZ = (tempZ1-tempZTE1)*panelPtr[i].c1;
+	rightZ =(tempZ2-tempZTE2)*panelPtr[i].c2;
 
-	//Calculate delta z on left edge and on right edge
-	leftZ =tempZ1-tempZTE1;
-	rightZ =tempZ2-tempZTE2;
-
-	// New section chord on left and right edges
+	//New section chord on left and right edges
 	*chord1 = sqrt(leftZ*leftZ+(panelPtr[i].c1/panelPtr[i].m)*(panelPtr[i].c1/panelPtr[i].m));
 	*chord2 = sqrt(rightZ*rightZ+(panelPtr[i].c2/panelPtr[i].m)*(panelPtr[i].c2/panelPtr[i].m));
 
-	//printf("\npanelPtr[i].c1: %f\t panelPtr[i].c2: %f\n",panelPtr[i].c1,panelPtr[i].c2);
-	//printf("chord1: %f\t chord2: %f\n",chord1,chord2);
-	
 	// Calculate mid-span eps
 	*eps1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m));
 	*eps2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m));
 
-	//printf("eps1(deg): %f\t eps2(deg): %f\n\n",eps1*RtD,eps2*RtD);
 
-
-
+	// Convert new LE points to the global reference frame 
 	Star_Glob(tempx1,nu,panelPtr[i].eps1,0,x1);
 	Star_Glob(tempx2,nu,panelPtr[i].eps2,0,x2);
-	/*
-	printf("camberNum is: %d and xbyc %f\n",camberNum,xbyc);
-	printf("i = %d which is at x/c %f\n",i,camberPtr[camberNum][i][0]);
-	printf("\ntempZ1 = %f\n",tempZ);
-
-	for(i=0;i<5;i++){printf("Camber %d: %f\t%f\n",i,camberPtr[camberNum][i][0],camberPtr[camberNum][i][1]);}
-
-	//Move the right LE panel based on the camberline
-	//printf("%f\t%f\t%f\t%f\t%f\t%f\n", x1[0],x1[1],x1[2],x2[0],x2[1],x2[2]);
-	*/
-
-	//compute a local epsilon between on the angle between the LE front 2 points
-	//and the TE center point
 
 }
 //===================================================================//

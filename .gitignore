@@ -45,3 +45,6 @@ Temporary Items
 # Output files
 /output/*.txt
 /output/*.py
+
+# fw executable to remove issues with merging
+fw

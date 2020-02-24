@@ -245,7 +245,6 @@ double delTANphi;	//tan(phiLE-phiTE)
 double delX[3];		//vector from center of leading edge to control point
 double eps1,eps2;
 double chord1,chord2;
-bool flagCAMBER = 0;
 
 	//loop over number of panels
 	for (i=0;i<info.nopanel;i++)
@@ -326,7 +325,7 @@ bool flagCAMBER = 0;
 			if(info.flagCAMBER){
 			Apply_Camber(panelPtr,x1,x2,camberPtr, m, i, nu, &eps1, &eps2, &chord1, &chord2);
 			}
-
+			
 			//computing vector along LE of current spanwise row of DVEs
 			tempS = 1./panelPtr[i].n;
 			xLE[0] = (x2[0]-x1[0])*tempS;
@@ -822,7 +821,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	double tempx1[3],tempx2[3];	//Local reference frame LE pts
 	double leftZ, rightZ;		//Delta Z from LE to TE
 
-	// Bring the inputted x1 and x2 into the local DVE ref frame
+	// Bring the input x1 and x2 into the local DVE ref frame
 	Glob_Star(x1,nu,panelPtr[i].eps1,0,tempx1);
 	Glob_Star(x2,nu,panelPtr[i].eps2,0,tempx2);
 
@@ -877,8 +876,8 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	*chord2 = sqrt(rightZ*rightZ+(panelPtr[i].c2/panelPtr[i].m)*(panelPtr[i].c2/panelPtr[i].m));
 
 	// Calculate mid-span eps
-	*eps1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m));
-	*eps2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m));
+	*eps1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m))+panelPtr[i].eps1;
+	*eps2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m))+panelPtr[i].eps2;
 
 
 	// Convert new LE points to the global reference frame 

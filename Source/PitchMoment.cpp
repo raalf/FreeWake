@@ -220,7 +220,7 @@ int *pivot;				//holds information for pivoting D
 		timestep ++; //advance timestep
 
 		printf("%d ",timestep);
-//		fflush(stdout);
+		fflush(stdout);
 //===================================================================//
 		//START Move_Wing
 //===================================================================//
@@ -411,7 +411,7 @@ int *pivot;				//holds information for pivoting D
 	// - e has not converged and
 	// - maximum time steps have not been reached
 	//} while((deltae > info.deltae) && (timestep<info.maxtime));
-	} while((timestep<info.maxtime));
+	} while((deltae > info.deltae) && (timestep<info.maxtime));
 
 ///////////////////////////////////////////////////////////////////////
 //===================================================================//

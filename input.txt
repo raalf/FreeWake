@@ -42,14 +42,14 @@ Panel boundary conditions:
 
 Defines leading edge of wing, all measured in metres:
 
-Panel #:1. Number of elements across span n = 1 and chord m = 2
+Panel #:1. Number of elements across span n = 3 and chord m = 3
 Neighbouring panels (0 for none) left: 0 right: 2
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil
 0.000	0.000	0.000   1.0     2.000	10			6
 xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil
 0.075	1.5	0.1	0.9	1.000	220		6
 
-Panel #:2. Number of elements across span n = 1 and chord m = 2
+Panel #:2. Number of elements across span n = 3 and chord m = 1
 Neighbouring panels (0 for none) left: 1 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil
 0.075	1.5	0.1	0.9	1.000	220		7
@@ -59,7 +59,7 @@ xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil
 
 
 
-Panel #:3. Number of elements across span n = 1 and chord m = 2
+Panel #:3. Number of elements across span n = 2 and chord m = 2
 Neighbouring panels (0 for none) left: 0 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil
 6	0.00	0.000	.8	.000	10	3

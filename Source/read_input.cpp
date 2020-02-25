@@ -405,6 +405,7 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 //GB2-9-20	panelPtr[0].TE1 = panelPtr[0].n*(info.m-1);	//the left DVE @ TE
     panelPtr[0].TE1 = panelPtr[0].n*(panelPtr[0].m-1);  //the left DVE @ TE
 	panelPtr[0].TE2 = panelPtr[0].TE1 + panelPtr[0].n-1;//the right DVE @ TE
+  
 
 	//loop over number of panels (info.nopanel)
 	for (i=1;i<info.nopanel;i++)
@@ -415,6 +416,13 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 		//the right DVE @ TE
 		panelPtr[i].TE2 = panelPtr[i].TE1 + panelPtr[i].n-1;
 	}
+
+    //loop over number of panels (info.nopanel)
+    for (i=0;i<info.nopanel;i++)
+    {   //DVE indices at left and right LE of panel
+        panelPtr[i].LE1 = panelPtr[i].TE1 - panelPtr[i].n*(panelPtr[i].m-1);
+        panelPtr[i].LE2 = panelPtr[i].LE1 + panelPtr[i].n-1;
+    }
 //#############################################################################
 }
 //===================================================================//

@@ -68,6 +68,8 @@ struct PANEL
 
     int TE1,TE2;		//indices of left and right DVE @ TE of the panel
 						//added 8/12/05 G.B.
+    int LE1,LE2;		//index of first and right DVE @ LE of panel 
+    					//GB 2-20-20
 
     //	Panel Boundary Conditions:
 	//	First Digit: 	0 - undefined circulation strength

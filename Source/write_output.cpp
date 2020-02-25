@@ -498,7 +498,7 @@ void Save_Timestep(const GENERAL info,const int timestep,DVE **wakePtr,\
 
 	fprintf(fp,"lifting surface after timestep: %d\n",timestep);
 	fprintf(fp,"elements in span direction: %d\n",info.nospanelement);
-	fprintf(fp,"elements in chord direction: %d\n",info.m);
+	fprintf(fp,"number of surface elements: %d\n",info.noelement);  //updated GB 2-25-20
 
 	fprintf(fp,"no. of wings: %d  first and last span indices of each wing:",info.nowing);
 	for(span=0;span<info.nowing;span++)

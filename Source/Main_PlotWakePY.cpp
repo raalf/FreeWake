@@ -1,6 +1,6 @@
 #include "general.h"
 #include "PerfCode.h"
-main()
+int main()
 {
 //This program creates and runs a python script to plots the surface and wake DVEs.
 //This is used to have access to matplotlib but required python to be installed
@@ -104,9 +104,9 @@ main()
 	//find the ':'-sign in input file before number of span-elements
 	do	ch = fgetc(fp);
 	while (ch!=':');
-	fscanf(fp,"%d", &nochord);
+	fscanf(fp,"%d", &nosurface);
 
-	nosurface = nospan*nochord;  //no. of surface DVEs
+	//removed GB 2-25-20 nosurface = nospan*nochord;  //no. of surface DVEs
 
 	//find the first '#'-sign at end of header of surface elements
 	do	ch = fgetc(fp);
@@ -195,7 +195,7 @@ sprintf(iofile,"%s","wakeplot.py");
 
 // writing Header
 	fprintf(fp,"#Plotting wake results that were generated with ");
-	fprintf(fp,"#\n",PROGRAM_VERSION);
+	fprintf(fp,"#%s\n",PROGRAM_VERSION);
 	//comment
 	fprintf(fp,"#Plotting wake of timestep %d\n\n",timestep);
 	

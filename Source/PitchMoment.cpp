@@ -155,14 +155,14 @@ int *pivot;				//holds information for pivoting D
 	DVE_KinCond(surfacePtr,info,panelPtr,D);
 										//Subroutine in equ_system.cpp
 
- //for(i=0; i<info.Dsize; i++)
- //{
- //	printf("\ni=%d  ",i);
- //   for(j=0; j<info.Dsize; j++)
-  //      printf("%lf  ",D[i][j]);
- //}
-//printf("\n");
-    
+/*for(i=0; i<info.Dsize; i++)
+{
+	printf("\ni=%d  ",i);
+   for(j=0; j<info.Dsize-info.noelement; j++)
+      printf("%lf  ",D[i][j]);
+}
+printf("\n");
+ // */  
 	//decompose D-matrix into lower/upper matrix,
 	//l/u coefficients saved in D -- WARNING: original D-values lost!!
 	//pivot holds the pivoting information of D

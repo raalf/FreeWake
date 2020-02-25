@@ -760,11 +760,15 @@ for(panel=0;panel<info.nopanel;panel++)			//loop over panels
 //                    1 - zero circulation curvature
 //                    2 - circul. curvature equal to neighboring el. wing
 //
-// BC = 100 - gamma = 0
-// BC = 110 - gamma = 0 AND gamma' = 0  (free tip)
-// BC = 220 - gamma[i] = gamma[j]  AND  gamma[i]' = gamma[j]'
-// BC = 022 - gamma[i]' = gamma[j]'  AND  gamma[i]" = gamma[j]"
-// BC = 010 - gamma' = 0
+// BC = 100 - Gamma = 0
+// BC = 220 - Gamma[i] = Gamma[j]  AND  gamma[i] = gamma[j]
+// BC = 010 - gamma = 0
+//
+// functions populates rows one after another:
+//          1. left sides of each panels
+//          2. interior sections of each panel
+//          3. complete right side of panels (usually free ends).
+// columns are associated with DVE index, usually column = 3*DVEindex
 //========================================================================
 
 void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
@@ -772,209 +776,285 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 {
     int element=0;        //elementary wing index counter
     int panel;            //panel index
-    int n,m;            //spanwise element, chordwise lifting line counter
+    int span,m;            //spanwise element, chordwise lifting line counter
     int col,row;        //column, row index
-    int nextelement;    //index of neighboring element of panel to the right
-    int k;                //counter
+    int pLeft,pRight;   //index of panel to the left and right, respectively
+    int DVEleft, colLeft; //index of DVE to the left (next panel), column of Dmatrix
 
-for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    
+    //check if numbering and BC correspond and are possible
+    
+    
+    row = 0; //initialize counter
+    
+//####################################################################################
+//1. working along the left side (1) of the panels
+    
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
     {
- //printf("panel %d  m %d right %d\n",panel,panelPtr[panel].m,panelPtr[panel].right);  //####
-
-        //if it exists, the panel to the "right" is determined
-        //then the index difference of the neighboring elementary wings
-        //of the two panels is determined.
-        if ((panelPtr[panel].right <= panel || \
-             panelPtr[panel].right>info.nopanel)\
-            && panelPtr[panel].right!=0)
-            {    printf("INPUT FILE ERROR! Panel numbering messed up!!\n");
-                printf("Indices are not ascending\n");
-                exit(1);
-            }
-            //error message if panel numbering is not ascending or out of bound
-        else
+        m=0; //initialize chordwise row counter
+        //loop over left side of panel
+        for(element=panelPtr[panel].LE1;\
+            element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
         {
-            nextelement=0;        //initializing
-            //adds number of spanwise elements up to right panel
-            for (k=panel;k<(panelPtr[panel].right-1);k++)
-                nextelement+=panelPtr[k].n;
-            nextelement*=(panelPtr[panel].m-1);
-            nextelement++;
-        }
+            col = 3*element; //column of D matrix
+//printf("left side element %d  col %d  row %d\n",element,col,row);
 
-        for(m=0;m<panelPtr[k].m;m++)    //loop over chordwise lifting lines
-        {
-            col = 3*(element);            //column of D matrix
             switch (panelPtr[panel].BC1)    //edge 1 bound. cond.
             {
-                case 100:     //gamma = 0
-                    D[element][col]   = -1;
-                    D[element][col+1] = elementPtr[element].eta;
-                    D[element][col+2] = -elementPtr[element].eta*\
-                                        elementPtr[element].eta;
-//#printf("case 100 element %d  nu %lf\n",element,elementPtr[element].eta);//#
-                break;
+            case 100:     //Gamma = 0
+                D[row][col]   = -1;
+                D[row][col+1] = elementPtr[element].eta;
+                D[row][col+2] = -elementPtr[element].eta*\
+                                    elementPtr[element].eta;
+            break;
 
-                //added 5/13/04 G.B.
-                case 110:     //gamma = 0 and gamma' = 0 (free tip)
-                    D[element][col]   = -1;
-                    D[element][col+1] = elementPtr[element].eta;
-                    D[element][col+2] = -elementPtr[element].eta*\
-                                        elementPtr[element].eta;
-                    row = element+2*info.noelement;
-                    D[row][col]   = 0;
-                    D[row][col+1] = 1;
-                    D[row][col+2] = -2*elementPtr[element].eta;
-//#printf("case 110 element %d  nu %lf\n",element,elementPtr[element].eta);//#
-                break;
-
-                case 220:    //gamma[i] = gamma[j] AND gamma[i]' = gamma[j]'
-                    col = 3*(element);            //column of D matrix
-                    D[element][col]   = -1;
-                    D[element][col+1] = elementPtr[element].eta;
-                    D[element][col+2] = -elementPtr[element].eta*\
-                                        elementPtr[element].eta;
-
-                    row = element+info.noelement;//+panelPtr[panel].m-2;
-                    D[row][col]   = 0;
-                    D[row][col+1] = -1;
-                    D[row][col+2] = 2*elementPtr[element].eta;
-//#printf("case 220 element %d  nu %lf\n",element,elementPtr[element].eta);//#
-                break;
-
-                case 22:    //gamma[i]' = gamma[j]' AND gamma[i]" = gamma[j]"
-                    col = 3*(element);            //column of D matrix
-                    D[element][col]   = 0;
-                    D[element][col+1] = 0;
-                    D[element][col+2] = 2;
-
-                    row = element+info.noelement;//+panelPtr[panel].m-2;
-                    D[row][col]   = 0;
-                    D[row][col+1] = -1;
-                    D[row][col+2] = 2*elementPtr[element].eta;
-//#printf("case 22 element %d  nu %lf\n",element,elementPtr[element].eta);//#
-                break;
-
-                case 10:    //gamma' = 0
-                    col = 3*(element);            //column of D matrix
-                    D[element][col]   = 0;
-                    D[element][col+1] = -1;
-                    D[element][col+2] = 2*elementPtr[element].eta;
-//#printf("case 10 element %d  nu %lf\n",element,elementPtr[element].eta);//#
-                break;
-
-                default:    //default case assumes gamma = 0
-                    col = 3*(element);            //column of D matrix
-                    D[element][col]   = -1;
-                    D[element][col+1] = elementPtr[element].eta;
-                    D[element][col+2] = -elementPtr[element].eta*\
-                                        elementPtr[element].eta;
-                    printf("WARNING!! \nEdge 1  boundary condition of");
-                    printf(" of panel %d undefined!!\n",panel+1);
-//#printf("default element %d  nu %lf\n",element,elementPtr[element].eta);//#
-                break;
-            }        // end switch statement for edge 1 bound. cond.
-
-        for(n=1;n<(panelPtr[panel].n);n++) //loop over spanwise elements-1
-            {
-                element++;        //increase elementary-wing index by 1
-                col = 3*element;
-                row = element+info.noelement;//+panelPtr[panel].m-2;
-
-                if (panelPtr[panel].left == 0)
-                row+=(panelPtr[panel].m-m-1);         //row correction for left-end panels
-
-                //continuous vorticity magnitude
-                D[element][col-3] = 1;
-                D[element][col-2] = elementPtr[element-1].eta;
-                D[element][col-1] = elementPtr[element-1].eta*\
-                                    elementPtr[element-1].eta;
-                D[element][col]   = -1;
-                D[element][col+1] = elementPtr[element].eta;
-                D[element][col+2] = -elementPtr[element].eta\
-                                    *elementPtr[element].eta;
-
-                //continuous vorticity slope
-                D[row][col-3] = 0;
-                D[row][col-2] = 1;
-                D[row][col-1] = 2*elementPtr[element-1].eta;
-
+            case 10:    //gamma = 0
                 D[row][col]   = 0;
                 D[row][col+1] = -1;
                 D[row][col+2] = 2*elementPtr[element].eta;
+            break;
+                
+            case 220:    //Gamma[i] = Gamma[j] AND gamma[i] = gamma[j]
+                //determine DVE to left
+                if(panelPtr[panel].left==0) //no neighboring panel,
+                {  //default tip
+                    D[row][col]   = -1;
+                    D[row][col+1] = elementPtr[element].eta;
+                    D[row][col+2] = -elementPtr[element].eta*\
+                                           elementPtr[element].eta;
+                    printf("WARNING!! \nEdge 1  boundary condition of");
+                    printf(" of panel %d undefined!!\n",panel+1);
+                }
+                else //panel to left exists
+                {
+                    pLeft=panelPtr[panel].left-1;  //index of panel to the left
+                
+                    if(m>=panelPtr[pLeft].m)
+                    {  //panel to left has less chordwise than current panel
+                        //no corresponding DVE exists -> default tip
+                        D[row][col]   = -1;
+                        D[row][col+1] = elementPtr[element].eta;
+                        D[row][col+2] = -elementPtr[element].eta*\
+                                               elementPtr[element].eta;
+                    }
+                    else  //DVE exists for panel to left and 220 condition
+                    {
+                        //index of corresponding DVE of panel to the left
+                        DVEleft = panelPtr[pLeft].LE2 + panelPtr[pLeft].n*m;
+                        colLeft = DVEleft*3; //column of DVE to the left
 
-            }//end loop over n, number of spanwise elementary wings
+//printf("left side element %d  col %d  row %d DVEleft %d\n",element,col,row,DVEleft);
+                        
+                        // -GAMMA + GAMMA_left = 0
+                        D[row][col]   = -1;
+                        D[row][col+1] = elementPtr[element].eta;
+                        D[row][col+2] = -elementPtr[element].eta*\
+                                            elementPtr[element].eta;
+                        D[row][colLeft]   = 1;
+                        D[row][colLeft+1] = elementPtr[DVEleft].eta;
+                        D[row][colLeft+2] = elementPtr[DVEleft].eta*\
+                                            elementPtr[DVEleft].eta;
 
-        //determine row to put right edge (edge 2) boundary condition
-        if (panelPtr[panel].right!=0)
-             row = element+nextelement+\
-                  (panelPtr[panelPtr[panel].right-1].n-panelPtr[panel].n)*m;
-        else row = element+panelPtr[panel].n*(panelPtr[panel].m-(m+1))+m+1;
+                        // -gamma + gamma_left = 0
+                        row++; //increase row index
+                        D[row][col]   = 0;
+                        D[row][col+1] = -1;
+                        D[row][col+2] = 2*elementPtr[element].eta;
+                        
+                        D[row][colLeft]   = 0;
+                        D[row][colLeft+1] = 1;
+                        D[row][colLeft+2] = 2*elementPtr[DVEleft].eta;
+//printf("left side element %d  col %d  row %d DVEleft %d\n",element,col,row,DVEleft);
+                  }
+                } //done dealing with panel to the left
+            break;
 
-        switch (panelPtr[panel].BC2)    //edge 2 bound. cond.
+            default:    //default case assumes gamma = 0
+                D[row][col]   = -1;
+                D[row][col+1] = elementPtr[element].eta;
+                D[row][col+2] = -elementPtr[element].eta*\
+                                    elementPtr[element].eta;
+                printf("WARNING!! \nEdge 1  boundary condition of");
+                printf(" of panel %d undefined!!\n",panel+1);
+            break;
+            }        // end switch statement for edge 1 bound. cond.
+            row++;  //increase row index
+            m++;    //next chordwise row counter
+        } //end loop over left side of panels
+    }// done with all left side of all panels
+        
+//####################################################################################
+//2. interior sections of each panel
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        for(m=0;m<panelPtr[panel].m;m++) //loop over chordwise rows
+        {
+        for(span=panelPtr[panel].LE1;span<panelPtr[panel].LE2;span++)
+        {        //loop over span  of panel
+            element = span+panelPtr[panel].n*m; //DVE index
+            col = 3*element; //column of D matrix
+//printf("interior G element %d  col %d  row %d\n",element,col,row);
+
+            //continuous vorticity magnitude
+            D[row][col]   = 1;
+            D[row][col+1] = elementPtr[element].eta;
+            D[row][col+2] = elementPtr[element].eta\
+                                 *elementPtr[element].eta;
+
+            D[row][col+3] = -1;
+            D[row][col+4] = elementPtr[element+1].eta;
+            D[row][col+5] = -elementPtr[element+1].eta*\
+                                 elementPtr[element+1].eta;
+            row++;  //increase row index
+//printf("interior g element %d  col %d  row %d\n",element,col,row);
+
+            //continuous vorticity slope
+            D[row][col]   = 0;
+            D[row][col+1] = 1;
+            D[row][col+2] = 2*elementPtr[element].eta;
+
+            D[row][col+3] = 0;
+            D[row][col+4] = -1;
+            D[row][col+5] = 2*elementPtr[element+1].eta;
+            row++;  //increase row index
+        } // end loop over panel span
+        } //end of loop over chordwise rows
+    } // done with looping over panels for treatment of interior of panels
+    
+//####################################################################################
+//3. complete right side of panels (usually free ends).
+    //
+    //There are five possibilities:
+    // 1. wrong BC, but no neighboring element (faulty input file)
+    // 2. wingtip --> Gamma = 0  (BC = 100)
+    // 3. symmetry plane --> gamma = 0 (BC = 010)
+    // 4. 220 condition to panel to the right and more chordwise rows than the panel
+    //      to the right --> assign wingtip condition (Gamma = 0)
+    // 5. 220 condition to panel to the right and less or equal number of chordwise
+    //      rows than the panle to the right --> already taken care of at 1.
+
+
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        m=0; //initialize chordwise row counter
+        //loop over right side of panel
+        for(element=panelPtr[panel].LE2;\
+            element<=panelPtr[panel].TE2;element += panelPtr[panel].n)
+        {
+            col = 3*element; //column of D matrix
+//printf("Right side element %d  col %d  row %d\n",element,col,row);
+
+            // 3.1. wrong BC, but no neighboring element (faulty input file)
+
+            //wingtip or symmetry but wrong BC -> default tip
+            if(panelPtr[panel].right==0 && \
+               (panelPtr[panel].BC2 != 100 && panelPtr[panel].BC2 != 10))
+            {  //default tip
+               D[row][col]   = 1;
+               D[row][col+1] = elementPtr[element].eta;
+               D[row][col+2] = elementPtr[element].eta*\
+                                  elementPtr[element].eta;
+               printf("WARNING!! \nEdge 2  boundary condition of");
+               printf(" of panel %d undefined!! BC = 100\n",panel+1);
+               row++;  //increase row index
+
+//printf("Right side element %d  col %d  row %d\n",element,col,row);
+            }
+            
+            switch (panelPtr[panel].BC2)    //edge 1 bound. cond.
             {
-                case 100:     //gamma = 0
-                    if(panel<info.nopanel-1) row += info.noelement;
+       // 3.2. wingtip --> Gamma = 0  (BC = 100)
+                case 100:     //Gamma = 0
                     D[row][col]   = 1;
                     D[row][col+1] = elementPtr[element].eta;
                     D[row][col+2] = elementPtr[element].eta*\
-                                    elementPtr[element].eta;
+                                elementPtr[element].eta;
+                    row++;  //increase row index
+
+//printf("Ri 100 side element %d  col %d  row %d\n",element,col,row);
                 break;
 
-                //added 5/13/04 G.B.
-                case 110:     //gamma = 0 and gamma'=0
-                    if(panel<info.nopanel-1) row += info.noelement;
-                    D[row][col]   = 1;
-                    D[row][col+1] = elementPtr[element].eta;
-                    D[row][col+2] = elementPtr[element].eta*\
-                                    elementPtr[element].eta;
-                    row = element+2*info.noelement;
+        // 3.3. symmetry plane --> gamma = 0 (BC = 010)
+                case 10:    //gamma = 0
                     D[row][col]   = 0;
                     D[row][col+1] = 1;
                     D[row][col+2] = 2*elementPtr[element].eta;
-//#printf("case 110 element %d  nu %lf\n",element,elementPtr[element].eta);//#
+
+                    row++;  //increase row index
+
+//printf("Ri 10 side element %d  col %d  row %d\n",element,col,row);
+                break;
+            
+                case 220:    //Gamma[i] = Gamma[j] AND gamma[i] = gamma[j]
+
+                    if(panelPtr[panel].right==0) //no neighboring panel, faulty input file
+                    {  //default tip
+                         D[row][col]   = 1;
+                         D[row][col+1] = elementPtr[element].eta;
+                         D[row][col+2] = elementPtr[element].eta*\
+                                            elementPtr[element].eta;
+                        row++;  //increase row index
+
+                         printf("WARNING!! \nEdge 2  boundary condition of");
+                         printf(" of panel %d undefined BC 220!!\n",panel+1);
+                    }
+                    else //panel to left exists
+                    {
+                        pRight = panelPtr[panel].right-1;// index of panel to the right
+                        
+        // 3.4. 220 condition to panel to the right and more chordwise rows than
+        //      the panel to the right --> assign wingtip condition (Gamma = 0)
+
+                        //if panel 'panel' has more chordwise rows than panel 'pRight'
+                        //than set tip condition for extra chordwise rows
+                        if(m>=panelPtr[pRight].m)
+                        {
+                            D[row][col]   = 1;
+                            D[row][col+1] = elementPtr[element].eta;
+                            D[row][col+2] = elementPtr[element].eta*\
+                                               elementPtr[element].eta;
+                            row++;  //increase row index
+
+//printf("Right extra m element %d  col %d  row %d\n",element,col,row);
+                        }
+        // 3.5. 220 condition to panel to the right and less or equal number of chordwise
+        //      rows than the panle to the right --> already taken care of at 1.
+                        else{}//already taken care under point 1.
+                    } //done dealing with panel to the left
                 break;
 
-                case 220:    //gamma[i] = gamma[j] AND gamma[i]' = gamma[j]'
+                default:    //default case assumes Gamma = 0
                     D[row][col]   = 1;
                     D[row][col+1] = elementPtr[element].eta;
                     D[row][col+2] = elementPtr[element].eta*\
                                         elementPtr[element].eta;
-                    row += info.noelement;//+panelPtr[panel].m-2;
-                    D[row][col]   = 0;
-                    D[row][col+1] = 1;
-                    D[row][col+2] = 2*elementPtr[element].eta;
-                break;
+                    printf("WARNING!! \nEdge 2  boundary condition of");
+                    printf(" of panel %d undefined!! DEFAULT\n",panel+1);
+                    
+                    row++;  //increase row index
+                    break;
+            }        // end switch statement for edge 1 bound. cond.
+ 
+            m++;    //next chordwise row counter
+        }// done with loop over elements at right side of panel
+    }//done looping over panels for right-side treatment
 
-                case 22:    //gamma[i]' = gamma[j]' AND gamma[i]" = gamma[j]"
-                    D[row][col]   = 0;
-                    D[row][col+1] = 0;
-                    D[row][col+2] = 1;
+//####################################################################################
 
-                    row += info.noelement;//+panelPtr[panel].m-2;
-                    D[row][col]   = 0;
-                    D[row][col+1] = 1;
-                    D[row][col+2] = 2*elementPtr[element].eta;
-                break;
+               
+/*
+ int i,j;
+for(i=0; i<info.Dsize-info.noelement; i++)
+{
+	printf("\ni=%d  ",i);
+   for(j=0; j<info.Dsize; j++)
+      printf("%lf  ",D[i][j]);
+}
+printf("\n");
+ exit(0);
+// */
 
-                case 10:    //gamma' = 0
-                    D[row][col]   = 0;
-                    D[row][col+1] = 1;
-                    D[row][col+2] = 2*elementPtr[element].eta;
-                break;
-
-                default:    //default case assumes gamma = 0
-                    D[row][col]   = 1;
-                    D[row][col+1] = elementPtr[element].eta;
-                    D[row][col+2] = elementPtr[element].eta*\
-                                    elementPtr[element].eta;
-                    printf("WARNING!! \nEdge 2  boundary condition");
-                    printf(" of panel %d undefined!!\n",panel+1);
-                break;
-            }        // end switch statement for edge 2 bound. cond.
-            element++;    //increment index to next elementary wing
-        }//end loop over m, one lifting line at a time
-    } //end loop over panel, one panel at a time
 }
 //===================================================================//
         //END assembly of Part 1&2 of D-matrix DVE method

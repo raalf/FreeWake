@@ -8,30 +8,30 @@ This file is created as a baseline case to compare between programs and versions
 Relaxed wake (yes 1, no 0):		relax =		1
 Steady (1) or unsteady (2):		aerodynamics =	1
 Viscous solutions (1) or inviscid (0)  viscous = 	0
-Using camber (1) or no camber (0)  camber = 	0
+Using camber (1) or no camber (0)  camber = 	1
 Symmetrical geometry (yes 1, no 0):	sym =		1
 Longitudinal trim (yes 1, no 0):	trim =		0	(yes means m has to be 1)
 
-Max. number of time steps:	maxtime =	30
+Max. number of time steps:	maxtime =	39
 Width of each time step (sec):	deltime =	0.250000
-Convergence delta-span effic.:	deltae =	0.00000	(0 if onlytimestepping)
+Convergence delta-span effic.:	deltae =	0	(0 if onlytimestepping)
 
 Freestream velocity (leave value 1):	Uinf =		1.0
-AOA beginning, end, step size [deg]:	alpha=		2 10 2
+AOA beginning, end, step size [deg]:	alpha=		2 2 2
 Sideslip angle [deg]:			beta =		0.0
 Density:				density =	1.225
 Kinematic viscosity:			nu =		1.420000e-05
 
-Reference area:			S =	10.05
-Reference span:			b =	15
+Reference area:			S =	1
+Reference span:			b =	1
 
-Mean aerodynamic chord:		cmac =	0.67
+Mean aerodynamic chord:		cmac =	1
 Aircraft weight (N):		W =	3000.0
-CG location (x y z):		cg =    0 0 0
+CG location (x y z):		cg =    0.25 0 0
 CMo of wing:			CMo =	-0.150000000
 
-No. of wings (max. 5):		wings =		2
-No. of panels:			panels =	3
+No. of wings (max. 5):		wings =		1
+No. of panels:			panels =	1
 No. of airfoils (max. 15):	airfoils =	10
 
 Panel boundary conditions:
@@ -41,24 +41,24 @@ Panel boundary conditions:
 
 Defines leading edge of wing, all measured in metres:
 
-Panel #:1. Number of spanwise elements (n) = 2 and m = 3
-Neighbouring panels (0 for none) left: 0 right: 2
+Panel #:1. Number of spanwise elements (n) = 1 and m = 20
+Neighbouring panels (0 for none) left: 0 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil
-0.000	0.000	0.000   1.0     2.000	10	6
+0.000	0.000	0.000   1.0     0.000	10	6
 xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil
-0.075	1.5	0.1	0.9	1.000	220	6
+0.0	1	0.0	1	0.000	10	6
 
-Panel #:2. Number of spanwise elements (n) = 10 and m = 3
+Panel #:2. Number of spanwise elements (n) = 10 and m = 6
 Neighbouring panels (0 for none) left: 1 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil
-0.075	1.5	0.1	0.9	1.000	220 6
+0	1	0	1	0.000	220 6
 xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil
-0.15	7.5	0.4	0.3	-5.00	100 7
+0	2	0	1	0.00	10 6
 
 
 
 
-Panel #:3. Number of spanwise elements (n) = 4 and m = 3
+Panel #:3. Number of spanwise elements (n) = 4 and m = 6
 Neighbouring panels (0 for none) left: 0 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil
 6	0.00	0.000	.8	.000	10 7

@@ -214,17 +214,18 @@ printf("\n");
 //===================================================================//
 ///////////////////////////////////////////////////////////////////////
 
+
 	do
 	{
 		timestep ++; //advance timestep
 
 		printf("%d ",timestep);
-//		fflush(stdout);
+		fflush(stdout);
 //===================================================================//
 		//START Move_Wing
 //===================================================================//
 //the every time step the wing is moved by delx which is deltime*u
-
+	//printf("surfacePtr[i].xo[0]: %f\tsurfacePtr[i].xo[2]: %f\n",surfacePtr[0].xo[0],surfacePtr[0].xo[2]);
 		Move_Wing(info,surfacePtr);	//Subroutine in wing_geometry.cpp
 
 		//move CG
@@ -409,6 +410,7 @@ printf("\n");
 	//continue time-stepping loop as long as
 	// - e has not converged and
 	// - maximum time steps have not been reached
+	//} while((deltae > info.deltae) && (timestep<info.maxtime));
 	} while((deltae > info.deltae) && (timestep<info.maxtime));
 
 ///////////////////////////////////////////////////////////////////////
@@ -425,20 +427,18 @@ printf("\n");
 
  	Moment = 0;//initializing Moment
  	//loop over no. surface DVE's
-
-//printf("\n");
 	for(i=0;i<info.noelement;i++)
 	{
-		//vector from surfaceDVE ref. pt. to 1/4chord location
+		//Vector from control pts to mid-point LE
 		tempA[0]=-surfacePtr[i].xsi;	tempA[1]=0;		tempA[2]=0;
 		Star_Glob(tempA,surfacePtr[i].nu,surfacePtr[i].epsilon,\
 					surfacePtr[i].psi,delX);
 
-		//computing the moment arm:
+		//CG- Control Point - Distance from control point to LE
+		// Done in x and z directions and multiplied to alpha accordingly
 		MomArm = (XCG[0]-surfacePtr[i].xo[0]-delX[0])*cos(info.alpha)\
 				+(XCG[2]-surfacePtr[i].xo[2]-delX[2])*sin(info.alpha);
 
-		//moment increment is (L+Lind)*MomARm
 		deltaM = (N_force[i][0]+N_force[i][1])*MomArm;
 
 		//adding to total pitching moment/density
@@ -446,9 +446,11 @@ printf("\n");
 	}
 
 	//the residual-moment coefficient
-	CM_resid = Moment*qc;  if(info.sym==1) CM_resid*=2;
-
-//printf("CM resid %lf  \n",CM_resid);
+	CM_resid = Moment*qc;  
+	//printf("\nCM_resid is: %f\n",CM_resid);
+	//printf("Moment: %f\t qc: %f\t\n",Moment,qc);
+	if(info.sym==1) CM_resid*=2;
+	//printf("CM resid %lf  \n",CM_resid);
 //===================================================================//
 		//DONE compute pitching moment
 //===================================================================//

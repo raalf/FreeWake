@@ -245,7 +245,6 @@ double delTANphi;	//tan(phiLE-phiTE)
 double delX[3];		//vector from center of leading edge to control point
 double eps1,eps2;
 double chord1,chord2;
-bool flagCAMBER = 0;
 
 	//loop over number of panels
 	for (i=0;i<info.nopanel;i++)
@@ -270,42 +269,65 @@ bool flagCAMBER = 0;
 		//spanwise incident increments
 		deleps = (panelPtr[i].eps2-panelPtr[i].eps1)/panelPtr[i].n;
 
+		/* Changed 20.02.20 D.F.B. User now defined panel at LE and the wing
+		/ twists about the LE of the wing (Instead of the quater chord)
 		//computing the left leading edge point of panel
 		x1LE[0] = panelPtr[i].x1[0]-0.25*panelPtr[i].c1*cos(panelPtr[i].eps1);
 		x1LE[1] = panelPtr[i].x1[1]-0.25*panelPtr[i].c1*sin(panelPtr[i].eps1)\
 																	*sin(nu);
 		x1LE[2] = panelPtr[i].x1[2]+0.25*panelPtr[i].c1*sin(panelPtr[i].eps1)\
-																	*cos(nu);
-
-		//computing the right leading edge point of panel
+																	*cos(nu);															
+		computing the right leading edge point of panel
 		x2LE[0] = panelPtr[i].x2[0]-0.25*panelPtr[i].c2*cos(panelPtr[i].eps2);
 		x2LE[1] = panelPtr[i].x2[1]-0.25*panelPtr[i].c2*sin(panelPtr[i].eps2)\
 																	*sin(nu);
 		x2LE[2] = panelPtr[i].x2[2]+0.25*panelPtr[i].c2*sin(panelPtr[i].eps2)\
 																	*cos(nu);
+		*/
 
+		//computing the left leading edge point of panel
+		x1LE[0] = panelPtr[i].x1[0];
+		x1LE[1] = panelPtr[i].x1[1];
+		x1LE[2] = panelPtr[i].x1[2];	
+		//computing the right leading edge point of panel
+		x2LE[0] = panelPtr[i].x2[0];
+		x2LE[1] = panelPtr[i].x2[1];							
+		x2LE[2] = panelPtr[i].x2[2];															
 		//loop over number of chordwise elements 'info.m'
 		//removed GB 2-9-20		for (m=0;m<info.m;m++)
         for (m=0;m<panelPtr[i].m;m++)
 		{
+			/* Changed 20.02.20 D.F.B. There was issues with multiple m so now
+			// panels are defined in input along LE instead of quater chord
 			tempS = (0.25+m); //leading edge location/chord, 1/4c of spanwise row
 
 			//computing left LE locations of current spanwise row of DVEs
 			x1[0] = x1LE[0]+delchord1*tempS*cos(panelPtr[i].eps1);
 			x1[1] = x1LE[1]+delchord1*tempS*sin(panelPtr[i].eps1)*sin(nu);
 			x1[2] = x1LE[2]-delchord1*tempS*sin(panelPtr[i].eps1)*cos(nu);
+			
 
 			//computing right LE locations of current spanwise row of DVEs
 			x2[0] = x2LE[0]+delchord2*tempS*cos(panelPtr[i].eps2);
 			x2[1] = x2LE[1]+delchord2*tempS*sin(panelPtr[i].eps2)*sin(nu);
 			x2[2] = x2LE[2]-delchord2*tempS*sin(panelPtr[i].eps2)*cos(nu);
+			*/
+			//computing left LE locations of current spanwise row of DVEs
+			x1[0] = x1LE[0]+delchord1*m*cos(panelPtr[i].eps1);
+			x1[1] = x1LE[1]+delchord1*m*sin(panelPtr[i].eps1)*sin(nu);
+			x1[2] = x1LE[2]-delchord1*m*sin(panelPtr[i].eps1)*cos(nu);
+
+			//computing right LE locations of current spanwise row of DVEs
+			x2[0] = x2LE[0]+delchord2*m*cos(panelPtr[i].eps2);
+			x2[1] = x2LE[1]+delchord2*m*sin(panelPtr[i].eps2)*sin(nu);
+			x2[2] = x2LE[2]-delchord2*m*sin(panelPtr[i].eps2)*cos(nu);
 
 			if(info.flagCAMBER){
 			Apply_Camber(panelPtr,x1,x2,camberPtr, m, i, nu, &eps1, &eps2, &chord1, &chord2);
 			}
-
+			
 			//computing vector along LE of current spanwise row of DVEs
-				tempS = 1./panelPtr[i].n;
+			tempS = 1./panelPtr[i].n;
 			xLE[0] = (x2[0]-x1[0])*tempS;
 			xLE[1] = (x2[1]-x1[1])*tempS;
 			xLE[2] = (x2[2]-x1[2])*tempS;
@@ -799,7 +821,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	double tempx1[3],tempx2[3];	//Local reference frame LE pts
 	double leftZ, rightZ;		//Delta Z from LE to TE
 
-	// Bring the inputted x1 and x2 into the local DVE ref frame
+	// Bring the input x1 and x2 into the local DVE ref frame
 	Glob_Star(x1,nu,panelPtr[i].eps1,0,tempx1);
 	Glob_Star(x2,nu,panelPtr[i].eps2,0,tempx2);
 
@@ -854,8 +876,8 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	*chord2 = sqrt(rightZ*rightZ+(panelPtr[i].c2/panelPtr[i].m)*(panelPtr[i].c2/panelPtr[i].m));
 
 	// Calculate mid-span eps
-	*eps1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m));
-	*eps2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m));
+	*eps1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m))+panelPtr[i].eps1;
+	*eps2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m))+panelPtr[i].eps2;
 
 
 	// Convert new LE points to the global reference frame 

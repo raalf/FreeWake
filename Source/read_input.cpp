@@ -362,7 +362,9 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 		fscanf(fp," %d",&(panelPtr[i].airfoil1));
 			panelPtr[i].airfoil1--; //adjust index
 		//panelPtr[i].airfoil1 = panelPtr[i].airfoil; // temporary airfoil asigment GB 2-14-2
-	
+
+		//read in hinge as %chord on edge 1 DFB 2-25-20
+		fscanf(fp," %lf",&(panelPtr[i].hinge1));
 
 		panelPtr[i].u1[0]=0; panelPtr[i].u1[1]=0; panelPtr[i].u1[2]=0;
 
@@ -387,6 +389,10 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 			panelPtr[i].airfoil2--; //adjust index
 		//panelPtr[i].airfoil2 = panelPtr[i].airfoil; // temporary airfoil asigment GB 2-14-20
 	
+		//read in hinge as %chord on edge 2 DFB 2-25-20
+		fscanf(fp," %lf",&(panelPtr[i].hinge2));
+
+
 		panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;
 
 		vsum(panelPtr[i].u1,info.U,panelPtr[i].u1);	//adds undisturbed free
@@ -807,17 +813,18 @@ void Read_Airfoil_or_Camber(GENERAL &info, double ***dataPtr, int &Row,\
 	//	
 	// 	dataPtr[Row][Col][0-5]
 	//	dataPtr[][][0] = angle of attack
-	//	camber[][][1] = cl
-	//	camber[][][2] = cd
-	//	camber[][][3] = Re
-	//	camber[][][4] = cm,
+	//	dataPtr[][][1] = cl
+	//	dataPtr[][][2] = cd
+	//	dataPtr[][][3] = Re
+	//	dataPtr[][][4] = cm,
 	//
 	//	
 	// Camber data output:
 	// 		The camber data is formated in the same way as the airfoil data is
 	// 		to be consistant.
 	// 	dataPtr[Row][Col][0 or 1]
-	//	dataPtr[][][0] is camber x locations, dataPtr[][][1] is camber y location
+	//	dataPtr[][][0] = camberline x locations
+	//	dataPtr[][][1] = camberline y location
 	//
 	//	Note that only the camber data of the airfoils specified in the input are read
 	// 	in and the rest of the data is set to 0.

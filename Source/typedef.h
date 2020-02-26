@@ -54,12 +54,14 @@ struct PANEL
     double u1[3];		//free stream velocity variation at panel side 1
 	int BC1;			//boundary condition at panel side 1
     int airfoil1;       //airfoil at panel side 1  added GB 2-14-20
+    double hinge1;		//hinge location in %c on side 1 of panel
 
     double x2[3];		//panel side 2 leading edge coordinates
     double c2, eps2;	//panel side 2 chord and incident angle
     double u2[3];		//free stream velocity variation at panel side 2
 	int BC2;			//boundary condition at panel side 2
     int airfoil2;       //airfoil at panel side 2   added GB 2-14-20
+    double hinge2;		//hinge location in %c on side 2 of panel
 
 	int left, right;	//left and right panel neighbors. 0 -> free end
     int n;				//number of spanwise elementary wings

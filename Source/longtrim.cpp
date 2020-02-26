@@ -70,10 +70,9 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 				HTpanel,info.RefPt,CLht,CLhti,\
 				N_force,D_force,CL,CDi,camberPtr);//Subroutine in PitchMoment.cpp
 
-	//adding zero lift of wing	
-	CM_resid += info.CMoWing;
+	//adding zero lift of wing only if camber is turned off
+	if(~info.flagCAMBER){CM_resid += info.CMoWing;}
 
-//printf("\neps %.1lf CMresid %.4lf CMold %.4lf",epsilonHT*RtD,CM_resid,CM_old);
 	if(info.trim==1)   //longitudinal trim routine
 	{
 	  if(CM_resid > 0)  	epsilonHT = 0.035; //deflect HT trailing edge 2deg down
@@ -102,7 +101,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		//computing new HT incidence angle
 		tempS = epsilonHT - CM_resid*(epsilonHT-eps1)/(CM_resid-CM_old);
 		eps1 = epsilonHT;  epsilonHT = tempS;	//reassigning HT angles
-			
+
 		i++;	//incrementing loop counter
 
 	  }while((i<20) && (CM_resid*CM_resid>.000025));

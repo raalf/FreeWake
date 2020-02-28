@@ -12,7 +12,7 @@ Using camber (1) or no camber (0)  camber = 	1
 Symmetrical geometry (yes 1, no 0):	sym =		1
 Longitudinal trim (yes 1, no 0):	trim =		0	(yes means m has to be 1)
 
-Max. number of time steps:	maxtime =	39
+Max. number of time steps:	maxtime =	40
 Width of each time step (sec):	deltime =	0.250000
 Convergence delta-span effic.:	deltae =	0	(0 if onlytimestepping)
 
@@ -49,25 +49,9 @@ Defines leading edge of wing, all measured in metres:
 Panel #:1. Number of spanwise elements (n) = 1 and m = 20
 Neighbouring panels (0 for none) left: 0 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.000	0.000	0.000   1.0     0.000	10	6 1
+0.000	0.000	0.000   1.0     0.000	10	6 0.25
 xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.0	1	0.0	1	0.000	10	6 1
-
-Panel #:2. Number of spanwise elements (n) = 10 and m = 6
-Neighbouring panels (0 for none) left: 1 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-0	1	0	1	0.000	220 6 1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-0	2	0	1	0.00	10 6 1
-
-
-Panel #:3. Number of spanwise elements (n) = 4 and m = 6
-Neighbouring panels (0 for none) left: 0 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-6	0.00	0.000	.8	.000	10 7 1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-6.2	1.2	0.00	0.6	.000	100 7 1
-
+0.0	1	0.0	1	0.000	10	6 0.25
 
 %<- special identifier
 Vertical tail information:

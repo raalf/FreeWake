@@ -16,7 +16,7 @@ void Move_Flex_Wing(const GENERAL, DVE*);
 void Apply_Camber(const PANEL*, double[3], double[3] ,double ***, int, \
 	int, double,double *,double *,double *,double *);
 void DeflectAboutHinge(const PANEL*, const double, double[3], double[3], \
-	int, int, double, double *,double *);
+	int, int, double, double *,double *m,double[3], double[3]);
 
 //===================================================================//
 		//FUNCTION Trailing_Edge_Generation
@@ -249,10 +249,11 @@ double deleps,ceps,seps;//increments of epsi; cos/sin of incidence angle
 double nu,nu2;		//nus of panel 1/4c line, LE of DVE row
 double delTANphi;	//tan(phiLE-phiTE)
 double delX[3];		//vector from center of leading edge to control point
-double eps1 = 0,eps2 = 0;
-double epsH1 = 0, epsH2 = 0;
-double chord1,chord2;
-double chordH1,chordH2;
+double eps1,eps2;	//epsilon of chordwise section (needed for camber/hinges)
+double epsH1,epsH2;	//epsilon of chordwise section of hinge
+double epsC1,epsC2; //epsilon of chordwise section of camber
+double chord1,chord2;	//new chord due to camber
+double xH1[3],xH2[3];	//hinge location 
 
 	//loop over number of panels
 	for (i=0;i<info.nopanel;i++)
@@ -330,27 +331,27 @@ double chordH1,chordH2;
 			x2[1] = x2LE[1]+delchord2*m*sin(panelPtr[i].eps2)*sin(nu);
 			x2[2] = x2LE[2]-delchord2*m*sin(panelPtr[i].eps2)*cos(nu);
 
+			// Assign espilon of m section as the panel edge eps 
+			// Needed for camber or trim
+			eps1 = panelPtr[i].eps1;
+			eps2 = panelPtr[i].eps2;
+
 			// If there is camber, add it to x1 and x2 and compute new
 			//chord and epsilon values
 			if(info.flagCAMBER){
 				Apply_Camber(panelPtr,x1,x2,camberPtr, m, i, nu, \
-					&eps1, &eps2, &chord1, &chord2);
+					&epsC1, &epsC2, &chord1, &chord2);
+				eps1 += epsC1;
+				eps2 += epsC2;
 			}
 
 			// If there is trim adjust the tail at its hinge according to 
 			//the deflection of epsilonHT
 			if(info.trim){
 				DeflectAboutHinge(panelPtr,epsilonHT, x1, x2, m, i, \
-								nu, &epsH1, &epsH2);
-					
-				if(info.flagCAMBER){ 
+								nu, &epsH1, &epsH2, xH1, xH2);
 					eps1 +=epsH1; //If there is camber, add the epsilon to that value
 					eps2 +=epsH2;
-				}
-				else{//If there is no camber, add it to panel epsilon
-					eps1 = panelPtr[i].eps1+epsH1; 
-					eps2 = panelPtr[i].eps2+epsH2;
-				}
 			}
 			
 			//computing vector along LE of current spanwise row of DVEs
@@ -825,7 +826,7 @@ double delx[3];
 //===================================================================//
 void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	double ***camberPtr, int m, int i, double nu, \
-	double *eps1, double *eps2, double *chord1, double *chord2)
+	double *epsC1, double *epsC2, double *chord1, double *chord2)
 {
 	// The function Apply_Camber determines changed the LE panel points to follow
 	// 		the curvature of the camber line.
@@ -910,9 +911,8 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	*chord2 = sqrt(rightZ*rightZ+(panelPtr[i].c2/panelPtr[i].m)*(panelPtr[i].c2/panelPtr[i].m));
 
 	// Calculate mid-span eps
-	*eps1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m))+panelPtr[i].eps1;
-	*eps2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m))+panelPtr[i].eps2;
-
+	*epsC1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m));
+	*epsC2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m));
 
 	// Convert new LE points to the global reference frame 
 	Star_Glob(tempx1,nu,panelPtr[i].eps1,0,x1);
@@ -928,12 +928,13 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 		//START FUNCTION DeflectAboutHinge 
 //===================================================================//
 void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
-	double x1[3], double x2[3], int m, int i, double nu, double *epsH1, double *epsH2)
+	double x1[3], double x2[3], int m, int i, double nu, \
+	double *epsH1, double *epsH2, double xH1[3], double xH2[3])
 {
 	// The function DeflectAboutHinge deflects the DVEs aft of a hinge by some
 	//		deflection angle. This function will work for a cambered wing.
 	//
-	// Note: There must be a LE at the DVE hinge. Else, the program will exit with a warming
+	// Note: There must be a LE at the DVE hinge or the program will exit with warning
 	//
 	// Function inputs:
 	//		PANEL* panelPtr -Panel structure for the panelPtr
@@ -942,20 +943,24 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 	//		m 				-chorwise row of interest
 	//		i 				-panelPtr of interest
 	//		nu 				-dihedral angle of panel
-	//		epsH1, epsH2 		-(see output) 
+	//		epsH1, epsH2 	-(see output) 
+	//		xH1,xH2			-(see output) 
 	//
 	// Function outputs:
 	//		x1,x2 			-updated left and right panel LE points
-	//		epsH1, epsH2 	-updated left and right edge epsilon angles with deflectoin
+	//		epsH1, epsH2 	-updated left and right edge epsilon angles with deflection
+	//		xH1,xH2			-x,y,z position of hinge for left and right panel edge
+	//							-this is created one m is add the LE point
 	//
 	// NOTE (1) indicated left and (2) indicated right for the above variables
 
 	// D.F.B. in Braunschweig, Germany, Feb. 2020
 
-
+	int j;						//Generic counter
 	double check1,check2;		//Checks to make sure that hinge is a DVE LE
 	double tempx1[3],tempx2[3];	//Local reference frame LE pts
-	double vecX;				//Temp variable of the chord length between hinge and LE of interest
+	double vecX, vecZ;				//x and z of a vector from hinge to LE pt. (in local)
+	double tempxH1[3],tempxH2[3];	//Hinge location in local reference frame
 
 
 	// Check if hinge point is at the LE of an element
@@ -978,6 +983,7 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 	}
 
 
+
 	// ================== Deflecting about hinge begins here ==================
 	// First deflect left side of panel
 	if(double(m)/double(panelPtr[i].m)<panelPtr[i].hinge1){
@@ -988,6 +994,9 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 		// Check if left point is in at hinge. If it is, set epsH1 to deflection
 		// angle but dont move points
 		*epsH1 = deflection;
+		
+		//save this point as hinge point for future calcs
+		for(j=0;j<3;j++){xH1[j]=x1[j];}
 	}else{
 		// Check if left point is in at hinge. If it is, set epsH1 to deflection
 		// angle and move the LE point accordingly
@@ -995,32 +1004,41 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 
 		// Put DVE in local reference frame
 		Glob_Star(x1,nu,panelPtr[i].eps1,0,tempx1);
+		// Put the hinge location in the local reference frame
+		Glob_Star(xH1,nu,panelPtr[i].eps1,0,tempxH1);
 
-		// Calculate the x distance from hinge to LE point of interest
-		vecX = (double(m)/double(panelPtr[i].m)-panelPtr[i].hinge1)*panelPtr[i].c1;
-		// Apply a substract the rotation matrix from vecX and add to the current
-		//local DVE LE coordinates. Note that the chordline vector in local reference
-		//frame is in the x-direction, so vecZ = 0 and thus is not included. 
-		tempx1[0] += vecX - vecX*cos(deflection);
-		tempx1[2] -= vecX*sin(deflection);
+		// Create a vector from the hinge point to the LE point of interest
+		// Because in local reference frame, only consider the x and z components
+		vecX = tempx1[0]-tempxH1[0];
+		vecZ = tempx1[2]-tempxH1[2];
 
-		// Put DVE in global reference frame
+		// Multiply the vectors from hinge to LE pt with a rotation matrix
+		// Note that down deflection is considered positive thus -ve deflection is used
+		tempx1[0] = vecX*cos(-deflection)-vecZ*sin(-deflection)+tempxH1[0];
+		tempx1[2] = vecX*sin(-deflection)+vecZ*cos(-deflection)+tempxH1[2];
+
+		// Put new LE point into global reference frame
 		Star_Glob(tempx1,nu,panelPtr[i].eps1,0,x1);
 	}
 
+
+
 	// Repeat everything for right edge (see above for detailed comments)
-	if(double(m)/double(panelPtr[i].m)<panelPtr[i].hinge1){
-		*epsH2 = 0;
+	if(double(m)/double(panelPtr[i].m)<panelPtr[i].hinge2){
+		*epsH2 = 0;	
 	}else if(fabs(double(m)/double(panelPtr[i].m)-panelPtr[i].hinge2)<DBL_EPS){
 		*epsH2 = deflection;
+		for(j=0;j<3;j++){xH2[j]=x2[j];}
 	}else{
 		*epsH2 = deflection;
 
 		Glob_Star(x2,nu,panelPtr[i].eps2,0,tempx2);
+		Glob_Star(xH2,nu,panelPtr[i].eps2,0,tempxH2);
 
-		vecX = (double(m)/double(panelPtr[i].m)-panelPtr[i].hinge2)*panelPtr[i].c2;
-		tempx2[0] += vecX - vecX*cos(deflection);
-		tempx2[2] -= vecX*sin(deflection);
+		vecX = tempx2[0]-tempxH2[0];
+		vecZ = tempx2[2]-tempxH2[2];
+		tempx2[0] = vecX*cos(-deflection)-vecZ*sin(-deflection)+tempxH2[0];
+		tempx2[2] = vecX*sin(-deflection)+vecZ*cos(-deflection)+tempxH2[2];
 		
 		Star_Glob(tempx2,nu,panelPtr[i].eps2,0,x2);
 	}

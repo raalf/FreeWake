@@ -53,6 +53,7 @@ double PitchingMoment(const GENERAL info,PANEL *panelPtr,DVE *&surfacePtr,\
 	double Moment,CM_resid;//residual pitch moment and moment coefficient
 	double XCG[3];		//CG location in this routine is moved with wing
 				XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
+	bool flagSTARFORCE=1;
 
 double *R,**D;			//resultant vector and matrix
 int *pivot;				//holds information for pivoting D
@@ -60,7 +61,8 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 		//Update tail incidence
 //===================================================================//
-
+/* REMOVED by DFB 2-26-20. No done deflected in Surface_DVE_Generation
+							to enable hinges
     //add incicent angle increment
     if(info.trim==1)   //only if longitudinal trim routine is ON
 //    {	for(i=HTpanel;i<info.nopanel;i++) changed GB 2-10-20
@@ -69,11 +71,12 @@ int *pivot;				//holds information for pivoting D
 		tempS = panelPtr[i].eps2 - panelPtr[i].eps1; //twist
 		panelPtr[i].eps1 = epsilonHT;
 		panelPtr[i].eps2 = epsilonHT+tempS;
-
+		printf("\n%d panelPtr[i].eps1: %f\n",i,panelPtr[i].eps1);
+		printf("\ninfo.panel1[1]: %d\n",info.panel1[0]);
 		//adding number of spanwise DVEs of HT
  //removed GB 2-9-20 		HTindex += panelPtr[i].n;
 	}
-    }
+    }*/
  
 	//computingn the first DVE index of HT
  //removed GB 2-9-20 	HTindex *= -info.m;	HTindex += info.noelement;
@@ -100,7 +103,7 @@ int *pivot;				//holds information for pivoting D
 		//START generating surface Distributed-Vorticity Elements
 //===================================================================//
 
-	Surface_DVE_Generation(info,panelPtr,surfacePtr,camberPtr);
+	Surface_DVE_Generation(info,panelPtr,surfacePtr,camberPtr, epsilonHT);
 								//Subroutine in wing_geometry.cpp
 
 	//save information on elementary wings to file
@@ -371,42 +374,46 @@ printf("\n");
 		//START DVE lift computation
 //===================================================================//
 //*/		//computes normal forces/density for each surface DVE
+		if(!flagSTARFORCE || ((timestep+1)>info.maxtime)){
+			Surface_DVE_Normal_Forces(info,panelPtr,timestep,wakePtr,\
+								  					surfacePtr,N_force);
+								  		//Subroutine in lift_force.cpp
 
-		Surface_DVE_Normal_Forces(info,panelPtr,timestep,wakePtr,\
-							  					surfacePtr,N_force);
-							  		//Subroutine in lift_force.cpp
+			//computes total lift and side force/density, and ascoefficients
+			DVE_Wing_Normal_Forces(info,N_force,Nt_free, Nt_ind, CL,CLi,CY,CYi);
+							 				//Subroutine in lift_force.cpp
 
-		//computes total lift and side force/density, and ascoefficients
-		DVE_Wing_Normal_Forces(info,N_force,Nt_free, Nt_ind, CL,CLi,CY,CYi);
-						 				//Subroutine in lift_force.cpp
+	//===================================================================//
+			//END DVE lift computation
+	//===================================================================//
 
-//===================================================================//
-		//END DVE lift computation
-//===================================================================//
+	//===================================================================//
+			//START Induce_DVE_Drag
+	//===================================================================//
 
-//===================================================================//
-		//START Induce_DVE_Drag
-//===================================================================//
+			//	CDi			- total drag coefficient
+			//  D_force 	- local drag force/density along span
+			CDi_DVE[timestep] = \
+			Induced_DVE_Drag(info,panelPtr,surfacePtr,wakePtr,timestep,D_force);
+							 			//Subroutine in drag_force.cpp
 
-		//	CDi			- total drag coefficient
-		//  D_force 	- local drag force/density along span
-		CDi_DVE[timestep] = \
-		Induced_DVE_Drag(info,panelPtr,surfacePtr,wakePtr,timestep,D_force);
-						 			//Subroutine in drag_force.cpp
+	//===================================================================//
+			//END Induce_DVE_Drag
+	//===================================================================//*/
 
-//===================================================================//
-		//END Induce_DVE_Drag
-//===================================================================//*/
+			//current span efficiency
+			tempS = CL*CL/(Pi*info.AR*CDi_DVE[timestep]);
 
-		//current span efficiency
-		tempS = CL*CL/(Pi*info.AR*CDi_DVE[timestep]);
+			//sqare of difference in span efficiencies
+			deltae = e_old-tempS;  deltae = deltae*deltae;
 
-		//sqare of difference in span efficiencies
-		deltae = e_old-tempS;  deltae = deltae*deltae;
-
-		e_old = tempS; //save e of previous time step
-//		printf("delta e %lf\n",sqrt(deltae));
-
+			e_old = tempS; //save e of previous time step
+	//		printf("delta e %lf\n",sqrt(deltae));
+		}
+		else
+		{
+			deltae = 1.0;
+		}
 	//continue time-stepping loop as long as
 	// - e has not converged and
 	// - maximum time steps have not been reached

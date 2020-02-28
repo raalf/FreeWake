@@ -781,107 +781,183 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
     int pLeft,pRight;   //index of panel to the left and right, respectively
     int DVEleft, colLeft; //index of DVE to the left (next panel), column of Dmatrix
 
-    
-    //check if numbering and BC correspond and are possible
-    
-    
-    row = 0; //initialize counter
-    
+    //flag whether panel has not been used for junction (TRUE)
+    bool *junc;			//junction flag
+   	ALLOC1D(&junc,info.nopanel);
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    	junc[panel]=1;		//initializing,TRUE => panel has not been used in junction
+   
+    row = 0; //initialize counter, increases by one every time a D-row is completed
 //####################################################################################
 //1. working along the left side (1) of the panels
     
     for(panel=0;panel<info.nopanel;panel++)            //loop over panels
     {
-        m=0; //initialize chordwise row counter
-        //loop over left side of panel
-        for(element=panelPtr[panel].LE1;\
-            element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
+        switch (panelPtr[panel].BC1)    //edge 1 bound. cond.
         {
-            col = 3*element; //column of D matrix
-//printf("left side element %d  col %d  row %d\n",element,col,row);
+        case 100:     //Gamma = 0
+	        //loop over left side of panel
+    	    for(element=panelPtr[panel].LE1;\
+            element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
+        	{
+            	col = 3*element; //column of D matrix
 
-            switch (panelPtr[panel].BC1)    //edge 1 bound. cond.
-            {
-            case 100:     //Gamma = 0
                 D[row][col]   = -1;
                 D[row][col+1] = elementPtr[element].eta;
                 D[row][col+2] = -elementPtr[element].eta*\
                                     elementPtr[element].eta;
-            break;
+             	row++;  //increase row index
+        	} //end loop over left side of panels
+        break;
 
-            case 10:    //gamma = 0
-                D[row][col]   = 0;
+        case 10:    //gamma = 0
+	        //loop over left side of panel
+    	    for(element=panelPtr[panel].LE1;\
+            element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
+        	{
+               	col = 3*element; //column of D matrix
+	            D[row][col]   = 0;
                 D[row][col+1] = -1;
                 D[row][col+2] = 2*elementPtr[element].eta;
-            break;
-                
-            case 220:    //Gamma[i] = Gamma[j] AND gamma[i] = gamma[j]
-                //determine DVE to left
+             	row++;  //increase row index
+        	} //end loop over left side of panels
+        break;
+            
+        case 220:    //Gamma[i] = Gamma[j] AND gamma[i] = gamma[j]
+       //one or several other panels attach to panel 'panel'
+        //In this case, the sum of circulations are zero and 
+        //the voriticities are equal at the junction. 
+        //For the sum of ciruclations, 
+        //circulations from a left edge (1) are accounted as negative; 
+        //circulations from a right edge (2) are positive
+        //For vorticity, n panels adjacent at junction -> n-1 equation
+//      
+//      
+//      Dmatrix BC structure:
+//      
+//      row         col             colLeft1        colLeft2            colLeft3
+//      TempRow     -Gamma          Gamma_left1     Gamma_left2         Gamma_left3           
+//      +1          gamma           -gamma_left1    0                   0
+//      +2          gamma           0               -gamma_left2        0
+//      +3          0               0               0                   -gamma_left3
+//      
+//      note that 
+//      left edge: gamma = B-2etaC  
+//      right edge: gamma = B+2etaC  
+//      
+        int tempRow,pLeft,Side;
+
+            m=0; //initialize chordwise row counter
+	        //loop over left side of panel
+	        for(element=panelPtr[panel].LE1;\
+            element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
+        	if(junc[panel])
+        	{
+            	col = 3*element; //column of D matrix
+                tempRow =row; //temp. row for circulation addition
+                pLeft=0;  //index of panel to the left
+
+               //determine DVE to left
                 if(panelPtr[panel].left==0) //no neighboring panel,
-                {  //default tip
-                    D[row][col]   = -1;
-                    D[row][col+1] = elementPtr[element].eta;
-                    D[row][col+2] = -elementPtr[element].eta*\
-                                           elementPtr[element].eta;
-                    printf("WARNING!! \nEdge 1  boundary condition of");
+                {  //default tip being applied
+                    printf("WARNING!! \nEdge 1  boundary condition");
                     printf(" of panel %d undefined!!\n",panel+1);
                 }
-                else //panel to left exists
-                {
-                    pLeft=panelPtr[panel].left-1;  //index of panel to the left
-                
-                    if(m>=panelPtr[pLeft].m)
-                    {  //panel to left has less chordwise than current panel
-                        //no corresponding DVE exists -> default tip
-                        D[row][col]   = -1;
-                        D[row][col+1] = elementPtr[element].eta;
-                        D[row][col+2] = -elementPtr[element].eta*\
+
+ 				// entering Gamma values for DVE of panel 'panel'
+                D[tempRow][col]   = -1;
+                D[tempRow][col+1] = elementPtr[element].eta;
+                D[tempRow][col+2] = -elementPtr[element].eta*\
                                                elementPtr[element].eta;
-                    }
-                    else  //DVE exists for panel to left and 220 condition
-                    {
-                        //index of corresponding DVE of panel to the left
-                        DVEleft = panelPtr[pLeft].LE2 + panelPtr[pLeft].n*m;
-                        colLeft = DVEleft*3; //column of DVE to the left
 
-//printf("left side element %d  col %d  row %d DVEleft %d\n",element,col,row,DVEleft);
-                        
-                        // -GAMMA + GAMMA_left = 0
-                        D[row][col]   = -1;
-                        D[row][col+1] = elementPtr[element].eta;
-                        D[row][col+2] = -elementPtr[element].eta*\
-                                            elementPtr[element].eta;
-                        D[row][colLeft]   = 1;
-                        D[row][colLeft+1] = elementPtr[DVEleft].eta;
-                        D[row][colLeft+2] = elementPtr[DVEleft].eta*\
-                                            elementPtr[DVEleft].eta;
+ 				//panel to left exists and Gamma and gamma conditions are applied
 
-                        // -gamma + gamma_left = 0
+				//panel 'pLeft' is attached to left edge of panel 'panel' either with 
+				//its right (x2) edge or its left (x1) edge
+				while(\
+					((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
+					(panelPtr[panel].x1[1]==panelPtr[pLeft].x2[1]) &&  \
+					(panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2])) || \
+					((panelPtr[panel].x1[0]==panelPtr[pLeft].x1[0]) && \
+					(panelPtr[panel].x1[1]==panelPtr[pLeft].x1[1]) &&  \
+					(panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]) ) \
+					&& junc[panel])
+				{
+printf("element %d m %d  pLeft %d  panelPtr[pLeft].m %d \n",element,m,pLeft,panelPtr[pLeft].m);
+
+					//if a junction exists then: sum(Gammas)=0 and gamma1=gamma2=gamma3...
+                    if(m<panelPtr[pLeft].m && pLeft!=panel)
+                    {  //panel to left has sufficient chordwise rows and is not itself
+                        //if no corresponding DVE exists -> default tip
+
+						// -gamma + gamma_left = 0
                         row++; //increase row index
                         D[row][col]   = 0;
-                        D[row][col+1] = -1;
-                        D[row][col+2] = 2*elementPtr[element].eta;
-                        
-                        D[row][colLeft]   = 0;
-                        D[row][colLeft+1] = 1;
-                        D[row][colLeft+2] = 2*elementPtr[DVEleft].eta;
-//printf("left side element %d  col %d  row %d DVEleft %d\n",element,col,row,DVEleft);
-                  }
-                } //done dealing with panel to the left
-            break;
+                        D[row][col+1] = 1;
+                        D[row][col+2] = -2*elementPtr[element].eta;
 
-            default:    //default case assumes gamma = 0
+                        //panel attaches with its right edge to left edge of panel'panel'
+                        if((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
+							(panelPtr[panel].x1[1]==panelPtr[pLeft].x2[1]) && \
+							(panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2]))
+                        {
+                        	//index of corresponding DVE of panel to the left
+	                        DVEleft = panelPtr[pLeft].LE2 + panelPtr[pLeft].n*m;
+	                        Side = 1; 		//panel to left attaches with edge 2
+	                    }
+	                    else 	//panel to left attaches with its edge 1 
+                        {
+                        	//index of corresponding DVE of panel to the left
+	                        DVEleft = panelPtr[pLeft].LE1 + panelPtr[pLeft].n*m;
+	                        Side = -1; 		//panel to left attaches with edge 1
+	                    }
+
+	                    colLeft = DVEleft*3; //column of DVE to the left
+
+printf("element %d side %d  tempRow %d  row %d  m %d\n",element,Side,tempRow,row,m);
+
+                        //adding Gamma of DVE to left
+                        D[tempRow][colLeft]   = Side;
+                        D[tempRow][colLeft+1] = elementPtr[DVEleft].eta;
+                        D[tempRow][colLeft+2] = Side*elementPtr[DVEleft].eta*\
+                                            elementPtr[DVEleft].eta;
+
+                        //adding gamma condition
+                        D[row][colLeft]   = 0;
+                        D[row][colLeft+1] = -1;
+                        D[row][colLeft+2] = -Side*2*elementPtr[DVEleft].eta;
+
+ junc[pLeft]=0; //panel has been used in junction
+ 
+
+	            	} //end if neighboring DVE exists
+                    pLeft++; //increase index for check if next panel attaches to panel 'panel'
+                } // end while statement
+//printf("left side element %d  col %d  row %d DVEleft %d\n",element,col,row,DVEleft);
+ 				 //done dealing with panel to the left
+
+             	row++;  //increase row index
+            	m++;    //next chordwise row counter
+        	} //end loop over left side of panels
+        break;
+
+        default:    //default case assumes gamma = 0
+	        //loop over left side of panel
+    	    for(element=panelPtr[panel].LE1;\
+            element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
+        	{
+				col = 3*element; //column of D matrix
+
                 D[row][col]   = -1;
                 D[row][col+1] = elementPtr[element].eta;
                 D[row][col+2] = -elementPtr[element].eta*\
                                     elementPtr[element].eta;
                 printf("WARNING!! \nEdge 1  boundary condition of");
                 printf(" of panel %d undefined!!\n",panel+1);
-            break;
-            }        // end switch statement for edge 1 bound. cond.
-            row++;  //increase row index
-            m++;    //next chordwise row counter
-        } //end loop over left side of panels
+             	row++;  //increase row index
+        	} //end loop over left side of panels
+        break;
+        }        // end switch statement for edge 1 bound. cond.
     }// done with all left side of all panels
         
 //####################################################################################
@@ -890,35 +966,35 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
     {
         for(m=0;m<panelPtr[panel].m;m++) //loop over chordwise rows
         {
-        for(span=panelPtr[panel].LE1;span<panelPtr[panel].LE2;span++)
-        {        //loop over span  of panel
-            element = span+panelPtr[panel].n*m; //DVE index
-            col = 3*element; //column of D matrix
-//printf("interior G element %d  col %d  row %d\n",element,col,row);
+	        for(span=panelPtr[panel].LE1;span<panelPtr[panel].LE2;span++)
+	        {        //loop over span  of panel
+	            element = span+panelPtr[panel].n*m; //DVE index
+	            col = 3*element; //column of D matrix
+	//printf("interior G element %d  col %d  row %d\n",element,col,row);
 
-            //continuous vorticity magnitude
-            D[row][col]   = 1;
-            D[row][col+1] = elementPtr[element].eta;
-            D[row][col+2] = elementPtr[element].eta\
-                                 *elementPtr[element].eta;
+	            //continuous vorticity magnitude
+	            D[row][col]   = 1;
+	            D[row][col+1] = elementPtr[element].eta;
+	            D[row][col+2] = elementPtr[element].eta\
+	                                 *elementPtr[element].eta;
 
-            D[row][col+3] = -1;
-            D[row][col+4] = elementPtr[element+1].eta;
-            D[row][col+5] = -elementPtr[element+1].eta*\
-                                 elementPtr[element+1].eta;
-            row++;  //increase row index
-//printf("interior g element %d  col %d  row %d\n",element,col,row);
+	            D[row][col+3] = -1;
+	            D[row][col+4] = elementPtr[element+1].eta;
+	            D[row][col+5] = -elementPtr[element+1].eta*\
+	                                 elementPtr[element+1].eta;
+	            row++;  //increase row index
+	//printf("interior g element %d  col %d  row %d\n",element,col,row);
 
-            //continuous vorticity slope
-            D[row][col]   = 0;
-            D[row][col+1] = 1;
-            D[row][col+2] = 2*elementPtr[element].eta;
+	            //continuous vorticity slope
+	            D[row][col]   = 0;
+	            D[row][col+1] = 1;
+	            D[row][col+2] = 2*elementPtr[element].eta;
 
-            D[row][col+3] = 0;
-            D[row][col+4] = -1;
-            D[row][col+5] = 2*elementPtr[element+1].eta;
-            row++;  //increase row index
-        } // end loop over panel span
+	            D[row][col+3] = 0;
+	            D[row][col+4] = -1;
+	            D[row][col+5] = 2*elementPtr[element+1].eta;
+	            row++;  //increase row index
+	        } // end loop over panel span
         } //end of loop over chordwise rows
     } // done with looping over panels for treatment of interior of panels
     
@@ -1041,17 +1117,27 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
     }//done looping over panels for right-side treatment
 
 //####################################################################################
+   	FREE1D(&junc,info.nopanel);  //free allocated memory
 
                
-/*
+//*
+
+ FILE *fp;		//output file
+	char filename[137];	//file path and name
  int i,j;
+	//creates file "Elementary_Wings.txt in directory "output"
+	sprintf(filename,"%s%s",OUTPUT_PATH,"Dmatrix.txt");
+	fp = fopen(filename, "w");
+
+
+
 for(i=0; i<info.Dsize-info.noelement; i++)
 {
-	printf("\ni=%d  ",i);
+	fprintf(fp,"\ni=%d  ",i);
    for(j=0; j<info.Dsize; j++)
-      printf("%lf  ",D[i][j]);
+      fprintf(fp,"\t%lf",D[i][j]);
 }
-printf("\n");
+fprintf(fp,"\n");
  exit(0);
 // */
 

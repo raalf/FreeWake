@@ -764,6 +764,9 @@ for(panel=0;panel<info.nopanel;panel++)			//loop over panels
 // BC = 220 - Gamma[i] = Gamma[j]  AND  gamma[i] = gamma[j]
 // BC = 010 - gamma = 0
 //
+// If BC = 220 function identifies multiple (>2) panels that might be part
+//				of the junction
+//
 // functions populates rows one after another:
 //          1. left sides of each panels
 //          2. interior sections of each panel
@@ -781,7 +784,7 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
     int pLeft,pRight;   //index of panel to the left and right, respectively
     int DVEleft, colLeft; //index of DVE to the left (next panel), column of Dmatrix
 
-    //flag whether panel has not been used for junction (TRUE)
+    //flag whether panel has not been used for junction (TRUE) or has (FALSE)
     bool *junc;			//junction flag
    	ALLOC1D(&junc,info.nopanel);
     for(panel=0;panel<info.nopanel;panel++)            //loop over panels
@@ -851,7 +854,7 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 	        //loop over left side of panel
 	        for(element=panelPtr[panel].LE1;\
             element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
-        	if(junc[panel])
+        	if(junc[panel])  //panel has not been used in junction, yet
         	{
             	col = 3*element; //column of D matrix
                 tempRow =row; //temp. row for circulation addition
@@ -883,7 +886,7 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 					(panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]) ) \
 					&& junc[panel])
 				{
-printf("element %d m %d  pLeft %d  panelPtr[pLeft].m %d \n",element,m,pLeft,panelPtr[pLeft].m);
+//printf("element %d m %d  pLeft %d  panelPtr[pLeft].m %d \n",element,m,pLeft,panelPtr[pLeft].m);
 
 					//if a junction exists then: sum(Gammas)=0 and gamma1=gamma2=gamma3...
                     if(m<panelPtr[pLeft].m && pLeft!=panel)
@@ -914,7 +917,7 @@ printf("element %d m %d  pLeft %d  panelPtr[pLeft].m %d \n",element,m,pLeft,pane
 
 	                    colLeft = DVEleft*3; //column of DVE to the left
 
-printf("element %d side %d  tempRow %d  row %d  m %d\n",element,Side,tempRow,row,m);
+//printf("element %d side %d  tempRow %d  row %d  m %d\n",element,Side,tempRow,row,m);
 
                         //adding Gamma of DVE to left
                         D[tempRow][colLeft]   = Side;
@@ -927,8 +930,7 @@ printf("element %d side %d  tempRow %d  row %d  m %d\n",element,Side,tempRow,row
                         D[row][colLeft+1] = -1;
                         D[row][colLeft+2] = -Side*2*elementPtr[DVEleft].eta;
 
- junc[pLeft]=0; //panel has been used in junction
- 
+						junc[pLeft]=0; //panel has been used in junction -> set to FALSE
 
 	            	} //end if neighboring DVE exists
                     pLeft++; //increase index for check if next panel attaches to panel 'panel'
@@ -1120,16 +1122,14 @@ printf("element %d side %d  tempRow %d  row %d  m %d\n",element,Side,tempRow,row
    	FREE1D(&junc,info.nopanel);  //free allocated memory
 
                
-//*
-
+//store Dmatrix in file
+/*
  FILE *fp;		//output file
 	char filename[137];	//file path and name
  int i,j;
 	//creates file "Elementary_Wings.txt in directory "output"
 	sprintf(filename,"%s%s",OUTPUT_PATH,"Dmatrix.txt");
 	fp = fopen(filename, "w");
-
-
 
 for(i=0; i<info.Dsize-info.noelement; i++)
 {
@@ -1138,7 +1138,7 @@ for(i=0; i<info.Dsize-info.noelement; i++)
       fprintf(fp,"\t%lf",D[i][j]);
 }
 fprintf(fp,"\n");
- exit(0);
+ //exit(0);
 // */
 
 }

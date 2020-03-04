@@ -45,7 +45,6 @@ struct GENERAL
 
 	// Circling flight info D.F.B 02-2020
 	bool flagCIRC;		// On/off flag for circling flight
-	double Vk;			// Velocity at reference point
 	double bank;		// Bank angle (rad)
 	double Ws; 			// Upwind velocity
 	double gradient;	// Velocity gradient

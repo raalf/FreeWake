@@ -267,12 +267,6 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	fscanf(fp,"%d",&tempI);
 	info.flagCIRC=tempI;
 
-
-	//read velocity at reference point of plane
-	do	ch = fgetc(fp);
-	while (ch!='=');
-	fscanf(fp,"%lf", &info.Vk);
-
 	//read bank angle
 	do	ch = fgetc(fp);
 	while (ch!='=');

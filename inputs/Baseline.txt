@@ -34,6 +34,15 @@ No. of wings (max. 5):		wings =		2
 No. of panels:			panels =	3
 No. of airfoils (max. 15):	airfoils =	10
 
+Circling flight information
+Circling flight on (1) off (0):		circling = 0
+Velocity at reference point (m/s)	Vk = 32.2
+Bank angle (deg)					phi = 5
+Upwind velocity (m/s)				Ws = 4
+Velocity gradient (1/s)				gradient = 3
+
+
+
 Panel boundary conditions:
 	Symmetry line - 	10
 	Between panels - 	220

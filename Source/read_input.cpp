@@ -257,7 +257,39 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	fscanf(fp,"%d", &info.noairfoils);
 
 //=============================================================================
+	// Read circling flight params - Added D.F.B. 02.2020
 
+	// Read circling flag (1 on, 0 off)
+	//find the '='-sign in input file before circling flag
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads read circling flight flag 
+	fscanf(fp,"%d",&tempI);
+	info.flagCIRC=tempI;
+
+
+	//read velocity at reference point of plane
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	fscanf(fp,"%lf", &info.Vk);
+
+	//read bank angle
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	fscanf(fp,"%lf", &info.bank);
+	info.bank *= DtR;
+
+	//read upwind velocity
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	fscanf(fp,"%lf", &info.Ws);
+
+
+	//read velocity gradient
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	fscanf(fp,"%lf", &info.gradient);
+	
 	//closes input file
 	fclose(fp);
 }

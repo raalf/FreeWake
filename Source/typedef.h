@@ -42,6 +42,13 @@ struct GENERAL
 	int noelement;		//number of elementary wings
 	int nospanelement;	//number of elements in span direction, noelement/m
 	int Dsize;			//3*info.noelement, dimension of R and D
+
+	// Circling flight info D.F.B 02-2020
+	bool flagCIRC;		// On/off flag for circling flight
+	double Vk;			// Velocity at reference point
+	double bank;		// Bank angle (rad)
+	double Ws; 			// Upwind velocity
+	double gradient;	// Velocity gradient
 	
 	int noVT,noFus;		//number of V-tail and fuselage sections
 };

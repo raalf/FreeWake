@@ -351,8 +351,27 @@ int main()
 		printf("\nalpha = %.2lf \n",info.alpha*RtD);
 
 		//computes free stream velocity vector
-		info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
-		info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta);
+		if(info.flagCIRC)  //aircraft turns 
+		{
+			if(info.flagHORZ)  //aircraft turns in horizontal plane
+			{
+				info.U[0]=info.Uinf;
+				info.U[1]=0;
+				info.U[2]=0;
+			}
+			else    //ac turns and descends
+			{
+				info.U[0]=info.Uinf*cos(alpha1);
+				info.U[1]=0	;
+				info.U[2]=info.Uinf*sin(alpha1);
+			}
+		}
+		else   //straight descending flight along the freestream vector
+		{
+			info.U[0]=info.Uinf*cos(alpha1)*cos(info.beta);
+			info.U[1]=info.Uinf			*sin(info.beta);
+			info.U[2]=info.Uinf*sin(alpha1)*cos(info.beta);
+		}
 
         //new free stream velocities at panel edges
 			//ATTENTION: NO SPANWISE VELOCITY VARIATION !!!

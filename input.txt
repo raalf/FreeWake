@@ -20,6 +20,14 @@ Convergence delta-span effic.:	deltae =	0.00	(0 if onlytimestepping)
 Freestream velocity (leave value 1):	Uinf =		1.0
 AOA beginning, end, step size [deg]:	alpha=		3 0 3
 Sideslip angle [deg]:			beta =		0.0
+Fligth in horizontal plane on/off (1/0)	horizontal = 0   if zero, a/c decends
+
+Circling flight information
+Circling flight on (1) off (0):			circling = 0
+Bank angle (deg)						phi = 5
+Upwind velocity (m/s)					Ws = 4
+Velocity gradient (1/s)					gradient = 3
+
 Density:				density =	1.225
 Kinematic viscosity:			nu =		1.420000e-05
 
@@ -35,11 +43,6 @@ No. of wings (max. 5):		wings =		2
 No. of panels:			panels =	3
 No. of airfoils (max. 15):	airfoils =	2
 
-Circling flight information
-Circling flight on (1) off (0):		circling = 0
-Bank angle (deg)					phi = 5
-Upwind velocity (m/s)				Ws = 4
-Velocity gradient (1/s)				gradient = 3
 
 Panel boundary conditions:
 	Symmetry line - 	10

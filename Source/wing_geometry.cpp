@@ -9,14 +9,17 @@ void Wing_Generation(const PANEL*,int,int[5],int[5],int[5],int[5],\
 void Surface_DVE_Generation(const GENERAL,const PANEL *,DVE *,double ***,\
 							const double);
 //moves wing by delta x every time step,
-void Move_Wing(const GENERAL, DVE*);
+void Move_Wing(const GENERAL, DVE*, const double[3],double[3]);
 //moves flexible wing by delta x every time step,
 void Move_Flex_Wing(const GENERAL, DVE*);
 //moves DVEs according do the input camber line
 void Apply_Camber(const PANEL*, double[3], double[3] ,double ***, int, \
 	int, double,double *,double *,double *,double *);
+//deflects DVEs about the hinge
 void DeflectAboutHinge(const PANEL*, const double, double[3], double[3], \
 	int, int, double, double *,double *m,double[3], double[3]);
+//calculates U_inf for circling flight
+void Circling_UINF(GENERAL, DVE*,double[3], const double [3]);
 
 //===================================================================//
 		//FUNCTION Trailing_Edge_Generation
@@ -790,7 +793,7 @@ double tempA[3];
 //===================================================================//
 		//START FUNCTION Move_Wing
 //===================================================================//
-void Move_Wing(const GENERAL info, DVE* surfacePtr)
+void Move_Wing(const GENERAL info, DVE* surfacePtr,const double circCenter[3], double XCG[3])
 {
 //moves wing by delta x every time step,
 //function updates xo location of surface DVE's
@@ -798,22 +801,107 @@ void Move_Wing(const GENERAL info, DVE* surfacePtr)
 //	input
 //	info			general information
 //	surfacePtr		surface DVE's
-//
+//	circCenter		center point of circling flight Added by D.F.B. 03-2020
 
 int i;
-double delx[3];
+double delx[3],delX1[3],delX2[3];
+double tempA[3], delXSI1[3];
+double rotAngle; // How many radian to rotate points
 
-	for(i=0;i<info.noelement;i++)
-	{
-		//delta x = local U * delta time
-		delx[0] = surfacePtr[i].u[0] * info.deltime;
-		delx[1] = surfacePtr[i].u[1] * info.deltime;
-		delx[2] = surfacePtr[i].u[2] * info.deltime;
+	if(!info.flagCIRC){
+		for(i=0;i<info.noelement;i++)
+		{
+			//delta x = local U * delta time
+			delx[0] = surfacePtr[i].u[0] * info.deltime;
+			delx[1] = surfacePtr[i].u[1] * info.deltime;
+			delx[2] = surfacePtr[i].u[2] * info.deltime;
 
-		//move reference point
-		surfacePtr[i].xo[0] -= delx[0];
-		surfacePtr[i].xo[1] -= delx[1];
-		surfacePtr[i].xo[2] -= delx[2];
+			//move reference point
+			surfacePtr[i].xo[0] -= delx[0];
+			surfacePtr[i].xo[1] -= delx[1];
+			surfacePtr[i].xo[2] -= delx[2];
+
+
+		}
+		// Moved from PitchMoment - D.F.B. 03-2020
+		//move CG
+		//newXCG -= local U * delta time
+		XCG[0] -= surfacePtr[0].u[0] * info.deltime;
+		XCG[1] -= surfacePtr[0].u[1] * info.deltime;
+		XCG[2] -= surfacePtr[0].u[2] * info.deltime;
+
+	} else{
+		for(i=0;i<info.noelement;i++)
+		{	
+			// -------Move points for circling flight-------
+			// D.F.B. in Braunschweig, Germany, Mar. 2020
+
+			// Angle to rotate points
+			rotAngle = info.gradient * info.deltime;
+
+			// Apply rotation matrix about the z-axis
+			// Calculate vector from rotation center to control point		
+			delx[0] = surfacePtr[i].xo[0] - circCenter[0];
+			delx[1] = surfacePtr[i].xo[1] - circCenter[1];
+
+			// Move control points
+			surfacePtr[i].xo[0] = delx[0]*cos(rotAngle)-delx[1]*sin(rotAngle)+circCenter[0];
+			surfacePtr[i].xo[1] = delx[0]*sin(rotAngle)+delx[1]*cos(rotAngle)+circCenter[1];
+			surfacePtr[i].xo[2] -= info.U[2] * info.deltime;
+
+			// Move left leading edge point
+			delx[0] = surfacePtr[i].x1[0] - circCenter[0];
+			delx[1] = surfacePtr[i].x1[1] - circCenter[1];
+			surfacePtr[i].x1[0] = delx[0]*cos(rotAngle)-delx[1]*sin(rotAngle)+circCenter[0];
+			surfacePtr[i].x1[1] = delx[0]*sin(rotAngle)+delx[1]*cos(rotAngle)+circCenter[1];
+			surfacePtr[i].x1[2] -= info.U[2] * info.deltime;
+
+			// Move right leading edge point
+			delx[0] = surfacePtr[i].x2[0] - circCenter[0];
+			delx[1] = surfacePtr[i].x2[1] - circCenter[1];
+			surfacePtr[i].x2[0] = (delx[0]*cos(rotAngle)-delx[1]*sin(rotAngle))+circCenter[0];
+			surfacePtr[i].x2[1] = (delx[0]*sin(rotAngle)+delx[1]*cos(rotAngle))+circCenter[1];
+			surfacePtr[i].x2[2] -= info.U[2] * info.deltime;	
+
+			// *************** Recompute DVE normals and yaw ***************
+			// This section of code was taken from move_flex_wing
+			//computing vector from center of leading edge to reference point
+			delX1[0] = surfacePtr[i].xo[0] \
+						- 0.5*(surfacePtr[i].x1[0]+surfacePtr[i].x2[0]);
+			delX1[1] = surfacePtr[i].xo[1] \
+						- 0.5*(surfacePtr[i].x1[1]+surfacePtr[i].x2[1]);
+			delX1[2] = surfacePtr[i].xo[2] \
+						- 0.5*(surfacePtr[i].x1[2]+surfacePtr[i].x2[2]);
+
+			//vector along leading edge of DVE
+			delX2[0] = surfacePtr[i].x2[0] - surfacePtr[i].x1[0];
+			delX2[1] = surfacePtr[i].x2[1] - surfacePtr[i].x1[1];
+			delX2[2] = surfacePtr[i].x2[2] - surfacePtr[i].x1[2];
+
+			//computing the normal of DVE,
+			cross(delX1,delX2,tempA);
+			scalar(tempA,1/norm2(tempA),surfacePtr[i].normal);
+
+			//delX1 in xsi reference frame (psi = 0)
+			Glob_Star(delX1,surfacePtr[i].nu,surfacePtr[i].epsilon,0,delXSI1);
+							  				//function in ref_frame_transform.h
+
+			//tan(psi)=(eta2)/(xsi1)
+			if(delXSI1[0]*delXSI1[0] > DBL_EPS)
+			{
+				surfacePtr[i].psi= atan(delXSI1[1]/delXSI1[0]);
+					if(delXSI1[0] < 0)  surfacePtr[i].psi += Pi;//|nu|>Pi/2
+			}
+			else	//tan(psi) -> infinity  -> |psi| = Pi/2
+				surfacePtr[i].psi = 0.5*Pi*fabs(delXSI1[1])/delXSI1[1];
+		}
+		//Move CG with the circling flight
+		delx[0] = XCG[0] - circCenter[0];
+		delx[1] = XCG[1] - circCenter[1];
+		XCG[0] = (delx[0]*cos(rotAngle)-delx[1]*sin(rotAngle))+circCenter[0];
+		XCG[1] = (delx[0]*sin(rotAngle)+delx[1]*cos(rotAngle))+circCenter[1];
+		XCG[2] -= info.U[2] * info.deltime;	
+
 	}
 }
 //===================================================================//
@@ -1046,4 +1134,67 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 }
 //===================================================================//
 		//END FUNCTION DeflectAboutHinge
+//===================================================================//
+
+
+//===================================================================//
+		//START FUNCTION Circling_UINF
+//===================================================================//
+void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
+{
+	// Calculates the velocity vector at each DVE given the cross product of
+	//	Omega x r. Where omega is the velocity gradient given in the input
+	//	file and r is a vector from the center of rotation to any given
+	//	dve control point. The z velocity is given by info.U[2].
+	//
+	// Function inputs:
+	//		GENERAL info 	- Uses info.noelements and info.U[2]
+	//		DVE* surfacePtr	- DVE info
+	//		circCenter		- Center point of circling flight
+	//
+	// Function outputs:
+	//		Updated surfacePtr with the following variables changed:
+	//			u1,u2,u - Velocity at left edge, right edge and control point
+	//
+	// D.F.B. in Braunschweig, Germany, Mar. 2020
+
+	int i; 					//Generic counter
+	double r[3];			//Distance from center of rotation to DVE control pt
+	double omega[3];		//Rotational rate [0 0 gradient]
+
+	// Iterate through number of elements
+	for(i=0;i<info.noelement;i++)
+	{
+
+		// Calculate r, the vector from the center of rotation to the DVE
+		r[0] = surfacePtr[i].xo[0]-circCenter[0];
+		r[1] = surfacePtr[i].xo[1]-circCenter[1];
+		r[2] = surfacePtr[i].xo[2]-circCenter[2];
+
+		// Create Omega vector
+		omega[0] = 0;
+		omega[1] = 0;
+		omega[2] = -info.gradient;
+		// Calculate the local velocities (Omega cross r)
+		cross(omega,r,surfacePtr[i].u);
+		surfacePtr[i].u[2] = info.U[2]; // Apply Z velocity based on input
+
+		// Repeat for left edge
+		r[0] = surfacePtr[i].x1[0]-circCenter[0];
+		r[1] = surfacePtr[i].x1[1]-circCenter[1];
+		r[2] = surfacePtr[i].x1[2]-circCenter[2];
+		cross(omega,r,surfacePtr[i].u1);
+		surfacePtr[i].u1[2] = info.U[2];
+
+		// Repeat for right edge
+		r[0] = surfacePtr[i].x2[0]-circCenter[0];
+		r[1] = surfacePtr[i].x2[1]-circCenter[1];
+		r[2] = surfacePtr[i].x2[2]-circCenter[2];
+		cross(omega,r,surfacePtr[i].u2);
+		surfacePtr[i].u2[2] = info.U[2];
+
+	}
+}
+//===================================================================//
+		//END FUNCTION Circling_UINF
 //===================================================================//

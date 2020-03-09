@@ -54,6 +54,7 @@ double PitchingMoment(const GENERAL info,PANEL *panelPtr,DVE *&surfacePtr,\
 	double XCG[3];		//CG location in this routine is moved with wing
 				XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
 	bool flagSTARFORCE=1;
+	double circCenter[3];  	//Center of circling flight added D.F.B. 03-20
 
 double *R,**D;			//resultant vector and matrix
 int *pivot;				//holds information for pivoting D
@@ -105,7 +106,14 @@ int *pivot;				//holds information for pivoting D
 
 	Surface_DVE_Generation(info,panelPtr,surfacePtr,camberPtr, epsilonHT);
 								//Subroutine in wing_geometry.cpp
-
+	
+	//if circling flight, calculate the new inflow velocities for each DVE
+	if(info.flagCIRC){ 
+	circCenter[0] = XCG[0];
+	circCenter[1] = XCG[1]-info.Uinf/info.gradient;
+	circCenter[2] = XCG[2];
+	Circling_UINF(info,surfacePtr,xCG);
+	}	
 	//save information on elementary wings to file
 //	Save_Surface_DVEs(info,surfacePtr);	//Subroutine in write_output.cpp
 
@@ -229,13 +237,23 @@ printf("\n");
 //===================================================================//
 //the every time step the wing is moved by delx which is deltime*u
 	//printf("surfacePtr[i].xo[0]: %f\tsurfacePtr[i].xo[2]: %f\n",surfacePtr[0].xo[0],surfacePtr[0].xo[2]);
-		Move_Wing(info,surfacePtr);	//Subroutine in wing_geometry.cpp
 
+		// Adjust z-location of rotation center for circling flight
+		if(info.flagCIRC){circCenter[2] += info.U[2]*info.deltime;} // Use original reference U velocity
+
+		Move_Wing(info,surfacePtr,circCenter,XCG);	//Subroutine in wing_geometry.cpp
+
+		//if circling flight, calculate the new inflow velocities for each DVE
+		if(info.flagCIRC){
+		Circling_UINF(info,surfacePtr,circCenter);
+		}
+		/* The moving CG calcs are now in Move_Wing function - D.F.B. 03-2020
 		//move CG
 		//newXCG -= local U * delta time
 		XCG[0] -= surfacePtr[0].u[0] * info.deltime;
 		XCG[1] -= surfacePtr[0].u[1] * info.deltime;
 		XCG[2] -= surfacePtr[0].u[2] * info.deltime;
+		*/
 
 //===================================================================//
 		//END Move_Wing

@@ -896,7 +896,6 @@ double rotAngle; // How many radian to rotate points
 		XCG[0] -= surfacePtr[0].u[0] * info.deltime;
 		XCG[1] -= surfacePtr[0].u[1] * info.deltime;
 		XCG[2] -= surfacePtr[0].u[2] * info.deltime;
-		printf("surfacePtr[i].nu %f\n",surfacePtr[1].nu*RtD);
 
 	} else{
 		for(i=0;i<info.noelement;i++)
@@ -940,8 +939,7 @@ double rotAngle; // How many radian to rotate points
 		delx[1] = XCG[1] - circCenter[1];
 		XCG[0] = (delx[0]*cos(rotAngle)-delx[1]*sin(rotAngle))+circCenter[0];
 		XCG[1] = (delx[0]*sin(rotAngle)+delx[1]*cos(rotAngle))+circCenter[1];
-		XCG[2] -= info.U[2] * info.deltime;	
-		printf("surfacePtr[i].nu %f\n",surfacePtr[1].nu*RtD);
+		XCG[2] -= info.U[2] * info.deltime;
 
 	}
 }

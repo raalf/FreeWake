@@ -142,6 +142,8 @@ double R[3];				//resultant ind. force/density of element l
 double N_free;				//magnitude free stream norm. forces/density
 double tempA[3],tempAA[3], tempS;
 double **U1,**Uo,**U2;		//mid-chord velocities of upstream DVE
+double spandir[3];
+double Uxspandir;	
 
 //if(info.m>1) //if more than one lifting line  //removed GB 2-9-20
 //{	//allocating temporary memory for the induced velocity of upstream DVE
@@ -188,6 +190,7 @@ for (i=0;i<info.nopanel;i++)
 								//function in ref_frame_transform.h
 		}
 
+		// S calculation works for circling flight D.F.B. 03-2020
 		eta  = surfacePtr[l].eta;
 		eta8 = eta*0.8;
 
@@ -197,12 +200,31 @@ for (i=0;i<info.nopanel;i++)
 		UxS=norm2(tempA);						//	|UxS|
 		scalar(tempA,1/UxS,eN);					//	eN=(UxS)/|UxS|
 
+		//***
+		//vector along the bound vortex along LE
+		tempA[0]=0; tempA[1]=1; tempA[2]=0;
+		//transforming into local reference frame
+		Star_Glob(tempA,0,surfacePtr[l].epsilon,surfacePtr[l].psi,spandir);
+
+		cross(surfacePtr[l].u,spandir,tempA);			//#	UxS
+		Uxspandir=norm2(tempA);						//	|UxS|
+		scalar(tempA,1/Uxspandir,eL);					//	eN=(UxS)/|UxS|
+		//printf("eL*\t%f %f %f\n",eL[0],eL[1],eL[2]);
+
+		//***
+
 		//the lift direction  eL=Ux[0,1,0]/|Ux[0,1,0]|
-		tempS = sqrt(surfacePtr[l].u[0]*surfacePtr[l].u[0]\
+		/*tempS = sqrt(surfacePtr[l].u[0]*surfacePtr[l].u[0]\
 		 			+surfacePtr[l].u[2]*surfacePtr[l].u[2]);
 		eL[0] = -surfacePtr[l].u[2]/tempS;
 		eL[1] =  0;
-		eL[2] =  surfacePtr[l].u[0]/tempS;
+		eL[2] =  surfacePtr[l].u[0]/tempS;*/
+		//printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
+		//printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
+		if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].normal,0);}
+		else{CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].normal,1);}
+
+		//CreateQuiverFile(surfacePtr[l].xo, eL,1);
 
 		//the side force direction eS=UxeL/|UxeL|
 		cross(eL,surfacePtr[l].u,tempA);
@@ -233,6 +255,7 @@ for (i=0;i<info.nopanel;i++)
 		//computing magnitude of normal force/density due to free stream
 //*****************************************************************************
 		N_free = (A*2*eta + C/3*2*eta*eta*eta)*UxS;
+		// N_free calculation works for circling flight D.F.B. 03-2020
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
 
 //*****************************************************************************

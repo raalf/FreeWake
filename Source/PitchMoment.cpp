@@ -245,7 +245,7 @@ printf("\n");
 
 		//if circling flight, calculate the new inflow velocities for each DVE
 		if(info.flagCIRC){
-		Circling_UINF(info,surfacePtr,circCenter);
+			Circling_UINF(info,surfacePtr,circCenter);
 		}
 		/* The moving CG calcs are now in Move_Wing function - D.F.B. 03-2020
 		//move CG

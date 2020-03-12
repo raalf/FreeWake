@@ -31,6 +31,8 @@ void Save_Timestep(const GENERAL,const int,DVE **,const DVE *,double **);
 //saves forces and moments of surface DVEs
 void Save_SurfaceDVE_Loads(const GENERAL,const int,const DVE *);
 
+void CreateQuiverFile(const double[3], const double[3],const int);
+
 //===================================================================//
 		//START OF File_Initializing
 //===================================================================//
@@ -739,4 +741,47 @@ char filename[133];	//file path and name
  //###########################################################//*/
 //===================================================================//
 		//Ende of Test
+//===================================================================//
+
+
+//===================================================================//
+		//START of CreateQuiverFile
+//===================================================================//
+void CreateQuiverFile(const double pos[3], const double vec[3],const int idx)
+{	
+	// This function create the quiver file used for Main_PlotQuiverPY.cpp
+	// 	The vector (vec) will be added to the quiver.txt
+	//
+	// Function inputs:
+	//		pos[3]		- Positional values of x,y,z where vector should begin
+	//		vec[3]		- Vector values of u,v,w (ie component of the vector to be plotted)
+	//		idx 		- Determine if adding or starting the file
+	//						idx == 0 opens file and begins new file
+	//						idx != 0 adds to file  
+	// 
+	// Example of use to plot eN
+	//	for(i=0;i<info.noelements;i++){
+	//	if(i==0){CreateQuiverFile(surfacePtr[l].xo, eN,0);}
+	//	else{CreateQuiverFile(surfacePtr[l].xo, eN,1);}
+	//	}
+	//
+	//
+	// D.F.B. in Braunschweig, Germany, Mar. 2020
+
+
+FILE *fp;		//output file
+
+// Either open file or add to file
+if(idx==0){fp = fopen("output/quiver.txt", "w");}
+if(idx!=0){fp = fopen("output/quiver.txt", "a");}
+
+// Write vector position and vector components to file
+fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t\n",pos[0],pos[1],pos[2],vec[0],vec[1],vec[2]);
+
+//Close file
+fclose(fp);
+
+}
+//===================================================================//
+		//CreateQuiverFile
 //===================================================================//

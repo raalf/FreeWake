@@ -20,6 +20,8 @@ void DeflectAboutHinge(const PANEL*, const double, double[3], double[3], \
 	int, int, double, double *,double *m,double[3], double[3]);
 //calculates U_inf for circling flight
 void Circling_UINF(GENERAL, DVE*,double[3], const double [3]);
+// Re-calculated DVE parameters based on DVE LE pts and Control pts
+void DVE_LEandCPtoParam(GENERAL, DVE*);
 
 //===================================================================//
 		//FUNCTION Trailing_Edge_Generation
@@ -798,15 +800,16 @@ void Move_Wing(const GENERAL info, DVE* surfacePtr,const double circCenter[3], d
 //moves wing by delta x every time step,
 //function updates xo location of surface DVE's
 //
-//	input
-//	info			general information
-//	surfacePtr		surface DVE's
-//	circCenter		center point of circling flight Added by D.F.B. 03-2020
+//	INPUTS:
+//		info			general information
+//		surfacePtr		surface DVE's
+//		circCenter		center point of circling flight Added by D.F.B. 03-2020
 
 int i;
 double delx[3],delX1[3],delX2[3];
-double tempA[3], delXSI1[3];
+double tempA[3];
 double rotAngle; // How many radian to rotate points
+
 
 	if(!info.flagCIRC){
 		for(i=0;i<info.noelement;i++)
@@ -823,12 +826,13 @@ double rotAngle; // How many radian to rotate points
 
 
 		}
-		// Moved from PitchMoment - D.F.B. 03-2020
+		// Updating CG location was moved from PitchMoment - D.F.B. 03-2020
 		//move CG
 		//newXCG -= local U * delta time
 		XCG[0] -= surfacePtr[0].u[0] * info.deltime;
 		XCG[1] -= surfacePtr[0].u[1] * info.deltime;
 		XCG[2] -= surfacePtr[0].u[2] * info.deltime;
+		printf("surfacePtr[i].nu %f\n",surfacePtr[1].nu*RtD);
 
 	} else{
 		for(i=0;i<info.noelement;i++)
@@ -861,46 +865,19 @@ double rotAngle; // How many radian to rotate points
 			delx[1] = surfacePtr[i].x2[1] - circCenter[1];
 			surfacePtr[i].x2[0] = (delx[0]*cos(rotAngle)-delx[1]*sin(rotAngle))+circCenter[0];
 			surfacePtr[i].x2[1] = (delx[0]*sin(rotAngle)+delx[1]*cos(rotAngle))+circCenter[1];
-			surfacePtr[i].x2[2] -= info.U[2] * info.deltime;	
-
-			// *************** Recompute DVE normals and yaw ***************
-			// This section of code was taken from move_flex_wing
-			//computing vector from center of leading edge to reference point
-			delX1[0] = surfacePtr[i].xo[0] \
-						- 0.5*(surfacePtr[i].x1[0]+surfacePtr[i].x2[0]);
-			delX1[1] = surfacePtr[i].xo[1] \
-						- 0.5*(surfacePtr[i].x1[1]+surfacePtr[i].x2[1]);
-			delX1[2] = surfacePtr[i].xo[2] \
-						- 0.5*(surfacePtr[i].x1[2]+surfacePtr[i].x2[2]);
-
-			//vector along leading edge of DVE
-			delX2[0] = surfacePtr[i].x2[0] - surfacePtr[i].x1[0];
-			delX2[1] = surfacePtr[i].x2[1] - surfacePtr[i].x1[1];
-			delX2[2] = surfacePtr[i].x2[2] - surfacePtr[i].x1[2];
-
-			//computing the normal of DVE,
-			cross(delX1,delX2,tempA);
-			scalar(tempA,1/norm2(tempA),surfacePtr[i].normal);
-
-			//delX1 in xsi reference frame (psi = 0)
-			Glob_Star(delX1,surfacePtr[i].nu,surfacePtr[i].epsilon,0,delXSI1);
-							  				//function in ref_frame_transform.h
-
-			//tan(psi)=(eta2)/(xsi1)
-			if(delXSI1[0]*delXSI1[0] > DBL_EPS)
-			{
-				surfacePtr[i].psi= atan(delXSI1[1]/delXSI1[0]);
-					if(delXSI1[0] < 0)  surfacePtr[i].psi += Pi;//|nu|>Pi/2
-			}
-			else	//tan(psi) -> infinity  -> |psi| = Pi/2
-				surfacePtr[i].psi = 0.5*Pi*fabs(delXSI1[1])/delXSI1[1];
+			surfacePtr[i].x2[2] -= info.U[2] * info.deltime;				
 		}
+
+		// Recompute DVE param based on new LE and Control pts
+		DVE_LEandCPtoParam(info, surfacePtr);
+
 		//Move CG with the circling flight
 		delx[0] = XCG[0] - circCenter[0];
 		delx[1] = XCG[1] - circCenter[1];
 		XCG[0] = (delx[0]*cos(rotAngle)-delx[1]*sin(rotAngle))+circCenter[0];
 		XCG[1] = (delx[0]*sin(rotAngle)+delx[1]*cos(rotAngle))+circCenter[1];
 		XCG[2] -= info.U[2] * info.deltime;	
+		printf("surfacePtr[i].nu %f\n",surfacePtr[1].nu*RtD);
 
 	}
 }
@@ -1197,4 +1174,120 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 }
 //===================================================================//
 		//END FUNCTION Circling_UINF
+//===================================================================//
+
+
+
+//===================================================================//
+		//START FUNCTION DVE_LEandCPtoParam
+//===================================================================//
+void DVE_LEandCPtoParam(const GENERAL info, DVE* surfacePtr)
+{
+	// Calculated the DVE parameters based on the LE pts and control pts.
+	// 	This function will iterate through info.noelements to update the
+	//	param for all DVEs.
+	//
+	// Function inputs:
+	//		GENERAL info 	- Uses info.noelements 
+	//		DVE* surfacePtr	- DVE pointers. Specifically uses:
+	//							surfacePtr.xo - control point location
+	//							surfacePtr.x1 - left LE point location
+	//							surfacePtr.x2 - right LE point location
+	//
+	// Function outputs:
+	//		surfacePtr with the following variables updated:
+	//			.normal, .nu, .epsilon, .psi, .phiLE,phiTE,phi0,.eta
+	//
+	//	This function is based on code found the function: Move_Flex_Wing
+	//
+	// D.F.B. in Braunschweig, Germany, Mar. 2020
+		
+
+int i;							//Generic counter
+double tempA[3];				// temp vector
+double delX1[3];				// vector from LE midpoint to reference pt
+double delX2[3];				// Vector along DVE LE
+double delXSI1[3],delXSI2[3];	//delX1 and delX2 in local DVE coordinates
+double delPhi;					//change in sweep.
+
+
+for(i=0;i<info.noelement;i++)
+	{
+			// This section of code was taken from move_flex_wing
+			//computing vector from center of leading edge to reference point
+			delX1[0] = surfacePtr[i].xo[0] \
+						- 0.5*(surfacePtr[i].x1[0]+surfacePtr[i].x2[0]);
+			delX1[1] = surfacePtr[i].xo[1] \
+						- 0.5*(surfacePtr[i].x1[1]+surfacePtr[i].x2[1]);
+			delX1[2] = surfacePtr[i].xo[2] \
+						- 0.5*(surfacePtr[i].x1[2]+surfacePtr[i].x2[2]);
+
+			//vector along leading edge of DVE
+			delX2[0] = surfacePtr[i].x2[0] - surfacePtr[i].x1[0];
+			delX2[1] = surfacePtr[i].x2[1] - surfacePtr[i].x1[1];
+			delX2[2] = surfacePtr[i].x2[2] - surfacePtr[i].x1[2];
+
+			//computing the normal of DVE,
+			cross(delX1,delX2,tempA);
+			scalar(tempA,1/norm2(tempA),surfacePtr[i].normal);
+			
+//********************************************************************
+	//dihedral angle, nu,
+	//tan(nu)=-(ny)/(nz)
+	if(fabs(surfacePtr[i].normal[2]) > DBL_EPS)
+	{
+		surfacePtr[i].nu=-atan(surfacePtr[i].normal[1]\
+								/surfacePtr[i].normal[2]);
+		if (surfacePtr[i].normal[2]<0)  surfacePtr[i].nu+= Pi;//|nu|>Pi/2
+	}
+	else  //tan(nu) -> infinity  -> |nu| = Pi/2
+	{
+		if(surfacePtr[i].normal[1]>0) 	surfacePtr[i].nu = -0.5*Pi;
+		else	 						surfacePtr[i].nu =  0.5*Pi;
+	}
+//********************************************************************
+	//computing epsilon
+	surfacePtr[i].epsilon = asin(surfacePtr[i].normal[0]);
+//********************************************************************
+	//computing yaw angle psi
+		//the orientation of the rotational axis of the vortex seet,
+		//is parallel to delX1.
+	//delX1 in xsi reference frame (psi = 0)
+	Glob_Star(delX1,surfacePtr[i].nu,surfacePtr[i].epsilon,0,delXSI1);
+					  				//function in ref_frame_transform.h
+	//tan(psi)=(eta2)/(xsi1)
+	if(delXSI1[0]*delXSI1[0] > DBL_EPS)
+	{
+		surfacePtr[i].psi= atan(delXSI1[1]/delXSI1[0]);
+			if(delXSI1[0] < 0)  surfacePtr[i].psi += Pi;//|nu|>Pi/2
+	}
+	else	//tan(psi) -> infinity  -> |psi| = Pi/2
+		surfacePtr[i].psi = 0.5*Pi*fabs(delXSI1[1])/delXSI1[1];
+	//length of projection
+	surfacePtr[i].xsi = sqrt(delXSI1[0]*delXSI1[0]+delXSI1[1]*delXSI1[1]);
+//********************************************************************
+	//computing sweep and halfspan
+	//1. transform delX2 into local frame
+	Glob_Star(delX2,surfacePtr[i].nu,surfacePtr[i].epsilon,\
+										surfacePtr[i].psi,delXSI2);
+					  				//function in ref_frame_transform.h
+	//if everything works => delXSI[2] = 0
+	if(delXSI2[1] < 0)
+	{
+		printf(" ohwei! around line 765, wing_geometry.cpp\n %2.2lf %2.16lf\n",delXSI2[1],delXSI2[2]);
+				exit(0);
+	}
+	//computing change in sweep
+	delPhi = atan(delXSI2[0]/delXSI2[1]) - surfacePtr[i].phiLE;
+	//updating sweeps
+	surfacePtr[i].phiLE += delPhi;
+	surfacePtr[i].phi0  += delPhi;
+	surfacePtr[i].phiTE += delPhi;
+	//computing the new half span
+	surfacePtr[i].eta = 0.5*delXSI2[1];
+	}
+}
+
+//===================================================================//
+		//END FUNCTION DVE_LEandCPtoParam
 //===================================================================//

@@ -157,36 +157,6 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	fscanf(fp,"%lf", &info.beta);
 	info.beta *=DtR;	//changes deg. to radians
 
-	//read flag for flight in horizontal plane, if 0 a/c descends, 1 remains in x-y plane
-	//find the '='-sign in input file before beta
-	do	ch = fgetc(fp);
-	while (ch!='=');
-	//reads sideslip
-	fscanf(fp,"%lf", &info.flagHORZ);
-
-	//computes free stream velocity vector
-	if(info.flagCIRC)  //aircraft turns 
-	{
-		if(info.flagHORZ)  //aircraft turns in horizontal plane
-		{
-			info.U[0]=info.Uinf;
-			info.U[1]=0;
-			info.U[2]=0;
-		}
-		else    //ac turns and descends
-		{
-			info.U[0]=info.Uinf*cos(alpha1)*cos(info.beta);
-			info.U[1]=info.Uinf			*sin(info.beta);
-			info.U[2]=info.Uinf*sin(alpha1)*cos(info.beta);
-		}
-	}
-	else   //straight descending flight along the freestream vector
-	{
-		info.U[0]=info.Uinf*cos(alpha1)*cos(info.beta);
-		info.U[1]=info.Uinf			*sin(info.beta);
-		info.U[2]=info.Uinf*sin(alpha1)*cos(info.beta);
-	}
-
 	//=============================================================================
 	// Read circling flight params - Added D.F.B. 02.2020
 
@@ -197,6 +167,14 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	//reads read circling flight flag 
 	fscanf(fp,"%d",&tempI);
 	info.flagCIRC=tempI;
+
+	//read flag for flight in horizontal plane, if 0 a/c descends, 1 remains in x-y plane
+	//find the '='-sign in input file before beta
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads sideslip
+	fscanf(fp,"%d", &tempI);
+	info.flagHORZ=tempI;
 
 	//read bank angle
 	do	ch = fgetc(fp);
@@ -309,7 +287,6 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	//reads number of airfoils
 	fscanf(fp,"%d", &info.noairfoils);
 
-	
 	//closes input file
 	fclose(fp);
 }

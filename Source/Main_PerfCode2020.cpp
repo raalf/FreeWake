@@ -146,7 +146,6 @@ int main()
 	General_Info_from_File(info,alpha1,alpha2,alphastep);
 						   //Subroutine in read_input.cpp
 
-
 	info.AR = info.b*info.b/info.S;  //reference aspect ratio
 
 	//allocates mememory for panel information in 'panelPtr'
@@ -341,7 +340,7 @@ int main()
 //===================================================================//
 
 	a2 = int((alpha2-alpha1)/alphastep+.5);  //max. number of alpha increments
-
+	
 	for(a=0;a<=a2;a++)
 	{
 		//updating AOA info
@@ -351,7 +350,7 @@ int main()
 		printf("\nalpha = %.2lf \n",info.alpha*RtD);
 
 		//computes free stream velocity vector
-		if(info.flagCIRC)  //aircraft turns 
+/*		if(info.flagCIRC)  //aircraft turns 
 		{
 			if(info.flagHORZ)  //aircraft turns in horizontal plane
 			{
@@ -361,16 +360,17 @@ int main()
 			}
 			else    //ac turns and descends
 			{
-				info.U[0]=info.Uinf*cos(alpha1);
+				info.U[0]=info.Uinf*cos(info.alpha);
 				info.U[1]=0	;
-				info.U[2]=info.Uinf*sin(alpha1);
+				info.U[2]=info.Uinf*sin(info.alpha);
 			}
 		}
 		else   //straight descending flight along the freestream vector
+*/	
 		{
-			info.U[0]=info.Uinf*cos(alpha1)*cos(info.beta);
+			info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
 			info.U[1]=info.Uinf			*sin(info.beta);
-			info.U[2]=info.Uinf*sin(alpha1)*cos(info.beta);
+			info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta);
 		}
 
         //new free stream velocities at panel edges
@@ -378,12 +378,13 @@ int main()
 		for(i=0;i<info.nopanel;i++)
 		{
 			panelPtr[i].u1[0]= info.U[0];
+			panelPtr[i].u1[1]= info.U[1];
 			panelPtr[i].u1[2]= info.U[2];
 
 			panelPtr[i].u2[0]= info.U[0];
+			panelPtr[i].u2[1]= info.U[1];
 			panelPtr[i].u2[2]= info.U[2];
 		}
-
 	//===============================================================//
 		//compute induced drag and lift distribution
 	//===============================================================//

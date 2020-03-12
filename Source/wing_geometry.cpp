@@ -6,7 +6,7 @@ void Trailing_Edge_Generation\
 void Wing_Generation(const PANEL*,int,int[5],int[5],int[5],int[5],\
                      int[5],int[5]);
 //Rotates panels for attitude during turning flight
-void Panel_Rotation(GENERAL,PANEL *);
+void Panel_Rotation(GENERAL &,PANEL *);
 //generates surface DVE elements
 void Surface_DVE_Generation(const GENERAL,const PANEL *,DVE *,double ***,\
 							const double);
@@ -202,7 +202,7 @@ int k,span=0,wing=0,index=0;				//loop counters, k=0..(panel.n-1)
 //===================================================================//
 		//FUNCTION Panel_Rotation
 //===================================================================//
-void Panel_Rotation(GENERAL info,PANEL* panelPtr)
+void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 {
 //Function important for turning flight simulation.
 //Function rotates panels to account for aircraft sideslip, roll angles
@@ -215,74 +215,46 @@ void Panel_Rotation(GENERAL info,PANEL* panelPtr)
 	// 	panel		- information of panels
 	//
 	//ouput:
-	//	I. 	 updated panel geometry
+	//	I. 	 updated panel geometry (move x1 & x2; 
+	//	Ia.  adjust epsilon for alpha (if horizontal flight) and beta
 	//	II.	 updated CG location (RefPt)
 	//	III. adjust freestream vector (info.U), also to include upwind info.Ws
+	//	IV.	 fix sideslip and angle of attack
 	//
 	//1. rotation about x-axis by phi; positive if left wing down
 	//2. rotarion about z'-axis; positive nose to left of flow
 	//3. rotation about y"; only if in horizontal plane; posit. nose up
+	//
+	//rotateX, rotateY, ratateZ found in vector_algebra.h
 
 	int panel; //panel counter
 	double tempA[3],tempAA[3]; //temporary arrays
 
-// I.	update panel geometry, i.e. rotate x1 and x2
+
+//	I. 	 updated panel geometry (move x1 & x2; 
 
 	for(panel=0;panel<info.nopanel;panel++)
 	{
-		//rotate X1
-		rotateX(panelPtr[panel].x1,info.bank,tempA);
-		rotateZ(tempA,info.beta,tempAA);
-		if(info.flagHORZ)  //flight in horizontal plane
-			rotateY(tempAA,info.alpha,panelPtr[panel].x1);
-		else
-		{
-			panelPtr[panel].x1[0]=tempAA[0];
-			panelPtr[panel].x1[1]=tempAA[1];
-			panelPtr[panel].x1[2]=tempAA[2];
-		}
+
+	//rotate X1
+		rotateX(panelPtr[panel].x1,-info.bank,panelPtr[panel].x1);
 
 
 		//rotate X2
-		rotateX(panelPtr[panel].x2,info.bank,tempA);
-		rotateZ(tempA,info.beta,tempAA);
-		if(info.flagHORZ)  //flight in horizontal plane
-			rotateY(tempAA,info.alpha,panelPtr[panel].x2);
-		else
-		{
-			panelPtr[panel].x2[0]=tempAA[0];
-			panelPtr[panel].x2[1]=tempAA[1];
-			panelPtr[panel].x2[2]=tempAA[2];
-		}
+		rotateX(panelPtr[panel].x2,-info.bank,panelPtr[panel].x2);
+
+//	Ia.  adjust epsilon for alpha (if horizontal flight) and beta
+
+
 	}
 
 //	II.	 updated CG location (RefPt)
 	//rotate reference point (CG)
-	rotateX(info.RefPt,info.bank,tempA);
-	rotateZ(tempA,info.beta,tempAA);
-	if(info.flagHORZ)  //flight in horizontal plane
-		rotateY(tempAA,info.alpha,info.RefPt);
-	else
-	{
-		info.RefPt[0]=tempAA[0];
-		info.RefPt[1]=tempAA[1];
-		info.RefPt[2]=tempAA[2];
-	}
+	rotateX(info.RefPt,-info.bank,info.RefPt);
 
 //	III. adjust freestream vector (info.U), also to include upwind info.Ws
 
-		if(info.flagHORZ)  //aircraft turns in horizontal plane
-		{
-			info.U[0]=info.Uinf;
-			info.U[1]=0;
-			info.U[2]=info.Ws;
-		}
-		else    //ac turns and descends
-		{
-			info.U[0]=info.Uinf*cos(alpha1);
-			info.U[1]=0	;
-			info.U[2]=info.Uinf*sin(alpha1)+info.Ws;
-		}
+		
 }
 //===================================================================//
 		//END FUNCTION Panel_Rotation

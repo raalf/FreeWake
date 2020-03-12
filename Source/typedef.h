@@ -14,7 +14,15 @@ struct GENERAL
 	double nu;			//kinematic viscosity
 	double RefPt[3];	//global reference point for moments
 						//added 1-0-13-2006 G.B. also used for CG
-
+	bool flagHORZ;		// On/off flag for flight in horizontal plane GB 3.9.20
+						//if on, geometry is rotated by alpha and Uinf in xy-plane
+	
+	// Circling flight info D.F.B 02-2020
+	bool flagCIRC;		// On/off flag for circling flight
+	double bank;		// Bank angle (rad)
+	double Ws; 			// Upwind velocity
+	double gradient;	// Velocity gradient
+	
 	double W;			//aircraft weight; added G.B. 8-8-07
 	double cmac;		//mean aeodynamic chord; added G.B. 8-8-07
 	double CMoWing;		//zero-lift moment coefficient of wing
@@ -43,12 +51,6 @@ struct GENERAL
 	int nospanelement;	//number of elements in span direction, noelement/m
 	int Dsize;			//3*info.noelement, dimension of R and D
 
-	// Circling flight info D.F.B 02-2020
-	bool flagCIRC;		// On/off flag for circling flight
-	double bank;		// Bank angle (rad)
-	double Ws; 			// Upwind velocity
-	double gradient;	// Velocity gradient
-	
 	int noVT,noFus;		//number of V-tail and fuselage sections
 };
 

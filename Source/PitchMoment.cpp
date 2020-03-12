@@ -1,10 +1,10 @@
 //computes pitching moment
-double PitchingMoment(const GENERAL,PANEL *,const double,DVE *&,\
+double PitchingMoment(GENERAL &,PANEL *,const double,DVE *&,\
 						const double,const int,const double [3],\
 						double &,double &,double **&,double *&,\
 						double &,double &,double ***);
 
-double PitchingMoment(const GENERAL info,PANEL *panelPtr,DVE *&surfacePtr,\
+double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 						const double cmac, const double epsilonHT,\
 						const int HTpanel,const double xCG[3],\
 						double &CLht,double &CLhti,\
@@ -98,6 +98,18 @@ int *pivot;				//holds information for pivoting D
 //         NO MORE HORSTMANN, ALL REMOVED GB 2-9-20
 //===================================================================//
 //*******************************************************************//
+//===================================================================//
+
+//===================================================================//
+		//START rotating panels 
+//===================================================================//
+//Rotates panels to account for sideslip, roll and alpha 
+//only applies for turning flight
+	if(info.flagCIRC) Panel_Rotation(info,panelPtr);
+							//Subroutine in wing_geometry.cpp
+
+//===================================================================//
+		//END rotating panels for horizontal flight sim
 //===================================================================//
 
 //===================================================================//

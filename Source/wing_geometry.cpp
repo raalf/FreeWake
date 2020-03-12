@@ -5,6 +5,8 @@ void Trailing_Edge_Generation\
 //identifies edges of separate wings
 void Wing_Generation(const PANEL*,int,int[5],int[5],int[5],int[5],\
                      int[5],int[5]);
+//Rotates panels for attitude during turning flight
+void Panel_Rotation(GENERAL &,PANEL *);
 //generates surface DVE elements
 void Surface_DVE_Generation(const GENERAL,const PANEL *,DVE *,double ***,\
 							const double);
@@ -201,6 +203,68 @@ int k,span=0,wing=0,index=0;				//loop counters, k=0..(panel.n-1)
 //===================================================================//
 		//END FUNCTION Wing_Generation
 //===================================================================//
+
+//===================================================================//
+		//FUNCTION Panel_Rotation
+//===================================================================//
+void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
+{
+//Function important for turning flight simulation.
+//Function rotates panels to account for aircraft sideslip, roll angles
+//and angle of attack. 
+//rotation by alpha on only considered when turning flight
+//happens in during level flight.
+	//
+	//input:
+	//	info 		- uses alpha, beta and phi to rotate panels and Ref. Pt
+	// 	panel		- information of panels
+	//
+	//ouput:
+	//	I. 	 updated panel geometry (move x1 & x2; 
+	//	Ia.  adjust epsilon for alpha (if horizontal flight) and beta
+	//	II.	 updated CG location (RefPt)
+	//	III. adjust freestream vector (info.U), also to include upwind info.Ws
+	//	IV.	 fix sideslip and angle of attack
+	//
+	//1. rotation about x-axis by phi; positive if left wing down
+	//2. rotarion about z'-axis; positive nose to left of flow
+	//3. rotation about y"; only if in horizontal plane; posit. nose up
+	//
+	//rotateX, rotateY, ratateZ found in vector_algebra.h
+
+	int panel; //panel counter
+	double tempA[3],tempAA[3]; //temporary arrays
+
+
+//	I. 	 updated panel geometry (move x1 & x2; 
+
+	for(panel=0;panel<info.nopanel;panel++)
+	{
+
+	//rotate X1
+		rotateX(panelPtr[panel].x1,-info.bank,panelPtr[panel].x1);
+
+
+		//rotate X2
+		rotateX(panelPtr[panel].x2,-info.bank,panelPtr[panel].x2);
+
+//	Ia.  adjust epsilon for alpha (if horizontal flight) and beta
+
+
+	}
+
+//	II.	 updated CG location (RefPt)
+	//rotate reference point (CG)
+	rotateX(info.RefPt,-info.bank,info.RefPt);
+
+//	III. adjust freestream vector (info.U), also to include upwind info.Ws
+
+		
+}
+//===================================================================//
+		//END FUNCTION Panel_Rotation
+//===================================================================//
+
 
 //===================================================================//
 		//FUNCTION Surface_DVE_Generation

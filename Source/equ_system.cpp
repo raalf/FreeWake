@@ -809,7 +809,8 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
                 D[row][col+1] = elementPtr[element].eta;
                 D[row][col+2] = -elementPtr[element].eta*\
                                     elementPtr[element].eta;
-             	row++;  //increase row index
+  //printf("100 left element %d m %d  col %d  row %d \n",element,m,col,row);
+           	row++;  //increase row index
         	} //end loop over left side of panels
         break;
 
@@ -822,7 +823,8 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 	            D[row][col]   = 0;
                 D[row][col+1] = -1;
                 D[row][col+2] = 2*elementPtr[element].eta;
-             	row++;  //increase row index
+//printf("10 left element %d m %d  col %d  row %d \n",element,m,col,row);
+               	row++;  //increase row index
         	} //end loop over left side of panels
         break;
             
@@ -848,13 +850,14 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 //      left edge: gamma = B-2etaC  
 //      right edge: gamma = B+2etaC  
 //      
-        int tempRow,pLeft,Side;
+        	int tempRow,pLeft,Side;
 
             m=0; //initialize chordwise row counter
+
+        	if(junc[panel])  //panel has not been used in junction, yet
 	        //loop over left side of panel
 	        for(element=panelPtr[panel].LE1;\
             element<=panelPtr[panel].TE1;element += panelPtr[panel].n)
-        	if(junc[panel])  //panel has not been used in junction, yet
         	{
             	col = 3*element; //column of D matrix
                 tempRow =row; //temp. row for circulation addition
@@ -872,19 +875,22 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
                 D[tempRow][col+1] = elementPtr[element].eta;
                 D[tempRow][col+2] = -elementPtr[element].eta*\
                                                elementPtr[element].eta;
+//printf("220 left element %d pleft %d  col %d  row %d \n",element,pLeft,col,row);
 
  				//panel to left exists and Gamma and gamma conditions are applied
 
 				//panel 'pLeft' is attached to left edge of panel 'panel' either with 
 				//its right (x2) edge or its left (x1) edge
-				while(\
+				for(pLeft=0;pLeft<info.nopanel;pLeft++)
+				{
+				if(\
 					((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
 					(panelPtr[panel].x1[1]==panelPtr[pLeft].x2[1]) &&  \
 					(panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2])) || \
 					((panelPtr[panel].x1[0]==panelPtr[pLeft].x1[0]) && \
 					(panelPtr[panel].x1[1]==panelPtr[pLeft].x1[1]) &&  \
 					(panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]) ) \
-					&& junc[panel])
+					&& junc[pLeft])
 				{
 //printf("element %d m %d  pLeft %d  panelPtr[pLeft].m %d \n",element,m,pLeft,panelPtr[pLeft].m);
 
@@ -924,7 +930,8 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
                         D[tempRow][colLeft+1] = elementPtr[DVEleft].eta;
                         D[tempRow][colLeft+2] = Side*elementPtr[DVEleft].eta*\
                                             elementPtr[DVEleft].eta;
-
+//printf("220 left element_left %d m %d  colLeft %d  temprow %d \n",DVEleft,m,colLeft,tempRow);
+  
                         //adding gamma condition
                         D[row][colLeft]   = 0;
                         D[row][colLeft+1] = -1;
@@ -933,8 +940,9 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 						junc[pLeft]=0; //panel has been used in junction -> set to FALSE
 
 	            	} //end if neighboring DVE exists
-                    pLeft++; //increase index for check if next panel attaches to panel 'panel'
+                    //pLeft++; //increase index for check if next panel attaches to panel 'panel'
                 } // end while statement
+            	} //end for loop over pLeft
 //printf("left side element %d  col %d  row %d DVEleft %d\n",element,col,row,DVEleft);
  				 //done dealing with panel to the left
 
@@ -1138,7 +1146,7 @@ for(i=0; i<info.Dsize-info.noelement; i++)
       fprintf(fp,"\t%lf",D[i][j]);
 }
 fprintf(fp,"\n");
- //exit(0);
+ exit(0);
 // */
 
 }

@@ -221,8 +221,8 @@ for (i=0;i<info.nopanel;i++)
 		eL[2] =  surfacePtr[l].u[0]/tempS;*/
 		//printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
 		//printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
-		if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, eL,0);}
-		else{CreateQuiverFile(surfacePtr[l].xo, eL,1);}
+		//if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, eL,0);}
+		//else{CreateQuiverFile(surfacePtr[l].xo, eL,1);}
 
 		//CreateQuiverFile(surfacePtr[l].xo, eL,1);
 

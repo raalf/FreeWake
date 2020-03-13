@@ -1194,26 +1194,40 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 	// Function outputs:
 	//		Updated surfacePtr with the following variables changed:
 	//			u1,u2,u - Velocity at left edge, right edge and control point
+	//			uTE[3][3] - Velocities at the TE. uTE[0] halfspan, uTE[1] -80%, uTE[2] +80%
+	//						 This is required for induced drag calculation
 	//
 	// D.F.B. in Braunschweig, Germany, Mar. 2020
 
 	int i; 					//Generic counter
+	double tempA[3];		//Generic temp vector
 	double r[3];			//Distance from center of rotation to DVE control pt
 	double omega[3];		//Rotational rate [0 0 gradient]
+	double X[3][3];			//Trailing edge points of DVE X[0] halfspan, X[1] -80%, X[2] +80%
+	double eta8;			// 80% of half span
 
+
+	// This function first calls calculates the velocities at the control point and LE pts
+	// Than calculated the velocities along the TE
+
+	void CreateQuiverFile(const double[3], const double[3],const int);
+	void Edge_Point(const double [3],const double,const double,const double,\
+				const double,const double,const double,double [3]);
 	// Iterate through number of elements
 	for(i=0;i<info.noelement;i++)
 	{
-
-		// Calculate r, the vector from the center of rotation to the DVE
-		r[0] = surfacePtr[i].xo[0]-circCenter[0];
-		r[1] = surfacePtr[i].xo[1]-circCenter[1];
-		r[2] = surfacePtr[i].xo[2]-circCenter[2];
 
 		// Create Omega vector
 		omega[0] = 0;
 		omega[1] = 0;
 		omega[2] = -info.gradient;
+
+		// ********************* Calculate u,u1,u2 *********************
+		// Calculate r, the vector from the center of rotation to the DVE
+		r[0] = surfacePtr[i].xo[0]-circCenter[0];
+		r[1] = surfacePtr[i].xo[1]-circCenter[1];
+		r[2] = surfacePtr[i].xo[2]-circCenter[2];
+
 		// Calculate the local velocities (Omega cross r)
 		cross(omega,r,surfacePtr[i].u);
 		surfacePtr[i].u[2] = info.U[2]; // Apply Z velocity based on input
@@ -1231,6 +1245,59 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 		r[2] = surfacePtr[i].x2[2]-circCenter[2];
 		cross(omega,r,surfacePtr[i].u2);
 		surfacePtr[i].u2[2] = info.U[2];
+
+		// ********************* Calculate uTE  *********************
+		// Compuate velocity at TE for induced drag calcs
+		// First calculate the location of the TE points: X[3][3]
+		// Than use the same method as above to calculate the velocities
+		//
+		// The following code was based off code found in Induced_DVE_Drag
+		
+		//the left and right points are 20% of half span away from edge
+		//in order to stay away from the singularity along the edge of
+		//the DVE
+		eta8  =	surfacePtr[i].eta*0.8; //0.8 as done for lift computation,
+
+		//X1:
+		Edge_Point(surfacePtr[i].xo,surfacePtr[i].nu,\
+				   surfacePtr[i].epsilon,surfacePtr[i].psi,\
+				   surfacePtr[i].phiTE,-eta8,surfacePtr[i].xsi,X[1]);
+				   						//Subroutine in wake_geometry.cpp
+		//X2:
+		Edge_Point(surfacePtr[i].xo,surfacePtr[i].nu,\
+				   surfacePtr[i].epsilon,surfacePtr[i].psi,\
+				   surfacePtr[i].phiTE,eta8,surfacePtr[i].xsi,X[2]);
+				   						//Subroutine in wake_geometry.cpp
+		//X0 = (X1+X2)/2
+		vsum(X[1],X[2],tempA);		scalar(tempA,0.5,X[0]);
+
+
+		// Calculate the TE velocities
+		r[0] = X[0][0]-circCenter[0];
+		r[1] = X[0][1]-circCenter[1];
+		r[2] = X[0][2]-circCenter[2];
+		cross(omega,r,surfacePtr[i].uTE[0]);
+		surfacePtr[i].uTE[0][2] = info.U[2];
+
+		r[0] = X[1][0]-circCenter[0];
+		r[1] = X[1][1]-circCenter[1];
+		r[2] = X[1][2]-circCenter[2];
+		cross(omega,r,surfacePtr[i].uTE[1]);
+		surfacePtr[i].uTE[1][2] = info.U[2];
+
+		r[0] = X[2][0]-circCenter[0];
+		r[1] = X[2][1]-circCenter[1];
+		r[2] = X[2][2]-circCenter[2];
+		cross(omega,r,surfacePtr[i].uTE[2]);
+		surfacePtr[i].uTE[2][2] = info.U[2];
+		
+		/*
+		if(i==0){CreateQuiverFile(X[0], surfacePtr[i].uTE[0],0);}
+		else{CreateQuiverFile(X[0], surfacePtr[i].uTE[0],1);}
+		CreateQuiverFile(X[1], surfacePtr[i].uTE[1],1);
+		CreateQuiverFile(X[1], surfacePtr[i].uTE[1],1);
+		CreateQuiverFile(X[2], surfacePtr[i].uTE[2],1);
+		CreateQuiverFile(X[2], surfacePtr[i].uTE[2],1);*/
 
 	}
 }

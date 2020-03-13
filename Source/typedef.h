@@ -168,6 +168,7 @@ struct DVE
 	double x1[3],x2[3];	//points at left and right end of leading edge bound vortex
 						//needed for displacing surface DVE's
 	double u1[3],u2[3];	//freestream velocities in x1 and x2  added 10-29-06 G.B.
+	double uTE[3][3];	//freestream at trailing edge. xTE[0] ctr pt, xTE[1] -80%, xTE[2] +80% added D.F.B. 03-2020
 	double xTE[3],TEvc[3]; //center point at and vector along trailing edge of previous
 						//timestep
 	int airfoil[2];		//airfoil file number G.B. 8-9-07; two airfoiils of panel edges 1 and 2 GB 2-14-20

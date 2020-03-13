@@ -86,13 +86,28 @@ DVE tempDVE;				//temporary DVE
 		//increase wing index to next wing
         if(index>info.dve2[wing]) wing++;
 
-        //###
-		//drag force direction
-		eD[0] = surfacePtr[index].U[0];
-		eD[1] = surfacePtr[index].U[1];
-		eD[2] = surfacePtr[index].U[2];
+        if(!info.flagCIRC){
+        	//###
+			//drag force direction
+			eD[0] = surfacePtr[index].U[0];
+			eD[1] = surfacePtr[index].U[1];
+			eD[2] = surfacePtr[index].U[2];
+		} else{
+			// Added by D.F.B. 03-2020 because of circling flight
+			// If there is circling flight, set the DVE drag direction to the
+			// velocitiy direction at the TE 
+			eD[0] = surfacePtr[index].uTE[0][0];
+			eD[1] = surfacePtr[index].uTE[0][1];
+			eD[2] = surfacePtr[index].uTE[0][2];
+		}
+
 
 	//#########################################################################
+		/* The lift and side for calculation have been romoved by D.F.B. 03-2020
+		// Calcs removed because the are incorrect but not even used in this function
+		// If need in future, see the fcn Surface_DVE_Normal_Forces in lift_force.cpp
+		// for the correct calcs.
+		//
 		//the lift direction  eL={U x [0,1,0]}/|U x [0,1,0]|
 		tempS = 1/sqrt(surfacePtr[index].U[0]*surfacePtr[index].U[0]\
 		 				+surfacePtr[index].U[2]*surfacePtr[index].U[2]);
@@ -104,7 +119,7 @@ DVE tempDVE;				//temporary DVE
 		cross(eL,surfacePtr[index].U,tempA);
 		tempS=1/norm2(tempA);
 		scalar(tempA,tempS,eS);
-
+		*/
 	//#########################################################################
 		A =	surfacePtr[index].A;
 		B =	surfacePtr[index].B;
@@ -139,6 +154,10 @@ DVE tempDVE;				//temporary DVE
 				   						//Subroutine in wake_geometry.cpp
 		//X0 = (X1+X2)/2
 		vsum(X[1],X[2],tempA);		scalar(tempA,0.5,X[0]);
+
+		//if(index == panelPtr[panel].TE1){CreateQuiverFile(X[1], eD,0);}
+		//else{CreateQuiverFile(X[1], eD,1);}
+
 
 //printf("\nx0 %2.3lf  %2.3lf  %2.3lf ",X[0][0],X[0][1],X[0][2]);  //#
 //printf("x1 %2.3lf  %2.3lf  %2.3lf ",X[1][0],X[1][1],X[1][2]);  //#

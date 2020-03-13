@@ -262,7 +262,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 
 //	II.	 updated CG location (RefPt)
 	//rotate reference point (CG)
-`   rotateZ(info.RefPt,psi,tempA);
+	rotateZ(info.RefPt,psi,tempA);
     rotateX(tempA,-nu,tempAA);
     rotateY(tempAA,eps,info.RefPt);
 

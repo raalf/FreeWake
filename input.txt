@@ -6,39 +6,27 @@ The results are written to the sub-directory output'
 
 
 
-Relaxed wake (yes 1, no 0):		relax =		1
+Relaxed wake (yes 1, no 0):		relax =		0
 Steady (1) or unsteady (2):		aerodynamics =	1
 Viscous solutions (1) or inviscid (0)  viscous = 	0
 Using camber (1) or no camber (0)  camber = 	0
 Symmetrical geometry (yes 1, no 0):	sym =		0
 Longitudinal trim (yes 1, no 0):	trim =		0	
 
-<<<<<<< HEAD
 Max. number of time steps:	maxtime =	20
 Width of each time step (sec):	deltime =	0.0250000
-=======
-Max. number of time steps:	maxtime =	40
-Width of each time step (sec):	deltime =	0.50000
->>>>>>> 9543288c0d0f0f90de98ed26c66ab9399688b835
 Convergence delta-span effic.:	deltae =	0.00	(0 if onlytimestepping)
 
 Freestream velocity (leave value 1):	Uinf =		30.0
-AOA beginning, end, step size [deg]:	alpha=		10 10 1
-Sideslip angle [deg]:			beta =		20
+AOA beginning, end, step size [deg]:	alpha=		7 7 1
+Sideslip angle [deg]:					beta =		20
 
 Circling flight information
 Circling flight on (1) off (0):			circling = 1
-<<<<<<< HEAD
 Turning in horizontal plane (1)			horizontal = 0   if (0), a/c decends
 Bank angle (deg)						phi = 30
 Upwind velocity (m/s)					Ws = 0
-Velocity gradient (1/s)					gradient = 3
-=======
-Turning in horizontal plane (1)			horizontal = 0   if (0), a/c descends
-Bank angle (deg)				phi = 50
-Upwind velocity (m/s)				Ws = 0
-Velocity gradient (1/s)				gradient = 0.8
->>>>>>> 9543288c0d0f0f90de98ed26c66ab9399688b835
+Velocity gradient (1/s)					gradient = 0.3
 
 Density:				density =	1.225
 Kinematic viscosity:			nu =		1.420000e-05
@@ -51,8 +39,8 @@ Aircraft weight (N):		W =	3000.0
 CG location (x y z):		cg =    0 0 0
 CMo of wing:				CMo =	-0.150000000
 
-No. of wings (max. 5):		wings =		1
-No. of panels:			panels =	2
+No. of wings (max. 5):		wings =		2
+No. of panels:			panels =	3
 No. of airfoils (max. 15):	airfoils =	2
 
 
@@ -68,28 +56,20 @@ Hinge is in percentage chord:
 
 Defines leading edge of wing, all measured in metres:
 
-<<<<<<< HEAD
-Panel #:1. Number of elements across span n = 2 and chord m = 2
-=======
-Panel #:1. Number of elements across span n = 3 and chord m = 1
->>>>>>> 9543288c0d0f0f90de98ed26c66ab9399688b835
+Panel #:1. Number of elements across span n = 2 and chord m = 1
 Neighbouring panels (0 for none) left: 0 right: 2
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-00.15	-7.5	0.		0.3		-5.00	100		6 1
-xright	yright	right	chord	epsilon	Bound.Cond. Airfoil Hinge
+00.15	-7.5	0.4		0.3		-5.00	100		6 1
+xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
 .000	0.000	0.000   1.0     2.000	220			6 1
 
 
-<<<<<<< HEAD
-Panel #:2. Number of elements across span n = 2 and chord m = 2
-=======
-Panel #:2. Number of elements across span n = 4 and chord m = 1
->>>>>>> 9543288c0d0f0f90de98ed26c66ab9399688b835
+Panel #:2. Number of elements across span n = 2 and chord m = 1
 Neighbouring panels (0 for none) left: 1 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
 .000	0.000	0.000   1.0     2.000	220			6 1
 xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.15	7.5	0.		0.3		-5.00	100		6 1
+0.15	7.5		0.4		0.3		-5.00	100		6 1
 
 
 Panel #:3. Number of elements across span n = 2 and chord m = 1

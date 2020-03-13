@@ -249,6 +249,12 @@ sprintf(iofile,"%s","wakeplot.py");
 	fprintf(fp,"ax = fig.gca(projection='3d')\n");
 	fprintf(fp,"ax.set_aspect('equal')\n\n");
 
+	// Plot labels 
+	fprintf(fp,"ax.set_xlabel('Global X')\n");
+	fprintf(fp,"ax.set_ylabel('Global Y')\n");
+	fprintf(fp,"ax.set_zlabel('Global Z')\n\n");
+
+
 if(plotWAKE){
 //Plottine Wake
 	//computing the corner points for each DVE and plotting them together.

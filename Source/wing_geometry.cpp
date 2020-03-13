@@ -1210,7 +1210,8 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 	// This function first calls calculates the velocities at the control point and LE pts
 	// Than calculated the velocities along the TE
 
-	void CreateQuiverFile(const double[3], const double[3],const int);
+	// Need to declare the Edge_Point function in order to use it
+	//void CreateQuiverFile(const double[3], const double[3],const int);
 	void Edge_Point(const double [3],const double,const double,const double,\
 				const double,const double,const double,double [3]);
 	// Iterate through number of elements
@@ -1291,7 +1292,7 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 		cross(omega,r,surfacePtr[i].uTE[2]);
 		surfacePtr[i].uTE[2][2] = info.U[2];
 		
-		/*
+		/* Code ussed for plotting quiver
 		if(i==0){CreateQuiverFile(X[0], surfacePtr[i].uTE[0],0);}
 		else{CreateQuiverFile(X[0], surfacePtr[i].uTE[0],1);}
 		CreateQuiverFile(X[1], surfacePtr[i].uTE[1],1);

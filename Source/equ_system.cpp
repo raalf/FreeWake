@@ -884,13 +884,13 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 				for(pLeft=0;pLeft<info.nopanel;pLeft++)
 				{
 				if(\
-					((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
+					(((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
 					(panelPtr[panel].x1[1]==panelPtr[pLeft].x2[1]) &&  \
 					(panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2])) || \
 					((panelPtr[panel].x1[0]==panelPtr[pLeft].x1[0]) && \
 					(panelPtr[panel].x1[1]==panelPtr[pLeft].x1[1]) &&  \
-					(panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]) ) \
-					&& junc[pLeft])
+					(panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]) )) \
+					&& (junc[pLeft]))
 				{
 //printf("element %d m %d  pLeft %d  panelPtr[pLeft].m %d \n",element,m,pLeft,panelPtr[pLeft].m);
 

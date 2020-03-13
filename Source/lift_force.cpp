@@ -200,7 +200,8 @@ for (i=0;i<info.nopanel;i++)
 		UxS=norm2(tempA);						//	|UxS|
 		scalar(tempA,1/UxS,eN);					//	eN=(UxS)/|UxS|
 
-		//***
+		//*** Calculated lift direction based on the freestream velocity direction
+		//		Changed by D.F.B. 03-2020
 		//vector along the bound vortex along LE
 		tempA[0]=0; tempA[1]=1; tempA[2]=0;
 		//transforming into local reference frame
@@ -211,8 +212,7 @@ for (i=0;i<info.nopanel;i++)
 		scalar(tempA,1/Uxspandir,eL);					//	eN=(UxS)/|UxS|
 		//printf("eL*\t%f %f %f\n",eL[0],eL[1],eL[2]);
 
-		//***
-
+		//***Removed by D.F.B. 03-2020
 		//the lift direction  eL=Ux[0,1,0]/|Ux[0,1,0]|
 		/*tempS = sqrt(surfacePtr[l].u[0]*surfacePtr[l].u[0]\
 		 			+surfacePtr[l].u[2]*surfacePtr[l].u[2]);
@@ -221,15 +221,18 @@ for (i=0;i<info.nopanel;i++)
 		eL[2] =  surfacePtr[l].u[0]/tempS;*/
 		//printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
 		//printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
-		if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].normal,0);}
-		else{CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].normal,1);}
+		if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, eL,0);}
+		else{CreateQuiverFile(surfacePtr[l].xo, eL,1);}
 
 		//CreateQuiverFile(surfacePtr[l].xo, eL,1);
 
 		//the side force direction eS=UxeL/|UxeL|
-		cross(eL,surfacePtr[l].u,tempA);
+		// cross(eL,surfacePtr[l].u,tempA);  \\ Removed by D.F.B. 03-2020
+		// Original FW use eL x U... Changed to U x eL :
+		cross(surfacePtr[l].u,eL,tempA); 
 		tempS=1/norm2(tempA);
 		scalar(tempA,tempS,eS);
+
 
 //#printf(" U = %lf\t%lf\t%lf\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);//#
 //#printf("S = %lf  %lf  %lf  %lf\n",S[0],S[1],S[2],norm2(S));//#

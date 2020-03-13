@@ -234,28 +234,37 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 
 	int panel; //panel counter
 	double tempA[3],tempAA[3]; //temporary arrays
+    double eps, psi, nu;
 
 
 //	I. 	 updated panel geometry (move x1 & x2; 
 
+    if(info.flagHORZ)   eps = info.alpha;
+    else eps = 0;
+    psi = info.beta;
+    nu = info.bank;
+    eps=0;
+    
 	for(panel=0;panel<info.nopanel;panel++)
 	{
-
-	//rotate X1
-		rotateX(panelPtr[panel].x1,-info.bank,panelPtr[panel].x1);
-
+        //rotate X1
+        rotateZ(panelPtr[panel].x1,psi,tempA);
+        rotateX(tempA,-nu,tempAA);
+        rotateY(tempAA,eps,panelPtr[panel].x1);
 
 		//rotate X2
-		rotateX(panelPtr[panel].x2,-info.bank,panelPtr[panel].x2);
-
-//	Ia.  adjust epsilon for alpha (if horizontal flight) and beta
-
-
+        rotateZ(panelPtr[panel].x2,psi,tempA);
+        rotateX(tempA,-nu,tempAA);
+        rotateY(tempAA,eps,panelPtr[panel].x2);
 	}
+//    Ia.  adjust epsilon for alpha (if horizontal flight) and beta
+    info.beta = 0;
 
 //	II.	 updated CG location (RefPt)
 	//rotate reference point (CG)
-	rotateX(info.RefPt,-info.bank,info.RefPt);
+`   rotateZ(info.RefPt,psi,tempA);
+    rotateX(tempA,-nu,tempAA);
+    rotateY(tempAA,eps,info.RefPt);
 
 //	III. adjust freestream vector (info.U), also to include upwind info.Ws
 

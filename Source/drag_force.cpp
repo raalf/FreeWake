@@ -61,6 +61,7 @@ double R1[3],Ro[3],R2[3]; 	//res. ind. force at trail. edge edges and center
 double R[3];				//resultant ind. force/density of element i
 double CDi = 0,CLi=0,CYi=0;	//total induced drag at trailind edge
 double tempA[3],tempB[3],tempS;
+double tempC[3][3];
 double tempProj[3],tempTE[3];
 int type;					//type of wake DVE
 DVE tempDVE;				//temporary DVE
@@ -231,22 +232,30 @@ DVE tempDVE;				//temporary DVE
 				delX[1] = X[k][1] - tempTE[1];
 				delX[2] = X[k][2] - tempTE[2];
 
-				//delX projected into the freestream direction (magnitude)
-				tempS=dot(delX,surfacePtr[index].U);
 
-				//vector from TE of s(inducer) to TE of index (induced) projected into the freestream direction (with direction) to make tempB
-				scalar(surfacePtr[index].U,tempS,tempB);
+				if(info.flagCIRC){ //Added by D.F.B. 03-2020 for circling flight
+					// NOTE: Move *induced point* in its own velocity direction
+					tempS=dot(delX,surfacePtr[index].uTE[k]);
+					scalar(surfacePtr[index].uTE[k],tempS,tempB);
+				} else{ // if not circling flight, move pts in freestream direction (U)
+					//delX projected into the freestream direction (magnitude)
+					tempS=dot(delX,surfacePtr[index].U);
+					
+					//vector from TE of s(inducer) to TE of index (induced) projected into the freestream direction (with direction) to make tempB
+					scalar(surfacePtr[index].U,tempS,tempB);
+				}
 
 				// (X[k] - tempB) should be global origin to new point of interest
 				Xstar[0] = X[k][0] - tempB[0];
 				Xstar[1] = X[k][1] - tempB[1];
 				Xstar[2] = X[k][2] - tempB[2];
+
 						
 				}
 			else
 			{
 			//DVE 's' (the inducer) and DVE 'index' (the induced one) are
-			//of different wigns
+			//of different wings
 
 				Xstar[0] = X[k][0];
 				Xstar[1] = X[k][1];

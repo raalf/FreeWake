@@ -421,8 +421,14 @@ int main()
 		{
 		  for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
 		  {
-			Re = V_inf*2*surfacePtr[m].xsi*tempS*panelPtr[k].m;	//Reynolds number
-
+		  	// Calculate Reynolds number.
+			if(info.flagCIRC){//Added for circling flight: D.F.B. 03-2020
+				// For circling flight calculate based on the panel left edge velocity.
+				Re = norm2(surfacePtr[m].u)*2*surfacePtr[m].xsi*tempS*panelPtr[k].m;
+			}else{
+				// For non-circling flight, calculate based on the fixed-lift velocity
+				Re = V_inf*2*surfacePtr[m].xsi*tempS*panelPtr[k].m;
+			}
 
 			//interpolation of airfoil drag between airfoil of panel edge 1 and 2
 			//GB 2-14-20

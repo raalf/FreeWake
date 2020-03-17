@@ -448,7 +448,10 @@ for (i=0;i<info.nopanel;i++)
 
 		N_force[l][1] = dot(R,eL);			//induced lift
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
-
+		double tempN_FREE[3];
+		scalar(eN,N_free/50,tempN_FREE);
+		if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, tempN_FREE,0);}
+		else{CreateQuiverFile(surfacePtr[l].xo, tempN_FREE,1);}
 //*****************************************************************************
 	  	 //the SIDE FORCE/density is the force in y-direction or N*eN[y]
 //*****************************************************************************

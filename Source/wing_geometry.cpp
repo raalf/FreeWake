@@ -220,11 +220,11 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 	// 	panel		- information of panels
 	//
 	//ouput:
-	//	I. 	 updated panel geometry (move x1 & x2; 
-	//	Ia.  adjust epsilon for alpha (if horizontal flight) and beta
-	//	II.	 updated CG location (RefPt)
-	//	III. adjust freestream vector (info.U), also to include upwind info.Ws
-	//	IV.	 fix sideslip and angle of attack
+	//	I. 	 updated panel geometry (move x1 & x2);
+    //  Ia.  update epsilon of panel if horizontal flight
+    //  II.     updated CG location (RefPt)
+    //  III. adjust beta and if horizontal flight alpha
+    //  IV.  adjust freestream vector (info.U), also to include upwind info.Ws
 	//
 	//1. rotation about x-axis by phi; positive if left wing down
 	//2. rotarion about z'-axis; positive nose to left of flow
@@ -233,17 +233,16 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 	//rotateX, rotateY, ratateZ found in vector_algebra.h
 
 	int panel; //panel counter
-	double tempA[3],tempAA[3]; //temporary arrays
-    double eps, psi, nu;
+	double tempA[3],tempAA[3], tempS; //temporary arrays and scalar
+    double eps,psi,nu,wingNu;
 
 
-//	I. 	 updated panel geometry (move x1 & x2; 
+//    I.      updated panel geometry (move x1 & x2);
 
     if(info.flagHORZ)   eps = info.alpha;
     else eps = 0;
     psi = info.beta;
     nu = info.bank;
-    eps=0;
     
 	for(panel=0;panel<info.nopanel;panel++)
 	{
@@ -256,17 +255,42 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
         rotateZ(panelPtr[panel].x2,psi,tempA);
         rotateX(tempA,-nu,tempAA);
         rotateY(tempAA,eps,panelPtr[panel].x2);
-	}
-//    Ia.  adjust epsilon for alpha (if horizontal flight) and beta
-    info.beta = 0;
+        
+//  Ia.  update epsilon of panel if horizontal flight
+        if(info.flagHORZ)
+        {
+            {   //code block taken from FUNCTION Surface_DVE_Generation
+                //xquart: vector along leading edge of panel
+                scalar(panelPtr[panel].x1,-1,tempA);    //negates x1
+                vsum(panelPtr[panel].x2,tempA,tempAA); //x_l.e. = x1/4_2-x1/4_1
 
-//	II.	 updated CG location (RefPt)
+                //panel span
+                tempS = sqrt(tempAA[1]*tempAA[1]+tempAA[2]*tempAA[2]);
+
+                //leading edge dihedral
+                wingNu = asin(tempAA[2]/tempS);
+            }
+            //correcting epsilons for alpha considering dihedral (wingNu) and bank (nu)
+            panelPtr[panel].eps1 += eps*cos(nu+wingNu);
+            panelPtr[panel].eps2 += eps*cos(nu+wingNu);
+        } //END if(info.flagHORZ)
+    }//END loop over panels
+
+//  II.     updated CG location (RefPt)
 	//rotate reference point (CG)
 	rotateZ(info.RefPt,psi,tempA);
     rotateX(tempA,-nu,tempAA);
     rotateY(tempAA,eps,info.RefPt);
 
-//	III. adjust freestream vector (info.U), also to include upwind info.Ws
+//  III. adjust beta and if horizontal flight alpha
+    info.beta = 0;
+    if(info.flagHORZ)   info.alpha=0;
+
+    
+//  IV.  adjust freestream vector (info.U), also to include upwind info.Ws
+    info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
+    info.U[1]=info.Uinf            *sin(info.beta);
+    info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta);
 
 		
 }
@@ -357,7 +381,7 @@ double xH1[3],xH2[3];	//hinge location
 		deleps = (panelPtr[i].eps2-panelPtr[i].eps1)/panelPtr[i].n;
 
 		/* Changed 20.02.20 D.F.B. User now defined panel at LE and the wing
-		/ twists about the LE of the wing (Instead of the quater chord)
+		/ pitch is adjusted about the LE of the wing (instead of the 1/4 chord)
 		//computing the left leading edge point of panel
 		x1LE[0] = panelPtr[i].x1[0]-0.25*panelPtr[i].c1*cos(panelPtr[i].eps1);
 		x1LE[1] = panelPtr[i].x1[1]-0.25*panelPtr[i].c1*sin(panelPtr[i].eps1)\

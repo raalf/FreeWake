@@ -545,7 +545,7 @@ void Save_Timestep(const GENERAL info,const int timestep,DVE **wakePtr,\
 	fprintf(fp,"%5s%5s%16s %16s %16s %16s %16s %16s",\
 				"span","time","xo","yo","zo","nu","epsilon","psi");
 	fprintf(fp," %16s %16s %16s %16s %16s %16s %16s %16s %16s",\
-				"U","V","W","A","B","C","eta","xsi","K");
+				"U","V","W","A","B","C","eta","xsi","singfct");
 	fprintf(fp," %16s %16s %16s\t#\n","phiLE","phi0","phiTE");
 
 	for (time=0;time<=timestep;time++)
@@ -575,8 +575,8 @@ void Save_Timestep(const GENERAL info,const int timestep,DVE **wakePtr,\
 			fprintf(fp," %16.12lf %16.12lf",\
 						wakePtr[time][span].eta,wakePtr[time][span].xsi);
 			//element half span and half chord
-            fprintf(fp," %16.12lf",999.999); //changed GB 2/6/20
-	//					wakePtr[time][span].K);
+            fprintf(fp," %16.12lf",wakePtr[time][span].singfct);//    999.999);
+	//					wakePtr[time][span].K);//changed GB 2/6/20
 			//leading-edge, mid-chord, and trailing edge sweep2
 			fprintf(fp," %16.12lf %16.12lf %16.12lf",\
 				wakePtr[time][span].phiLE*RtD,\

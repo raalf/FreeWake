@@ -314,9 +314,10 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 	//					1 - zero slope in circulation change
 	//					2 - circulation slope equal to neighboring elementary wing
 
-	FILE *fp;		//input file
-	char ch;		//generic character
-	int i;			//loop counter
+	FILE *fp;		                //input file
+	char ch;		                //generic character
+	int i;			                //loop counter
+    int span,panel,pLeft,pRight;    //span and panel counter, panel to the left
 
 
 	// checks if input file exists
@@ -458,7 +459,88 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
         panelPtr[i].LE1 = panelPtr[i].TE1 - panelPtr[i].n*(panelPtr[i].m-1);
         panelPtr[i].LE2 = panelPtr[i].LE1 + panelPtr[i].n-1;
     }
+    
 //#############################################################################
+    //indentivy span indices across one panel. Later used for wake relaxation
+    span =0; //span index intialized
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        panelPtr[panel].dve1 = span;    //span index at left edge
+        span += panelPtr[panel].n;
+        panelPtr[panel].dve2 = span-1;    //span index at right edge
+        //span++;
+    }
+
+//#############################################################################
+
+    //   Identify span index of wakeDVEs coming off neighboring panels
+    //this seems redundant with input of input file, but had to be done
+    //in order to account for junction
+    //Hierarchy:
+    //          - variables PanelLeft and PanelRight are span index of neighboring DVEs
+    //          - of panel next to current panel
+    //          - (999) - no neighboring panel
+    //          - negative value is that DVE attaches to edge 1 of neighboring DVE
+    //          -
+
+    //initailzing with default values (999) which is no neighboring element
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        panelPtr[panel].dveL = 999;       //no wakedve to the left
+        panelPtr[panel].dveR = 999;       //no wakedve to the right
+    }
+
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        //identifying span index of wakeDVE to the left of this panel
+        for(pLeft=0;pLeft<info.nopanel;pLeft++)
+        {
+            if( (pLeft!=panel) && (panelPtr[panel].dveL == 999))
+            {//not itself and no identified neighbor
+                if((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
+                   (panelPtr[panel].x1[1]==panelPtr[pLeft].x2[1]) &&  \
+                   (panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2]))
+                {   //assigning span index of wakeDVE to the left
+                    panelPtr[panel].dveL = panelPtr[pLeft].dve2;
+                }
+                else if((panelPtr[panel].x1[0]==panelPtr[pLeft].x1[0]) && \
+                        (panelPtr[panel].x1[1]==panelPtr[pLeft].x1[1]) &&  \
+                        (panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]))
+                {   //assigning span index of wakeDVE to the left
+                    panelPtr[panel].dveL = -panelPtr[pLeft].dve1;
+                }
+            }
+        } //end loop over panels to left
+
+        //identifying span index of wakeDVE to the right of this panel
+        for(pRight=0;pRight<info.nopanel;pRight++)
+        {
+            if( (pRight!=panel) && (panelPtr[panel].dveR == 999))
+            {//not itself and no identified neighbor
+                if((panelPtr[panel].x2[0]==panelPtr[pRight].x2[0]) && \
+                   (panelPtr[panel].x2[1]==panelPtr[pRight].x2[1]) &&  \
+                   (panelPtr[panel].x2[2]==panelPtr[pRight].x2[2]))
+                {   //assigning span index of wakeDVE to the right
+                    panelPtr[panel].dveR = panelPtr[pRight].dve2;
+                }
+                else if((panelPtr[panel].x2[0]==panelPtr[pRight].x1[0]) && \
+                        (panelPtr[panel].x2[1]==panelPtr[pRight].x1[1]) &&  \
+                        (panelPtr[panel].x2[2]==panelPtr[pRight].x1[2]))
+                {   //assigning span index of wakeDVE to the right
+                    panelPtr[panel].dveR = -panelPtr[pRight].dve1;
+                }
+            }
+        } //end loop over panels to right
+    } //end loop over panel
+    
+    
+    /*/Test output
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+      {
+          printf("panel %d dve1 %d dve2 %d  dveL %d  dveR  %d\n", \
+                 panel,panelPtr[panel].dve1,panelPtr[panel].dve2,\
+                 panelPtr[panel].dveL,panelPtr[panel].dveR);
+      }//*/
 }
 //===================================================================//
 		//END OF Panel_Info_from_File

@@ -370,7 +370,7 @@ printf("\n");
 
 		//relax only after first two timesteps have been executed
 		if(info.relax == 1 && timestep > 1)
-			Relax_Wake(info,timestep,surfacePtr,wakePtr);
+			Relax_Wake(info,panelPtr,timestep,surfacePtr,wakePtr);
 						 				//Subroutine in wake_geometry.cpp
 
 //===================================================================//
@@ -416,7 +416,7 @@ printf("\n");
 	//===================================================================//
 			//END DVE lift computation
 	//===================================================================//
-
+            
 	//===================================================================//
 			//START Induce_DVE_Drag
 	//===================================================================//
@@ -430,7 +430,9 @@ printf("\n");
 	//===================================================================//
 			//END Induce_DVE_Drag
 	//===================================================================//*/
+            printf("\nCL %lf CY  %lf CN %lf  CDi  %lf\n",CL, CY, sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
 
+            
 			//current span efficiency
 			tempS = CL*CL/(Pi*info.AR*CDi_DVE[timestep]);
 

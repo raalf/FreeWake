@@ -878,20 +878,22 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 //printf("220 left element %d pleft %d  col %d  row %d \n",element,pLeft,col,row);
 
  				//panel to left exists and Gamma and gamma conditions are applied
-
-				//panel 'pLeft' is attached to left edge of panel 'panel' either with 
-				//its right (x2) edge or its left (x1) edge
 				for(pLeft=0;pLeft<info.nopanel;pLeft++)
 				{
-				if(\
+//printf("panel %d  pleft %d \n",panel,pLeft);
+                //panel 'pLeft' is attached to left edge of panel 'panel' either with
+                //its right (x2) edge or its left (x1) edge
+				if( (pLeft!=panel) && (\
 					((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
 					(panelPtr[panel].x1[1]==panelPtr[pLeft].x2[1]) &&  \
-					(panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2])) || \
+					(panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2])) \
+                   || \
 					((panelPtr[panel].x1[0]==panelPtr[pLeft].x1[0]) && \
 					(panelPtr[panel].x1[1]==panelPtr[pLeft].x1[1]) &&  \
-					(panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2])) \
-					&& (junc[pLeft]))
+					(panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]))\
+                    ))
 				{
+//printf("common edge panel %d  pleft %d \n",panel,pLeft);
 //printf("element %d m %d  pLeft %d  panelPtr[pLeft].m %d \n",element,m,pLeft,panelPtr[pLeft].m);
 
 					//if a junction exists then: sum(Gammas)=0 and gamma1=gamma2=gamma3...
@@ -940,8 +942,7 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
 						junc[pLeft]=0; //panel has been used in junction -> set to FALSE
 
 	            	} //end if neighboring DVE exists
-                    //pLeft++; //increase index for check if next panel attaches to panel 'panel'
-                } // end while statement
+                } // end if check if panle to left exists
             	} //end for loop over pLeft
 //printf("left side element %d  col %d  row %d DVEleft %d\n",element,col,row,DVEleft);
  				 //done dealing with panel to the left
@@ -1130,7 +1131,7 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
    	FREE1D(&junc,info.nopanel);  //free allocated memory
 
                
-//store Dmatrix in file
+//store Dmatrix in file - DEBUGGING TOOL
 /*
  FILE *fp;		//output file
 	char filename[137];	//file path and name

@@ -220,7 +220,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 	// 	panel		- information of panels
 	//
 	//ouput:
-	//	I. 	 updated panel geometry (move x1 & x2);
+    //  I. 	 updated panel geometry (move x1 & x2);
     //  Ia.  update epsilon of panel if horizontal flight
     //  II.     updated CG location (RefPt)
     //  III. adjust beta and if horizontal flight alpha
@@ -235,7 +235,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 	int panel; //panel counter
 	double tempA[3],tempAA[3], tempS; //temporary arrays and scalar
     double eps,psi,nu,wingNu;
-
+    
 
 //    I.      updated panel geometry (move x1 & x2);
 
@@ -290,7 +290,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 //  IV.  adjust freestream vector (info.U), also to include upwind info.Ws
     info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
     info.U[1]=info.Uinf            *sin(info.beta);
-    info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta);
+    info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta)-info.Ws;
 
 		
 }
@@ -495,9 +495,9 @@ double xH1[3],xH2[3];	//hinge location
 
 				//computing the mid-span location of the DVE LE
 				//temporarily saved in xleft
-				surfacePtr[l].xleft[0] = x1[0]+xLE[0]*tempS;
-				surfacePtr[l].xleft[1] = x1[1]+xLE[1]*tempS;
-				surfacePtr[l].xleft[2] = x1[2]+xLE[2]*tempS;
+				tempA[0] = x1[0]+xLE[0]*tempS;
+				tempA[1] = x1[1]+xLE[1]*tempS;
+				tempA[2] = x1[2]+xLE[2]*tempS;
 
 				//vector from LE mid-span point to reference point
 				delX[0] =  surfacePtr[l].xsi * ceps;
@@ -505,14 +505,14 @@ double xH1[3],xH2[3];	//hinge location
 				delX[2] = -surfacePtr[l].xsi * seps * cos(nu2);
 
 				//computing the DVE reference point
-				surfacePtr[l].xo[0] = surfacePtr[l].xleft[0] + delX[0];
-				surfacePtr[l].xo[1] = surfacePtr[l].xleft[1] + delX[1];
-				surfacePtr[l].xo[2] = surfacePtr[l].xleft[2] + delX[2];
+				surfacePtr[l].xo[0] = tempA[0] + delX[0];
+				surfacePtr[l].xo[1] = tempA[1] + delX[1];
+				surfacePtr[l].xo[2] = tempA[2] + delX[2];
 
 				//computing the normal of DVE,
-				cross(delX,xLE,surfacePtr[l].xleft);
-				tempS = 1/norm2(surfacePtr[l].xleft);
-				scalar(surfacePtr[l].xleft,tempS,surfacePtr[l].normal);
+				cross(delX,xLE,tempA);
+				tempS = 1/norm2(tempA);
+				scalar(tempA,tempS,surfacePtr[l].normal);
 
 				//computes local free stream velocity at xo location
 				scalar(panelPtr[i].u2,tempS,tempA);		//u2/n*(.5+k)

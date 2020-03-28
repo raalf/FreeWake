@@ -199,8 +199,8 @@ for (i=0;i<info.nopanel;i++)
 		cross(surfacePtr[l].u,S,tempA);			//#	UxS
 		UxS=norm2(tempA);						//	|UxS|
 		scalar(tempA,1/UxS,eN);					//	eN=(UxS)/|UxS|
-
-		//*** Calculated lift direction based on the freestream velocity direction
+       
+        //*** Calculated lift direction based on the freestream velocity direction
 		//		Changed by D.F.B. 03-2020
 		//vector along the bound vortex along LE
 		tempA[0]=0; tempA[1]=1; tempA[2]=0;
@@ -210,7 +210,11 @@ for (i=0;i<info.nopanel;i++)
 		cross(surfacePtr[l].u,spandir,tempA);			//#	UxS
 		Uxspandir=norm2(tempA);						//	|UxS|
 		scalar(tempA,1/Uxspandir,eL);					//	eN=(UxS)/|UxS|
-		//printf("eL*\t%f %f %f\n",eL[0],eL[1],eL[2]);
+
+//        printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
+//        printf("spandir\t%f %f %f\n",spandir[0],spandir[1],spandir[2]);
+//        printf("DVEu\t%f %f %f\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);
+         
 
 		//***Removed by D.F.B. 03-2020
 		//the lift direction  eL=Ux[0,1,0]/|Ux[0,1,0]|
@@ -236,10 +240,10 @@ for (i=0;i<info.nopanel;i++)
 
 //#printf(" U = %lf\t%lf\t%lf\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);//#
 //#printf("S = %lf  %lf  %lf  %lf\n",S[0],S[1],S[2],norm2(S));//#
-//#printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#
-//#printf("eL= %lf\t%lf\t%lf\t%lf\n",eL[0],eL[1],eL[2],norm2(eL));//#
-//#printf("eS= %lf\t%lf\t%lf\t%lf\n",eS[0],eS[1],eS[2],norm2(eS));//#
-//#printf("UXS= %lf\n",(UxS));//#
+//printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#
+//printf("eL= %lf\t%lf\t%lf\t%lf\n",eL[0],eL[1],eL[2],norm2(eL));//#
+//printf("eS= %lf\t%lf\t%lf\t%lf\n",eS[0],eS[1],eS[2],norm2(eS));//#
+//printf("UXS= %lf\n",(UxS));//#
 
 		if(j==0)
 		{	//most forward bound vortex

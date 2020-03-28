@@ -79,7 +79,10 @@ struct PANEL
     int TE1,TE2;		//indices of left and right DVE @ TE of the panel
 						//added 8/12/05 G.B.
     int LE1,LE2;		//index of first and right DVE @ LE of panel 
-    					//GB 2-20-20
+                        //GB 2-20-20
+                        //For wake relaxation GB 3-20-20
+    int dve1,dve2;      //span index at left of right side of panel
+    int dveL,dveR;      //span index of wakeDVE to the left or right
 
     //	Panel Boundary Conditions:
 	//	First Digit: 	0 - undefined circulation strength
@@ -135,6 +138,7 @@ struct DVE
 						//with y=-eta .. eta
 
 	//double K;			//total circulation of DVE K = A +1/3*eta^2*C
+                        //removed February 2020 GB
     
     double A_old, B_eta, Csqeta;    //replaces K-approach to compute new
                         //spanwise circulation distribution
@@ -157,7 +161,6 @@ struct DVE
 	double u[3];		//ind. velocity in ref. pt. in global coordinate
 	//NOTE! surface DVEs u stores the local free stream vector!!
 	double U[3];		//normalized local free stream vel. in ref. pt.
-	double xleft[3];	//coordinates of mid-chord of left edge
 	double singfct;		//rate at which additional singularity at the edge
 						//of the vortex sheet decays
 						//## singfct added 2/8/05 G.B.
@@ -167,7 +170,9 @@ struct DVE
 						//added 10-13-2006 (it's a Friday!) G.B.
 	double x1[3],x2[3];	//points at left and right end of leading edge bound vortex
 						//needed for displacing surface DVE's
+                        //for wakeDEVs: coordinate of mid-chord of left edge
 	double u1[3],u2[3];	//freestream velocities in x1 and x2  added 10-29-06 G.B.
+                        //also velocity at left & right midchord of wakeDVE GB 3-19-20
 	double uTE[3][3];	//freestream at trailing edge. xTE[0] ctr pt, xTE[1] -80%, xTE[2] +80% added D.F.B. 03-2020
 	double xTE[3],TEvc[3]; //center point at and vector along trailing edge of previous
 						//timestep

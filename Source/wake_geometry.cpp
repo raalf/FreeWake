@@ -237,25 +237,6 @@ wakePtr[span].xleft[0],wakePtr[span].xleft[1],wakePtr[span].xleft[2]);
 		}	//end loop over j, DVE's along trailing edge
 	}	// end loop k over nopanel
 
-	//##this part has been added 2/9/05 G.B.
-	//decaying factor for added singularity at wing tip
-	for(wing=0;wing<info.nowing;wing++)
-	{
-		//is the wing symmetrical or not?
-		if(info.sym == 1)//decay factor is 1% of tip-element half-span
-			tempS = 0.01*wakePtr[info.wing2[wing]].eta;
-		else//wing has two tips, possibly different in geometry
-		{	//in that case, decay factor is 1% of the shorter half-span
-			if(wakePtr[info.wing1[wing]].eta < wakePtr[info.wing2[wing]].eta)
-						tempS = 0.01*wakePtr[info.wing1[wing]].eta;
-			else 		tempS = 0.01*wakePtr[info.wing2[wing]].eta;
-		}
-		//loop over wale DVEs of current timestep
-		for(span=info.wing1[wing];span<=info.wing2[wing];span++)
-			wakePtr[span].singfct = tempS;  //assigning decay factor
-	}//next wing
-
-    
     //NEW NEW NEW NEW GB   3/28/20
     //routine to find decay factor based on halfspan of shortes tip element
     //decay factor (singfct) is 1% of smalles tip span.

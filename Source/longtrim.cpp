@@ -42,7 +42,9 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 					//[0]: free stream lift, [1]: induced lift,
 					//[2]: free stream side, [3]: induced side force/density
 					//[4]: free str. normal, [5]: ind. normal frc/density
+                    //[6,7,8]: eN_x, eN_y, eN_z in global ref. frame
 	double *D_force;		//drag forces/density along span
+    double **Span_force;  //x,y,z aerodynamic force/density in wind-axis system
 	double *cd;	//section ind. drag coefficient
 
 	FILE *spaninfo;			//output file for spanwise information
@@ -53,9 +55,10 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
    	ALLOC1D(&cy,info.nospanelement);	//section side force coefficient
    	ALLOC1D(&S,info.nospanelement);	//section area
    	ALLOC1D(&cd,info.nospanelement);	//section ind. drag coefficient
-	ALLOC2D(&N_force,info.noelement,6);	//surface DVE normal forces
+	ALLOC2D(&N_force,info.noelement,9);	//surface DVE normal forces
 	ALLOC1D(&D_force,info.nospanelement);//Drag force per span element
-	
+    ALLOC2D(&Span_force,info.nospanelement,3);//Span force vector per span element
+
 	//initial HT incident correction
 	epsilonHT = 0;//panelPtr[i].eps1;  	//[rad]
 	eps1 = 0;	//the HT incidence angle of one iteration previous
@@ -68,7 +71,8 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	CM_resid = PitchingMoment\
 				(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
 				HTpanel,info.RefPt,CLht,CLhti,\
-				N_force,D_force,CL,CDi,camberPtr);//Subroutine in PitchMoment.cpp
+				N_force,D_force,Span_force,CL,CDi,camberPtr);
+                                    //Subroutine in PitchMoment.cpp
 
 	//adding zero lift of wing only if camber is turned off
 	if(~info.flagCAMBER){CM_resid += info.CMoWing;}
@@ -93,7 +97,8 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		CM_resid = PitchingMoment\
 					(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
 					HTpanel,info.RefPt,CLht,CLhti,\
-					N_force,D_force,CL,CDi,camberPtr);//Subroutine in PitchMoment.cpp
+					N_force,D_force,Span_force,CL,CDi,camberPtr);
+                                    //Subroutine in PitchMoment.cpp
 
 		//adding zero lift of wing	
 		CM_resid += info.CMoWing;
@@ -228,6 +233,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 
 FREE2D(&N_force,info.noelement,6);
 FREE1D(&D_force,info.nospanelement);
+FREE2D(&Span_force,info.nospanelement,3);
 FREE1D(&cl,info.nospanelement);	//section lift coefficient
 FREE1D(&cy,info.nospanelement);	//section side force coefficient
 FREE1D(&S,info.nospanelement);	//section area

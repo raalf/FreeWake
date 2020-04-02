@@ -1,14 +1,14 @@
 //computes pitching moment
 double PitchingMoment(GENERAL &,PANEL *,const double,DVE *&,\
 						const double,const int,const double [3],\
-						double &,double &,double **&,double *&,\
+						double &,double &,double **&,double *&,double **&,\
 						double &,double &,double ***);
 
 double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 						const double cmac, const double epsilonHT,\
 						const int HTpanel,const double xCG[3],\
 						double &CLht,double &CLhti,\
-						double **&N_force,double *&D_force,\
+						double **&N_force,double *&D_force,double **&Span_force,\
 						double &CL,double &CDi_finit, double ***camberPtr)
 {
 //this routine computes the pitching moment of a given configuration.
@@ -27,6 +27,9 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 //
 //output
 //	surfacePtr	geometry of lifting surface
+//  N_force     normal forces of each DVE (9 dimensions)
+//  D_force     drag force/density along span
+//  Span_force  force/density vector along span in wind axis system (inviscid)
 //	CM_resid	residutal pitching moment coefficient w/o CMo of wing
 //	CLht		CL of HT, S is reference area
 // 	CLhti		induced lift of HT
@@ -53,52 +56,10 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 	double Moment,CM_resid;//residual pitch moment and moment coefficient
 	double XCG[3];		//CG location in this routine is moved with wing
 				XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
-	bool flagSTARFORCE=1;
 	double circCenter[3];  	//Center of circling flight added D.F.B. 03-20
 
 double *R,**D;			//resultant vector and matrix
 int *pivot;				//holds information for pivoting D
-
-//===================================================================//
-		//Update tail incidence
-//===================================================================//
-/* REMOVED by DFB 2-26-20. No done deflected in Surface_DVE_Generation
-							to enable hinges
-    //add incicent angle increment
-    if(info.trim==1)   //only if longitudinal trim routine is ON
-//    {	for(i=HTpanel;i<info.nopanel;i++) changed GB 2-10-20
-    {    for(i=info.panel1[1];i<=info.panel2[1];i++)
-	{
-		tempS = panelPtr[i].eps2 - panelPtr[i].eps1; //twist
-		panelPtr[i].eps1 = epsilonHT;
-		panelPtr[i].eps2 = epsilonHT+tempS;
-		printf("\n%d panelPtr[i].eps1: %f\n",i,panelPtr[i].eps1);
-		printf("\ninfo.panel1[1]: %d\n",info.panel1[0]);
-		//adding number of spanwise DVEs of HT
- //removed GB 2-9-20 		HTindex += panelPtr[i].n;
-	}
-    }*/
- 
-	//computingn the first DVE index of HT
- //removed GB 2-9-20 	HTindex *= -info.m;	HTindex += info.noelement;
-
-//===================================================================//
-		//DONE Update tail incidence
-//===================================================================//
-
-//===================================================================//
-//*******************************************************************//
-//===================================================================//
-//
-//						HORSTMANN METHOD (fixed wake)
-//
-//The following part is a strongly abreviated part of Horstmann's 
-//multiple lifting line method.  It doesn't work anymore, but the 
-//information is needed for the relaxed wake part.
-//         NO MORE HORSTMANN, ALL REMOVED GB 2-9-20
-//===================================================================//
-//*******************************************************************//
-//===================================================================//
 
 //===================================================================//
 		//START rotating panels 
@@ -120,12 +81,14 @@ int *pivot;				//holds information for pivoting D
 								//Subroutine in wing_geometry.cpp
 	
 	//if circling flight, calculate the new inflow velocities for each DVE
-	if(info.flagCIRC){ 
-	circCenter[0] = XCG[0];
-	circCenter[1] = XCG[1]-info.Uinf/info.gradient;
-	circCenter[2] = XCG[2];
-	Circling_UINF(info,surfacePtr,xCG);
-	}	
+	if(info.flagCIRC)
+    {
+        circCenter[0] = XCG[0];
+        circCenter[1] = XCG[1]-info.Uinf/info.gradient;
+        circCenter[2] = XCG[2];
+        Circling_UINF(info,surfacePtr,xCG);
+                //Subroutine in wing_geometry.cpp
+	}
 	//save information on elementary wings to file
 //	Save_Surface_DVEs(info,surfacePtr);	//Subroutine in write_output.cpp
 
@@ -137,8 +100,9 @@ int *pivot;				//holds information for pivoting D
 	ALLOC1D(&pivot,info.Dsize);							//pivoting array
 	ALLOC2D(&wakePtr,info.maxtime+1,info.nospanelement);	//wake DVE
 
-	ALLOC1D(&CDi_DVE,info.maxtime+1);			//total induced drag (Eppler)
-	ALLOC2D(&CN,info.maxtime+1,4);				//total normal forces
+    ALLOC2D(&Cf,info.nospanelement,3);  //section forces in wind axis
+	ALLOC1D(&CDi_DVE,info.maxtime+1);   //total induced drag (Eppler)
+	ALLOC2D(&CN,info.maxtime+1,4);		//total normal forces
 
 	//initalizing
 	for(i=0; i<info.maxtime; i++)
@@ -251,14 +215,17 @@ printf("\n");
 	//printf("surfacePtr[i].xo[0]: %f\tsurfacePtr[i].xo[2]: %f\n",surfacePtr[0].xo[0],surfacePtr[0].xo[2]);
 
 		// Adjust z-location of rotation center for circling flight
-		if(info.flagCIRC){circCenter[2] += info.U[2]*info.deltime;} // Use original reference U velocity
+		if(info.flagCIRC)
+            circCenter[2] += info.U[2]*info.deltime; // Use original reference U velocity
 
-		Move_Wing(info,surfacePtr,circCenter,XCG);	//Subroutine in wing_geometry.cpp
+		Move_Wing(info,surfacePtr,circCenter,XCG);
+                        //Subroutine in wing_geometry.cpp
 
 		//if circling flight, calculate the new inflow velocities for each DVE
-		if(info.flagCIRC){
+		if(info.flagCIRC)
 			Circling_UINF(info,surfacePtr,circCenter);
-		}
+                        //Subroutine in wing_geometry.cpp
+		
 		/* The moving CG calcs are now in Move_Wing function - D.F.B. 03-2020
 		//move CG
 		//newXCG -= local U * delta time
@@ -403,34 +370,44 @@ printf("\n");
 //===================================================================//
 		//START DVE lift computation
 //===================================================================//
-//*/		//computes normal forces/density for each surface DVE
-		if(!flagSTARFORCE || ((timestep+1)>info.maxtime)){
+        //computes normal forces/density for each surface DVE
+        if(!flagSTARFORCE || ((timestep+1)>info.maxtime))
+        {   //executed if flagSTARFORCE!=0 or end of time stepping
 			Surface_DVE_Normal_Forces(info,panelPtr,timestep,wakePtr,\
 								  					surfacePtr,N_force);
 								  		//Subroutine in lift_force.cpp
 
-			//computes total lift and side force/density, and ascoefficients
-			DVE_Wing_Normal_Forces(info,N_force,Nt_free, Nt_ind, CL,CLi,CY,CYi);
-							 				//Subroutine in lift_force.cpp
-
-	//===================================================================//
+//===================================================================//
 			//END DVE lift computation
-	//===================================================================//
+//===================================================================//
             
-	//===================================================================//
+//===================================================================//
 			//START Induce_DVE_Drag
-	//===================================================================//
+//===================================================================//
 
 			//	CDi			- total drag coefficient
 			//  D_force 	- local drag force/density along span
 			CDi_DVE[timestep] = \
 			Induced_DVE_Drag(info,panelPtr,surfacePtr,wakePtr,timestep,D_force);
 							 			//Subroutine in drag_force.cpp
-
-	//===================================================================//
+//===================================================================//
 			//END Induce_DVE_Drag
-	//===================================================================//*/
-            printf("\nCL %lf CY  %lf CN %lf  CDi  %lf\n",CL, CY, sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
+//===================================================================//*/
+//===================================================================//
+        //START wing-force computation
+//===================================================================//
+ 
+            //computes total lift and side force/density, and ascoefficients
+            DVE_Wing_Normal_Forces(info,panelPtr,surfacePtr,timestep,\
+                N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi);
+                                            //Subroutine in lift_force.cpp
+
+//===================================================================//
+            //END wing-force computation
+//===================================================================//
+
+            
+   //         printf("\nCL %lf CY  %lf CN %lf  CDi  %lf\n",CL, CY, sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
 
             
 			//current span efficiency
@@ -442,7 +419,7 @@ printf("\n");
 			e_old = tempS; //save e of previous time step
 	//		printf("delta e %lf\n",sqrt(deltae));
 		}
-		else
+		else //skip computing lift and drag force
 		{
 			deltae = 1.0;
 		}
@@ -529,7 +506,8 @@ printf("\n");
 	FREE2D(&D,info.Dsize,info.Dsize);
 	FREE1D(&pivot,info.Dsize);
 
-	FREE1D(&CDi_DVE,info.maxtime+1);
+    FREE2D(&Cf,info.nospanelement,3);
+    FREE1D(&CDi_DVE,info.maxtime+1);
 	FREE2D(&CN,info.maxtime+1,4);
 	FREE2D(&wakePtr,info.maxtime+1,info.nospanelement);
 	

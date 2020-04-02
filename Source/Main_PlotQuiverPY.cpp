@@ -163,7 +163,7 @@ int main()
 	do ch = fgetc(fp);
 	while (ch!='#');
 
-	//allocates memory for wakePtr
+    //allocates memory for wakePtr
 	ALLOC2D(&wakePtr,timestep+1,nospan);
 
 	for(time=0;time<=timestep;time++)

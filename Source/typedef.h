@@ -6,17 +6,19 @@ struct GENERAL
 	char inputfilename[126]; 
 	bool flagVISCOUS; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	bool flagCAMBER; // Turn on/off camber (O = OFF, 1 = ON)
+    
 	double Uinf;		//free stream velocity
 	double alpha, beta;	//angle of attack, sideslip angle
 	double S, b,AR;		//reference area, span, aspect ratio
 	double U[3];		//free stream velocity vector
 	double density;		//density of fluid
 	double nu;			//kinematic viscosity
+    
 	double RefPt[3];	//global reference point for moments
 						//added 1-0-13-2006 G.B. also used for CG
 	bool flagHORZ;		// On/off flag for flight in horizontal plane GB 3.9.20
 						//if on, geometry is rotated by alpha and Uinf in xy-plane
-	
+
 	// Circling flight info D.F.B 02-2020
 	bool flagCIRC;		// On/off flag for circling flight
 	double bank;		// Bank angle (rad)

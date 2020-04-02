@@ -87,13 +87,16 @@ DVE tempDVE;				//temporary DVE
 		//increase wing index to next wing
         if(index>info.dve2[wing]) wing++;
 
-        if(!info.flagCIRC){
+        if(!info.flagCIRC)
+        {
         	//###
 			//drag force direction
 			eD[0] = surfacePtr[index].U[0];
 			eD[1] = surfacePtr[index].U[1];
 			eD[2] = surfacePtr[index].U[2];
-		} else{
+		}
+        else
+        {
 			// Added by D.F.B. 03-2020 because of circling flight
 			// If there is circling flight, set the DVE drag direction to the
 			// velocitiy direction at the TE 
@@ -400,8 +403,12 @@ DVE tempDVE;				//temporary DVE
 		//add all partial drag/lift/side values [force/density]
 		CDi += D_force[i];
 
+//    printf("\tm = %d  eD \t%2.8lf\t%2.8lf\t%2.8lf\n",\
+//           i,eD[0],eD[1],eD[2]);  //###
+        
 		i++;	//advanicing span index of wake DVEs
 	}//end loop over trailing edge surface DVEs and over panels
+
 //#############################################################################
 //							FORCE LOOP - END
 //#############################################################################

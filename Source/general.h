@@ -12,11 +12,12 @@
 #define Pi  3.1415926535897931
 #define DtR Pi/180
 #define RtD 180/Pi
-#define DBL_EPS 1e-14
-#define OUTPUT_PATH "output/"
+#define DBL_EPS 1e-14                   //"zero" definition
+#define OUTPUT_PATH "output/"           //directory where output is saved
 #define PROGRAM_VERSION "FreeWake2020_dev"
-#define AIRFOIL_PATH "airfoils/"
-#define CAMBER_PATH "inputs/camber/"
+#define AIRFOIL_PATH "airfoils/"        //directory with airfoils
+#define CAMBER_PATH "inputs/camber/"  //directory with camber data
+#define flagSTARFORCE 1   //flag = 1 skip computing aero laods until end
 
 
 //global Variables
@@ -32,10 +33,12 @@ BOUND_VORTEX *elementPtr;//pointer holds information on elementary wings
 DVE *surfacePtr;		//pointer to surface Distributed-Vorticity elements
 DVE **wakePtr;			//pointer to wake DVE
 
-double Nt_free[2], Nt_ind[2];
+double Nt_free[3], Nt_ind[3];
 						//magnitude of induced and free stream normal
 						//forces/density of total wing
 
+double CF[3];           //total forces in wind axis system (CFX,CFY,CFY)
+double **Cf;            //section forces in wind axis systme (Cfx,Cfy,Cfz)
 double **CN;			//total normal forces, CL,CLi,CY,CYi for each timestep
 
 double *CDi_DVE;		//total ind. drag (Eppler) with DVEs for each timestep

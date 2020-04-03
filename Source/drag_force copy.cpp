@@ -200,7 +200,7 @@ DVE tempDVE;				//temporary DVE
 				tempB[1] = 0;
 				tempB[2] = 0;
 
-				//make tempB global, call it tempA
+				//make temp B global, call it tempA
 				Star_Glob(tempB,surfacePtr[s].nu,surfacePtr[s].epsilon,\
 													  surfacePtr[s].psi,tempA);
 
@@ -235,7 +235,7 @@ DVE tempDVE;				//temporary DVE
 				Xstar[2] = X[k][2] - tempB[2];
 
 						
-            }
+				}
 			else
 			{
 			//DVE 's' (the inducer) and DVE 'index' (the induced one) are

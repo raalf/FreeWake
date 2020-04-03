@@ -157,48 +157,44 @@ void Wing_Generation(const PANEL* panelPtr,const int nopanel,\
     //    dve1[wing]- index of first dve of wing "wing"
     //    dve2[wing]- index of last dve of wing "wing" added GB 2-9-20
 
-int k,span=0,wing=0,index=0;				//loop counters, k=0..(panel.n-1)
+int k,span,wing,index,panel;		//loop counters, k=0..(panel.n-1)
+    
+    panel1[0]=0;    panel2[0]=0;  //first left panel of wing 1
 
-	//identifies left edges (edge 1) of wings
-	for(k=0;k<nopanel;k++)
-	{
-		//looks at panels left edge (edge 1)
-		if(panelPtr[k].left==0)
-		{
-			wing1[wing]=span;
-			panel1[wing]=k;
-            dve1[wing]=index;
-			wing++;			//advance to next wing
-		}
-		span += panelPtr[k].n; //move to next panel
-        index += panelPtr[k].n*panelPtr[k].m; //index to first dve of next panel
-	}
+    for(wing=0;wing<info.nowing;wing++)
+    {
+        k=panel1[wing]+1;
 
-//identifies right edges (edge 2) of wings
+        while((panelPtr[k].left-1<=panel2[wing] && panelPtr[k].left-1 !=-1) \
+          ||  (panelPtr[k].right-1<=panel2[wing] && panelPtr[k].right-1 !=-1))
+        {
+            panel2[wing]=k;
+            panel1[wing+1]=k+1;
+            panel2[wing+1]=k+1;
+            k++;
+        }
+    }
 
-	//initialize
-	wing = 0;
-	span = -1;
-    index = -1;
-
-	for(k=0;k<nopanel;k++)
-	{
-		span += panelPtr[k].n; //move to next panel
-        index += panelPtr[k].n*panelPtr[k].m; //index to first dve of next
-		//looks at panels left edge (edge 1)
-		if(panelPtr[k].right==0)
-		{
-			wing2[wing]=span;
-			panel2[wing]=k;
-            dve2[wing]=index;
-			wing++;			//advance to next wing
-		}
-	}
-//    for(k=0;k<info.nowing;k++)
-//    {
-//       printf("  wing[%d] dve1 %d  dve2 %d panel1 %d panel2 %d\n",k,info.dve1[k],info.dve2[k],info.panel1[k],info.panel2[k]);
-//    } //###
-
+	//identify DVE indices
+    span=0; wing=0; index=0; //initialize
+    
+    for(wing=0;wing<info.nowing;wing++) //loop over wings
+    {
+        wing1[wing] = span;
+        dve1[wing] = index;
+        //loop over panels of wing
+        for(panel=panel1[wing];panel <= panel2[wing];panel++)
+        {
+            span += panelPtr[panel].n-1;
+            index += panelPtr[panel].n*panelPtr[panel].m-1;
+            
+            wing2[wing] = span;
+            dve2[wing] = index;
+            
+            index++;
+            span++;
+        }// next panel
+    }// next wing
 }
 //===================================================================//
 		//END FUNCTION Wing_Generation

@@ -71,27 +71,26 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
             
             //initializing
             Span_force[span][0]=0; Span_force[span][1]=0; Span_force[span][2]=0;
- //           Cf[0]=0; Cf[1]=0; Cf[3]=0; //section load coefficients
-   
+
             //loop over chord of panel
             for(m=0;m<panelPtr[panel].m;m++)
             {
-                index += m*panelPtr[panel].n; //surfaceDVE indexing down the chord
-
                 //normal force direction
                 eN[0] = N_force[index][6];
                 eN[1] = N_force[index][7];
                 eN[2] = N_force[index][8];
-                
+ 
                 //adding normal forces
                 tempS = (N_force[index][4]+N_force[index][5]); //total normal force
                 Span_force[span][0] += eN[0]*tempS;
                 Span_force[span][1] += eN[1]*tempS;
                 Span_force[span][2] += eN[2]*tempS;
 
- 
+                index +=panelPtr[panel].n; //surfaceDVE indexing down the chord
             }//next chord element; 'index' should be value of surfaceDVE at trailing edge
-            
+
+            index = index - panelPtr[panel].n; //adjusting surfaceDVE
+ 
 //################################################
             // drag force direction
             if(!info.flagCIRC)
@@ -131,8 +130,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
              }
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
-//printf("\n UTE %lf  %lf  %lf ",\
-       surfacePtr[index].uTE[0][0],surfacePtr[index].uTE[0][1],surfacePtr[index].uTE[0][2]);
+//printf("\n%d Spanforce %lf  %lf  %lf ",\
+//       span,tempA[0],tempA[1],tempA[2]);
 //printf("\n u   %lf  %lf  %lf ",\
        surfacePtr[index].u[0],surfacePtr[index].u[1],surfacePtr[index].u[2]);
 
@@ -183,6 +182,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     Nt_ind[1]=0;
     Nt_ind[2]=0;
 
+    printf("\n");
+    
     //loop over number of surfaceDVEs
     for (l=0;l<info.noelement;l++)
     {
@@ -194,10 +195,12 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
         Nt_ind[0]	+=  N_force[l][1];
         Nt_ind[1]	+=  N_force[l][3];
         Nt_ind[2]   +=  N_force[l][5];
-//#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
+printf("DVE %d  Nx  =%lf\t Ntxind  =%lf  in lift_force\n",l,N_force[l][0],N_force[l][1]);//#
+    //#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
     //#printf("NtXi =%lf\t NtZi =%lf\n",Nt_ind[0],Nt_ind[1]);//#
     }
 
+    
     if (info.sym==1 && info.beta == 0)
     {	//twice the force if symmetric geometry
         Nt_free[0]*=2;
@@ -215,8 +218,32 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     CLi = Nt_ind[0]*q;
     CYi = Nt_ind[1]*q;
 
-//    printf("CL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf  CFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
-//           CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#
+    printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
+           CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#
+
+    //===================================================================//
+    //===================================================================//
+//################
+    
+    // N_force    normal forces/density of each surface DVE, second index is:
+    //            [0]: free stream lift, [1]: induced lift,
+    //            [2]: free stream side, [3]: induced side force/density
+    //          [4]: free stream normal, [5]: induced normal force/density
+    //          [6,7,8]: eN_x, eN_y, eN_z in global ref. frame
+    // D_force  drag force/density across span
+    //
+    //ouput:
+    //
+    // Span_force   force/density vector across span in wind axis system
+    // Nt_free    total lift, side and normal forces/density due to free stream flow
+    // Nt_ind    total lift, side and normalforces/density due to induced velocities
+    
+    
+   // for (l=0;l<info.noelement;l++)
+   // {
+   //     printf
+//}
+
 }
 //===================================================================//
 		//END FUNCTION DVE_Wing_Normal_Forces

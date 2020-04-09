@@ -100,17 +100,9 @@ int *pivot;				//holds information for pivoting D
 	ALLOC1D(&pivot,info.Dsize);							//pivoting array
 	ALLOC2D(&wakePtr,info.maxtime+1,info.nospanelement);	//wake DVE
 
-    ALLOC2D(&Cf,info.nospanelement,3);  //section forces in wind axis
-	ALLOC1D(&CDi_DVE,info.maxtime+1);   //total induced drag (Eppler)
-	ALLOC2D(&CN,info.maxtime+1,4);		//total normal forces
-
-	//initalizing
-	for(i=0; i<info.maxtime; i++)
-	{
-		CN[i][0] = 0;	CN[i][1] = 0;	CN[i][2] = 0;	CN[i][3] = 0;
-		CDi_DVE[i] = 0;
-	}
-	for(j=0; j<info.nospanelement; j++)		D_force[j] = 0;
+    //initalizing
+    for(i=0; i<=info.maxtime; i++)          CDi_DVE[i] = 0;
+    for(j=0; j<info.nospanelement; j++)     D_force[j] = 0;
 
 //===================================================================//
 		//START generating D matrix
@@ -372,11 +364,12 @@ printf("\n");
 //===================================================================//
         //computes normal forces/density for each surface DVE
         if(!flagSTARFORCE || ((timestep+1)>info.maxtime))
-        {   //executed if flagSTARFORCE!=0 or end of time stepping
+        {
+            //executed if flagSTARFORCE!=0 or end of time stepping
 			Surface_DVE_Normal_Forces(info,panelPtr,timestep,wakePtr,\
 								  					surfacePtr,N_force);
 								  		//Subroutine in lift_force.cpp
-
+ 
 //===================================================================//
 			//END DVE lift computation
 //===================================================================//
@@ -393,6 +386,7 @@ printf("\n");
 //===================================================================//
 			//END Induce_DVE_Drag
 //===================================================================//*/
+ 
 //===================================================================//
         //START wing-force computation
 //===================================================================//
@@ -402,13 +396,12 @@ printf("\n");
                 N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi);
                                             //Subroutine in lift_force.cpp
 
+            printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
+            printf(" CN %lf CDi %lf\n",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
+
 //===================================================================//
             //END wing-force computation
 //===================================================================//
-
-            
-   //         printf("\nCL %lf CY  %lf CN %lf  CDi  %lf\n",CL, CY, sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
-
             
 			//current span efficiency
 			tempS = CL*CL/(Pi*info.AR*CDi_DVE[timestep]);
@@ -506,9 +499,6 @@ printf("\n");
 	FREE2D(&D,info.Dsize,info.Dsize);
 	FREE1D(&pivot,info.Dsize);
 
-    FREE2D(&Cf,info.nospanelement,3);
-    FREE1D(&CDi_DVE,info.maxtime+1);
-	FREE2D(&CN,info.maxtime+1,4);
 	FREE2D(&wakePtr,info.maxtime+1,info.nospanelement);
 	
 	//returning the residual moment coefficient

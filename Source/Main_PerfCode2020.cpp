@@ -248,7 +248,9 @@ int main()
 
 	//allocating memory
 	ALLOC1D(&surfacePtr,info.noelement);	//surface DVE
+    ALLOC1D(&CDi_DVE,info.maxtime+1);   //total induced drag (Eppler)
 	ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
+    ALLOC2D(&Cf,info.nospanelement,3);  //section forces in wind axis
 
 //===================================================================//
 		//START wing generation
@@ -386,7 +388,11 @@ int main()
 
 		//induced drag
 		Di = CDi*info.S*q_inf;
-		printf("CL %lf V %lf CDi %lf \n",CL,V_inf,CDi);
+        
+        printf("CL %lf CDi_DVE %lf CDi %lf %d\n",\
+               CL,CDi_DVE[info.maxtime],CDi,info.maxtime);
+        printf("CFX %lf CFY %lf CFZ %lf CFz+CFY %lf in Main\n",\
+               CF[0],CF[1],CF[2],sqrt(CF[1]*CF[1]+CF[2]*CF[2]));
 
 	//===============================================================//
 		//computing wing/horizontal tail profile drag
@@ -595,6 +601,8 @@ int main()
 	FREE1D(&panelPtr,info.nopanel);
 	FREE1D(&surfacePtr,info.noelement);
 	FREE1D(&cn,info.noelement);
+    FREE1D(&CDi_DVE,info.maxtime+1);
+    FREE2D(&Cf,info.nospanelement,3);
 	FREE3D(&camberPtr,cambRow,cambCol,2);
 	FREE3D(&airfoilPtr,airfoilRow,airfoilCol,5);
 	

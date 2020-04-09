@@ -39,8 +39,6 @@ double Nt_free[3], Nt_ind[3];
 
 double CF[3];           //total forces in wind axis system (CFX,CFY,CFY)
 double **Cf;            //section forces in wind axis systme (Cfx,Cfy,Cfz)
-double **CN;			//total normal forces, CL,CLi,CY,CYi for each timestep
-
 double *CDi_DVE;		//total ind. drag (Eppler) with DVEs for each timestep
 double CDi_finit;		//total induced drag with DVEs after all timesteps
 

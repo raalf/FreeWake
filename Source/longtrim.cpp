@@ -38,6 +38,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	double *cl,*cy;		//section lift and side force coefficients
 	double *S;			//area of a spanwise strip (sum of areas of DVEs of one span location)
 	double tempS;
+    int tempI;
 	double **N_force;		//surface DVE's normal forces/density
 					//[0]: free stream lift, [1]: induced lift,
 					//[2]: free stream side, [3]: induced side force/density
@@ -51,7 +52,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	char filename[133];	//file path and name for spanwise information
 
 	//allocating memory	
-	ALLOC1D(&cl,info.noelement);	//section lift coefficient
+	ALLOC1D(&cl,info.nospanelement);	//section lift coefficient
    	ALLOC1D(&cy,info.nospanelement);	//section side force coefficient
    	ALLOC1D(&S,info.nospanelement);	//section area
    	ALLOC1D(&cd,info.nospanelement);	//section ind. drag coefficient
@@ -135,25 +136,34 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 			//adding up chordal values of one spanwise location (indexed i)
 			for(m=0;m<panelPtr[k].m;m++)
 			{
-				j=n+m*panelPtr[k].n;
-				cn[i] += (N_force[j][4]+N_force[j][5]);
-				cl[i] += (N_force[j][0]+N_force[j][1]);
-				cy[i] += (N_force[j][2]+N_force[j][3]);
-				S[i] += surfaceDVEPtr[j].S;
+				j=n+m*panelPtr[k].n;  //counting index along chord
+//
+                cn[i] += (N_force[j][4]+N_force[j][5]); //adding forces/density along chord
+                cl[i] += (N_force[j][0]+N_force[j][1]);
+                cy[i] += (N_force[j][2]+N_force[j][3]);
+                S[i] += surfaceDVEPtr[j].S;             //adding DVE areas along chord
 			}
-			//Nondimensionalizing values
-			tempS = 2/(info.Uinf*info.Uinf*S[i]);			
-			cd[i] = D_force[i]*tempS;		
+			//Nondimensionalizing values using summed areas and velocity at LE of chordal row of DVEs
+            tempI = j-panelPtr[k].n*(panelPtr[k].m-1); // index of DVE at leading edge
+			tempS = 2/(S[i]*dot(surfaceDVEPtr[tempI].u,surfaceDVEPtr[tempI].u));
+            cd[i] = D_force[i]*tempS;
 			cn[i] *= tempS;
 			cl[i] *= tempS;
-			cy[i] *= tempS;	
-
+			cy[i] *= tempS;
+            
 			i++;  //next span index 
 			n++;	//index of next leading edge DVE 
 		}
 		n += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 	}
-
+    for(i=0;i<info.nospanelement;i++)
+    {
+        printf("%d cl %lf cy %lf cn %lf  cd %lf  in longtrim\n",i,cl[i],cy[i],cn[i],cd[i]);
+    }
+    for(i=0;i<info.nospanelement;i++)
+    {
+        printf("%d cfz %lf cfy %lf cfx %lf  in longtrim\n",i,Cf[i][2],Cf[i][1],Cf[i][0]);
+    }
 
 //===================================================================//
 //			save spanwise information, lift and drag distribution

@@ -952,8 +952,10 @@ void Read_Airfoil_or_Camber(GENERAL &info, double ***dataPtr, int &Row,\
 	
 
 	// Initialize the dataPtr array with all zeros
-	for (k = 0; i < Row; ++i){
-		for (j = 0; j < Col; ++j){
+	for (i = 0; i < Row; ++i)
+    {
+		for (j = 0; j < Col; ++j)
+        {
 				dataPtr[i][j][0] = 0;
 				dataPtr[i][j][1] = 0;
 		}

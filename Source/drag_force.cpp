@@ -384,8 +384,8 @@ DVE tempDVE;				//temporary DVE
 		//add all partial drag/lift/side values [force/density]
 		CDi += D_force[i];
 
-//    printf("\tm = %d  eD \t%2.8lf\t%2.8lf\t%2.8lf\n",\
-//           i,eD[0],eD[1],eD[2]);  //###
+//  printf("\nspan %d  eD %2.8lf %2.8lf %2.8lf span %d D %lf cos %lf sin %lf Drag\n",\
+//         i,eD[0],eD[1],eD[2],i,D_force[i],cos(info.gradient*info.deltime*(rightnow-1)),sin(info.gradient*info.deltime*(rightnow-1)));  //###
         
 		i++;	//advanicing span index of wake DVEs
 	}//end loop over trailing edge surface DVEs and over panels

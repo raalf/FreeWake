@@ -17,7 +17,7 @@
 #define PROGRAM_VERSION "FreeWake2020_dev"
 #define AIRFOIL_PATH "airfoils/"        //directory with airfoils
 #define CAMBER_PATH "inputs/camber/"  //directory with camber data
-#define flagSTARFORCE 1   //flag = 1 skip computing aero laods until end
+#define flagSTARFORCE 0   //flag = 1 skip computing aero laods until end
 
 
 //global Variables

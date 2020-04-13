@@ -158,11 +158,11 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	}
     for(i=0;i<info.nospanelement;i++)
     {
-        printf("%d cl %lf cy %lf cn %lf  cd %lf  in longtrim\n",i,cl[i],cy[i],cn[i],cd[i]);
+        //printf("%d cl %lf cy %lf cn %lf  cd %lf  in longtrim\n",i,cl[i],cy[i],cn[i],cd[i]);
     }
     for(i=0;i<info.nospanelement;i++)
     {
-        printf("%d cfz %lf cfy %lf cfx %lf  in longtrim\n",i,Cf[i][2],Cf[i][1],Cf[i][0]);
+        //printf("%d cfz %lf cfy %lf cfx %lf  in longtrim\n",i,Cf[i][2],Cf[i][1],Cf[i][0]);
     }
 
 //===================================================================//

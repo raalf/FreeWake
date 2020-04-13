@@ -100,9 +100,10 @@ DVE tempDVE;				//temporary DVE
 			// Added by D.F.B. 03-2020 because of circling flight
 			// If there is circling flight, set the DVE drag direction to the
 			// velocitiy direction at the TE 
-			eD[0] = surfacePtr[index].uTE[0][0];
-			eD[1] = surfacePtr[index].uTE[0][1];
-			eD[2] = surfacePtr[index].uTE[0][2];
+			tempS = 1 / norm2(surfacePtr[index].uTE[0]);
+			eD[0] = surfacePtr[index].uTE[0][0] * tempS;
+			eD[1] = surfacePtr[index].uTE[0][1] * tempS;
+			eD[2] = surfacePtr[index].uTE[0][2] * tempS;
 		}
 
 	//#########################################################################

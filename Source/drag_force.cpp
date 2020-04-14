@@ -60,7 +60,7 @@ double gamma1,gammao,gamma2;//vorticity at trailing edge edges and center
 double R1[3],Ro[3],R2[3]; 	//res. ind. force at trail. edge edges and center
 double R[3];				//resultant ind. force/density of element i
 double CDi = 0,CLi=0,CYi=0;	//total induced drag at trailind edge
-double tempA[3],tempB[3],tempS;
+double tempA[3],tempB[3],tempS,tempD,tempE[3];
 double tempC[3][3];
 double tempProj[3],tempTE[3];
 int type;					//type of wake DVE
@@ -220,8 +220,15 @@ DVE tempDVE;				//temporary DVE
 
 				if(info.flagCIRC){ //Added by D.F.B. 03-2020 for circling flight
 					// NOTE: Move *induced point* in its own velocity direction
-					tempS=dot(delX,surfacePtr[index].uTE[k]);
-					scalar(surfacePtr[index].uTE[k],tempS,tempB);
+
+					tempD = 1 / norm2(surfacePtr[index].uTE[k]); //nondimensionalize the direction. BBB April 2020
+					tempE[0] = surfacePtr[index].uTE[k][0] * tempD;
+					tempE[1] = surfacePtr[index].uTE[k][1] * tempD;
+					tempE[2] = surfacePtr[index].uTE[k][2] * tempD;
+
+					tempS = dot(delX, tempE);
+					scalar(tempE,tempS,tempB);
+
 				} else{ // if not circling flight, move pts in freestream direction (U)
 					//delX projected into the freestream direction (magnitude)
 					tempS=dot(delX,surfacePtr[index].U);

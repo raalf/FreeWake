@@ -45,6 +45,13 @@ Temporary Items
 # Output files
 /output/*.txt
 /output/*.py
+/output/*.dat
+
+# Source Stuff
+*.obj
 
 # fw executable to remove issues with merging
 fw
+
+# Visual Studio directories
+FreeWake2020

@@ -168,8 +168,10 @@ int k,span,wing,index,panel;		//loop counters, k=0..(panel.n-1)
         //identifies whether panel to left or right as defined in input file is
         //of lesser or equal index as current index and not no-neighober (-1).
         //If so, advance to next panel.
-        while((panelPtr[k].left-1<=panel2[wing] && panelPtr[k].left-1 !=-1) \
-          ||  (panelPtr[k].right-1<=panel2[wing] && panelPtr[k].right-1 !=-1))
+        while(((panelPtr[k].left-1<=panel2[wing] && panelPtr[k].left-1 !=-1) \
+          ||  (panelPtr[k].right-1<=panel2[wing] && panelPtr[k].right-1 !=-1)) \
+			&& k < info.nopanel)
+
         {
             panel2[wing]=k;
             panel1[wing+1]=k+1;
@@ -177,6 +179,8 @@ int k,span,wing,index,panel;		//loop counters, k=0..(panel.n-1)
             k++;
         }
     }
+
+
 
 	//identify DVE indices
     span=0; wing=0; index=0; //initialize

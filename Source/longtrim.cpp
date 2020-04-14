@@ -101,8 +101,9 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 					N_force,D_force,Span_force,CL,CDi,camberPtr);
                                     //Subroutine in PitchMoment.cpp
 
-		//adding zero lift of wing	
-		CM_resid += info.CMoWing;
+		
+		//adding zero lift of wing only if camber is turned off
+		if (~info.flagCAMBER) { CM_resid += info.CMoWing; } //changed to account for camber, BBB Apr 2020
 
 		//computing new HT incidence angle
 		tempS = epsilonHT - CM_resid*(epsilonHT-eps1)/(CM_resid-CM_old);

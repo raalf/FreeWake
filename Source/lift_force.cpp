@@ -195,7 +195,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
         Nt_ind[0]	+=  N_force[l][1];
         Nt_ind[1]	+=  N_force[l][3];
         Nt_ind[2]   +=  N_force[l][5];
-printf("DVE %d  Nx  =%lf\t Ntxind  =%lf  in lift_force\n",l,N_force[l][0],N_force[l][1]);//#
+//printf("DVE %d  Nx  =%lf\t Ntxind  =%lf  in lift_force\n",l,N_force[l][0],N_force[l][1]);//#
     //#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
     //#printf("NtXi =%lf\t NtZi =%lf\n",Nt_ind[0],Nt_ind[1]);//#
     }
@@ -218,7 +218,7 @@ printf("DVE %d  Nx  =%lf\t Ntxind  =%lf  in lift_force\n",l,N_force[l][0],N_forc
     CLi = Nt_ind[0]*q;
     CYi = Nt_ind[1]*q;
 
-    printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
+ //   printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
            CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#
 
     //===================================================================//

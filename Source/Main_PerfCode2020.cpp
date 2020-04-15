@@ -610,7 +610,7 @@ int main()
 	fclose(Performance);//close output file of performance calc's
 //printf("done\n");
 //printf("push any key and return ",PROGRAM_VERSION);
-//scanf("%c",&answer);
+scanf("%c",&answer);
 //scanf("%c",&answer);
 	//return(0);
 }

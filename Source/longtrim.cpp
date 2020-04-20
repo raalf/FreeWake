@@ -1,8 +1,8 @@
 void LongitudinalTrim(GENERAL,PANEL *,DVE *,int,double *&,double &,\
-						double &,FILE *,double ***);
+						double &,double &,FILE *,double ***);
 
 void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpanel,\
-						double *&cn,double &CL,double &CDi,\
+						double *&cn,double &CL,double &CY,double &CDi,\
 						FILE *MomSol,double ***camberPtr)
 {
 // This program finds longitudinal trim solutions for twin wing configurations
@@ -22,6 +22,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 //	cn			normal force coefficient of each span element
 //	cd			drag force coefficient of each span element
 // 	CL			total lift
+//  CY          total side force
 //	CDi			total induced drag
 //
 //the routine also saves the trim information to TrimSol.txt
@@ -72,7 +73,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	CM_resid = PitchingMoment\
 				(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
 				HTpanel,info.RefPt,CLht,CLhti,\
-				N_force,D_force,Span_force,CL,CDi,camberPtr);
+				N_force,D_force,Span_force,CL,CY,CDi,camberPtr);
                                     //Subroutine in PitchMoment.cpp
 
 	//adding zero lift of wing only if camber is turned off
@@ -98,7 +99,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		CM_resid = PitchingMoment\
 					(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
 					HTpanel,info.RefPt,CLht,CLhti,\
-					N_force,D_force,Span_force,CL,CDi,camberPtr);
+					N_force,D_force,Span_force,CL,CY,CDi,camberPtr);
                                     //Subroutine in PitchMoment.cpp
 
 		
@@ -157,15 +158,21 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		}
 		n += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 	}
+//*
+//debugging output
     for(i=0;i<info.nospanelement;i++)
     {
-        printf("%d cl %lf cy %lf cn %lf  cd %lf  in longtrim\n",i,cl[i],cy[i],cn[i],cd[i]);
+        printf("%d cl %lf cy %lf cn %lf  cd %lf  in longtrim\n",i,\
+               cl[i],cy[i],cn[i],cd[i]);
     }
     for(i=0;i<info.nospanelement;i++)
     {
-        printf("%d cfz %lf cfy %lf cfx %lf  in longtrim\n",i,Cf[i][2],Cf[i][1],Cf[i][0]);
+        printf("%d cfz %lf cfy %lf cfx %lf  cl %lf  cd %lf in longtrim\n",i,\
+               Cf[i][2],Cf[i][1],Cf[i][0],\
+               Cf[i][2]*cos(info.alpha)-Cf[i][0]*sin(info.alpha),\
+               Cf[i][2]*sin(info.alpha)+Cf[i][0]*cos(info.alpha));
     }
-
+// */
 //===================================================================//
 //			save spanwise information, lift and drag distribution
 //===================================================================//

@@ -54,7 +54,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 //===================================================================//
      if(info.flagCIRC) //total angle turned if turning flight
      {
-         omega=(info.gradient*info.deltime*(time-1)); //turn angle
+         omega=(info.gradient*info.deltime*(time+1)); //turn angle
          cosOm = cos(omega);
          sinOm = sin(omega);
      }
@@ -86,6 +86,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
                 Span_force[span][1] += eN[1]*tempS;
                 Span_force[span][2] += eN[2]*tempS;
 
+                printf("eN %lf %lf %lf |eN| %lf\n",eN[0],eN[1],eN[2],norm2(eN));
+
                 index +=panelPtr[panel].n; //surfaceDVE indexing down the chord
             }//next chord element; 'index' should be value of surfaceDVE at trailing edge
 
@@ -103,14 +105,19 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
               else
               {
                  // Added by D.F.B. 03-2020 because of circling flight
-                 // If there is circling flight, set the DVE drag direction to the
-                 // velocitiy direction at the TE
+                 // If there is circling flight, set the DVE drag
+                 // direction to the velocitiy direction at the TE
                  tempS = 1/norm2(surfacePtr[span].uTE[0]);
                  eD[0] = surfacePtr[index].uTE[0][0]*tempS;
                  eD[1] = surfacePtr[index].uTE[0][1]*tempS;
                  eD[2] = surfacePtr[index].uTE[0][2]*tempS;
               }
-
+ 
+            printf("ed %lf %lf %lf |eD| %lf\n",eD[0],eD[1],eD[2],norm2(eD));
+//            printf("edrot %lf %lf %lf %lf\n",\
+                   eD[0]*cosOm+eD[1]*sinOm,eD[1]*cosOm-eD[0]*sinOm,eD[2],norm2(eD));
+            
+            
             //adding drag
             Span_force[span][0] += eD[0]*D_force[span];
             Span_force[span][1] += eD[1]*D_force[span];
@@ -120,8 +127,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
             //rotate into wind axis system
             if(info.flagCIRC) //turning flight -> rotate vector to wind-axis frame
             {   //rotating by omega
-                tempA[0] = Span_force[span][0]*cosOm - Span_force[span][1]*sinOm;
-                tempA[1] = Span_force[span][0]*sinOm + Span_force[span][1]*cosOm;
+                tempA[0] = Span_force[span][0]*cosOm + Span_force[span][1]*sinOm;
+                tempA[1] = -Span_force[span][0]*sinOm + Span_force[span][1]*cosOm;
                 tempA[2] = Span_force[span][2];
                 //reassigning
                 Span_force[span][0]=tempA[0];
@@ -223,7 +230,6 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 
     //===================================================================//
     //===================================================================//
-//################
     
     // N_force    normal forces/density of each surface DVE, second index is:
     //            [0]: free stream lift, [1]: induced lift,
@@ -237,12 +243,6 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     // Span_force   force/density vector across span in wind axis system
     // Nt_free    total lift, side and normal forces/density due to free stream flow
     // Nt_ind    total lift, side and normalforces/density due to induced velocities
-    
-    
-   // for (l=0;l<info.noelement;l++)
-   // {
-   //     printf
-//}
 
 }
 //===================================================================//

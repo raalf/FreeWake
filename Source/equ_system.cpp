@@ -768,7 +768,8 @@ for(panel=0;panel<info.nopanel;panel++)			//loop over panels
 //				of the junction
 //
 // functions populates rows one after another:
-//          1. left sides of each panels
+//          1. left sides of each panels (even when connecting with
+//              neighboring panel to the right
 //          2. interior sections of each panel
 //          3. complete right side of panels (usually free ends).
 // columns are associated with DVE index, usually column = 3*DVEindex

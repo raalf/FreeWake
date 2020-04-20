@@ -202,10 +202,13 @@ int k,span,wing,index,panel;		//loop counters, k=0..(panel.n-1)
             span++;
         }// next panel
     }// next wing
+
+/*  //test output
     for(wing=0;wing<info.nowing;wing++) //loop over wings
     {
         printf("wing %d panel1 %d panel2 %d\n",wing,panel1[wing],panel2[wing]);
     }
+// */
     
 }
 //===================================================================//

@@ -411,44 +411,6 @@ DVE tempDVE;				//temporary DVE
 		CDi*=2;//sym. geometry and flow, twice the drag
 	}
 
-	///////////////////////////////////////////////////////////////////////
-	//Drag-force contribution to total forces and moments of DVE
-	//Moments are with respect to info.RefPt.
-	//G.B. 11-24-06
-
-	span = 0; //initializing D_force index
-	//loop over panels
-	for(panel=0;panel<info.nopanel;panel++)
-	{
-		//smallest index of panel-1
-		index=panelPtr[panel].TE2-panelPtr[panel].n*panelPtr[panel].m;
-
-	  	//loop over trailing edge elements of current panel
-	  	for(k=panelPtr[panel].TE1;k<=panelPtr[panel].TE2;k++)
-	  	{
-			//drag per DVE is saved in tempS
-			tempS = D_force[span]*info.density/panelPtr[panel].m;
-
-			//loop over elements of one span location, from TE to LE
-			for(i=k;i>index;i-=panelPtr[panel].n)
-			{
-				//the drag vector of each DVE is stored in R[3]
-				R[0] = surfacePtr[i].U[0]*tempS;
-				R[1] = surfacePtr[i].U[1]*tempS;
-				R[2] = surfacePtr[i].U[2]*tempS;
-
-				//surfacePtr[i].Force was initialized in
-				//Surface_DVE_Normal_Forces in lift_force.cpp
-				surfacePtr[i].Force[0] += R[0];
-				surfacePtr[i].Force[1] += R[1];
-				surfacePtr[i].Force[2] += R[2];
-
-			}//end loop i, chordwise elements
-			span++;  //increase span index
-
-	  	}//end loop k, spanwise elements
-	}//end loop panel, loop over panels
-///////////////////////////////////////////////////////////////////////
 
 //#	printf(" L=%lf  Y=%lf",CLi,CYi);
 	return CDi;

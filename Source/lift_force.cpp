@@ -82,11 +82,11 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
  
                 //adding normal forces
                 tempS = (N_force[index][4]+N_force[index][5]); //total normal force
-                Span_force[span][0] += eN[0]*tempS;
-                Span_force[span][1] += eN[1]*tempS;
-                Span_force[span][2] += eN[2]*tempS;
+   //             Span_force[span][0] += eN[0]*tempS;
+    //            Span_force[span][1] += eN[1]*tempS;
+      //          Span_force[span][2] += eN[2]*tempS;
 
-                printf("eN %lf %lf %lf |eN| %lf\n",eN[0],eN[1],eN[2],norm2(eN));
+                printf("\neN %lf %lf %lf |eN| %lf\n",eN[0],eN[1],eN[2],norm2(eN));
 
                 index +=panelPtr[panel].n; //surfaceDVE indexing down the chord
             }//next chord element; 'index' should be value of surfaceDVE at trailing edge
@@ -113,7 +113,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
                  eD[2] = surfacePtr[index].uTE[0][2]*tempS;
               }
  
-            printf("ed %lf %lf %lf |eD| %lf\n",eD[0],eD[1],eD[2],norm2(eD));
+            printf("ed %lf %lf %lf |omega| %lf\n",eD[0],eD[1],eD[2],omega*RtD);
 //            printf("edrot %lf %lf %lf %lf\n",\
                    eD[0]*cosOm+eD[1]*sinOm,eD[1]*cosOm-eD[0]*sinOm,eD[2],norm2(eD));
             
@@ -581,8 +581,8 @@ for (i=0;i<info.nopanel;i++)
          eL[0] = -surfacePtr[l].u[2]/tempS;
          eL[1] =  0;
          eL[2] =  surfacePtr[l].u[0]/tempS;*/
-         //printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
-         //printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
+         printf("\neL\t%f %f %f\n",eL[0],eL[1],eL[2]);
+         printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
          
 /* ************************ Quiver output of lift vector *************************
          if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, eL,0);}

@@ -10,7 +10,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	double *cn,cd;			//section normal and drag force coefficients
 	double cm,CMo;			//section, total zero-lift moment coefficient
 	double cd1,cd2,cm1,cm2;	//section values of panel edge 1 and 2 for interpolation; GB 2-14-20
-	double CL,CD,CDi=0;		//aircraft lift, total and induced drag coefficients
+	double CL,CY,CD,CDi=0;		//aircraft lift, total and induced drag coefficients
 	double CLinviscid=0;	//inviscid CL without stall correction
 	double CDprofile=0;		//wing profile drag coefficient
 	double CDfuselage=0;	//fuselage drag coefficeing
@@ -374,7 +374,8 @@ int main()
 		//compute induced drag and lift distribution
 	//===============================================================//
 		LongitudinalTrim(info,panelPtr,surfacePtr,info.panel2[1],cn,\
-						 CL,CDi,MomSol,camberPtr); //Subroutine in longtrim.cpp
+						 CL,CY,CDi,MomSol,camberPtr);
+                                        //Subroutine in longtrim.cpp
 	//===============================================================//
 		//DONE compute induced drag and lift distribution
 	//===============================================================//
@@ -389,11 +390,13 @@ int main()
 		//induced drag
 		Di = CDi*info.S*q_inf;
         
-        printf("CL %lf CDi_DVE %lf CDi %lf %d\n",\
-               CL,CDi_DVE[info.maxtime],CDi,info.maxtime);
-        printf("CFX %lf CFY %lf CFZ %lf CFz+CFY %lf in Main\n",\
-               CF[0],CF[1],CF[2],sqrt(CF[1]*CF[1]+CF[2]*CF[2]));
-
+        printf("CL %lf CY %lf CDi %lf  alfpha %.2lf  Main line 393\n",\
+               CL,CY,CDi,info.alpha*RtD);
+        printf("CFX %lf CFY %lf CFZ %lf  ",\
+               CF[0],CF[1],CF[2]);
+        printf("<--> CD %lf   CL %lf  \n",\
+               CF[0]*cos(info.alpha)+CF[2]*sin(info.alpha),\
+               -CF[0]*sin(info.alpha)+CF[2]*cos(info.alpha));
 	//===============================================================//
 		//computing wing/horizontal tail profile drag
 	//===============================================================//
@@ -589,7 +592,7 @@ int main()
 		//END write to Performance file
 	//===============================================================//
 
-		printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
+//		printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
 
 
 	}//end loop over 'a' angle of attack

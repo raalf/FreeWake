@@ -166,10 +166,6 @@ struct DVE
 	double singfct;		//rate at which additional singularity at the edge
 						//of the vortex sheet decays
 						//## singfct added 2/8/05 G.B.
-	double Force[3],Moment[3];//aerodynamic forces and moments of DVE in global
-						//reference frame.
-						//Moments with respect to global reference point
-						//added 10-13-2006 (it's a Friday!) G.B.
 	double x1[3],x2[3];	//points at left and right end of leading edge bound vortex
 						//needed for displacing surface DVE's
                         //for wakeDEVs: coordinate of mid-chord of left edge

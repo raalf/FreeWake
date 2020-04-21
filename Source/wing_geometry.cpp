@@ -202,10 +202,13 @@ int k,span,wing,index,panel;		//loop counters, k=0..(panel.n-1)
             span++;
         }// next panel
     }// next wing
+
+/*  //test output
     for(wing=0;wing<info.nowing;wing++) //loop over wings
     {
         printf("wing %d panel1 %d panel2 %d\n",wing,panel1[wing],panel2[wing]);
     }
+// */
     
 }
 //===================================================================//
@@ -1262,7 +1265,7 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 		// Create Omega vector
 		omega[0] = 0;
 		omega[1] = 0;
-		omega[2] = -info.gradient;
+        omega[2] = -info.gradient*cos(info.alpha);
 
 		// ********************* Calculate u,u1,u2 *********************
 		// Calculate r, the vector from the center of rotation to the DVE

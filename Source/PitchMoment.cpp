@@ -2,14 +2,14 @@
 double PitchingMoment(GENERAL &,PANEL *,const double,DVE *&,\
 						const double,const int,const double [3],\
 						double &,double &,double **&,double *&,double **&,\
-						double &,double &,double ***);
+						double &,double &,double &,double ***);
 
 double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 						const double cmac, const double epsilonHT,\
 						const int HTpanel,const double xCG[3],\
 						double &CLht,double &CLhti,\
 						double **&N_force,double *&D_force,double **&Span_force,\
-						double &CL,double &CDi_finit, double ***camberPtr)
+						double &CL,double &CY,double &CDi_finit, double ***camberPtr)
 {
 //this routine computes the pitching moment of a given configuration.
 //The moment is computed about the point xCG, which moves with the wing
@@ -34,6 +34,7 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 //	CLht		CL of HT, S is reference area
 // 	CLhti		induced lift of HT
 //	CL			aircraft CL
+//  CY          aircraft CY
 //	CDi_finit	induced drag
 //
 //
@@ -46,7 +47,7 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 	int saveStep=20;	//number of steps when relaxed wake is saved
 	int timestart=0;	//first timestep of relaxed wake scheme
  //GB 2-9-20 	int HTindex=0;		//the first DVE index of the HT
-	double CLi,CY,CYi;	//lift and side force coefficients
+	double CLi,CYi;	    //induced lift and side force coefficients
 	double e_old;		//span efficiency of previous time step
 	double deltae;		//square of delta_e of curent and previous time step
 	double tempS,tempA[3];//a temporary variable for a scalar and vector

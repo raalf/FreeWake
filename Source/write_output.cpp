@@ -675,15 +675,15 @@ void Save_SurfaceDVE_Loads(const GENERAL info,const int timestep,\
 				0.5*(surfacePtr[span].x1[1]+surfacePtr[span].x2[1]),\
 				0.5*(surfacePtr[span].x1[2]+surfacePtr[span].x2[2]));
 		//Force
-		fprintf(fp," %16.12lf %16.12lf %16.12lf",\
-				surfacePtr[span].Force[0],\
-				surfacePtr[span].Force[1],\
-				surfacePtr[span].Force[2]);
+//		fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+//				surfacePtr[span].Force[0],\
+//				surfacePtr[span].Force[1],\
+//				surfacePtr[span].Force[2]);
 		//Moment
-		fprintf(fp," %16.12lf %16.12lf %16.12lf",\
-				surfacePtr[span].Moment[0],\
-				surfacePtr[span].Moment[1],\
-				surfacePtr[span].Moment[2]);
+//		fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+ //                surfacePtr[span].Moment[0],\
+//				surfacePtr[span].Moment[1],\
+//				surfacePtr[span].Moment[2]);
 		//more info on element
 		fprintf(fp," %16.12lf %16.12lf",\
 				surfacePtr[span].xsi,surfacePtr[span].eta);

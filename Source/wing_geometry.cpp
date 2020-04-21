@@ -1265,7 +1265,7 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 		// Create Omega vector
 		omega[0] = 0;
 		omega[1] = 0;
-		omega[2] = -info.gradient;
+        omega[2] = -info.gradient*cos(info.alpha);
 
 		// ********************* Calculate u,u1,u2 *********************
 		// Calculate r, the vector from the center of rotation to the DVE

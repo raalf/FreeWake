@@ -390,14 +390,13 @@ int main()
 		//induced drag
 		Di = CDi*info.S*q_inf;
         
-        printf("CL %lf CY %lf CDi %lf  |CY+CDI| %lf\n",\
-               CL,CY,CDi,sqrt(CY*CY+CDi*CDi));
-        printf("CFX %lf CFY %lf CFZ %lf |CFX+CFY| %lf in Main\n",\
-               CF[0],CF[1],CF[2],sqrt(CF[1]*CF[1]+CF[0]*CF[0]));
-        printf("CD %lf   CL %lf  alfpha %.2lf in Main\n",\
+        printf("CL %lf CY %lf CDi %lf  alfpha %.2lf  Main line 393\n",\
+               CL,CY,CDi,info.alpha*RtD);
+        printf("CFX %lf CFY %lf CFZ %lf  ",\
+               CF[0],CF[1],CF[2]);
+        printf("<--> CD %lf   CL %lf  \n",\
                CF[0]*cos(info.alpha)+CF[2]*sin(info.alpha),\
-               -CF[0]*sin(info.alpha)+CF[2]*cos(info.alpha),\
-               info.alpha*RtD);
+               -CF[0]*sin(info.alpha)+CF[2]*cos(info.alpha));
 	//===============================================================//
 		//computing wing/horizontal tail profile drag
 	//===============================================================//

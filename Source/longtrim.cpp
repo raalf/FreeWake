@@ -158,7 +158,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		}
 		n += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 	}
-//*
+/*
 //debugging output
     for(i=0;i<info.nospanelement;i++)
     {

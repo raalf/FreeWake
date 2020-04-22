@@ -46,6 +46,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     int l,m,n,panel,span,index;				//counter
     double eN[3],eD[3];         //normal force and drag directions
     double omega,cosOm,sinOm;               //turn angle
+    double cosPhi,sinPhi;           //bank angles
     double tempS,tempA[3];
     double q = 1/(0.5*info.Uinf*info.Uinf*info.S); 	//1/(ref. area* dyn. pressure/density)
     double q_local;         //1/(ref. area dyn. pressure) of DVE
@@ -57,6 +58,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
          omega=(info.gradient*info.deltime*(time+1)); //turn angle
          cosOm = cos(omega);
          sinOm = sin(omega);
+         
+         cosPhi = cos(info.bank);   //bank angle cosine
+         sinPhi = sin(info.bank);   //bank angle sine
      }
 
     span = 0;       //initializing span index
@@ -123,15 +127,15 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
                 tempA[0] = Span_force[span][0]*cosOm + Span_force[span][1]*sinOm;
                 tempA[1] = -Span_force[span][0]*sinOm + Span_force[span][1]*cosOm;
                 tempA[2] = Span_force[span][2];
-                //reassigning
-                Span_force[span][0]=tempA[0];
-                Span_force[span][1]=tempA[1];
-                Span_force[span][2]=tempA[2];
+                //reassigning and rotation by bank angle
+                Span_force[span][0] = tempA[0];
+                Span_force[span][1] = tempA[1]*cosPhi + tempA[2]*sinPhi;
+                Span_force[span][2] = -tempA[1]*sinPhi + tempA[2]*cosPhi;
              }
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
-//printf("\n%d Spanforce %lf  %lf  %lf ",\
-//       span,tempA[0],tempA[1],tempA[2]);
+//printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
+       span,info.bank*RtD, tempA[0],tempA[1],tempA[2]);
 //printf("\n u   %lf  %lf  %lf ",\
        surfacePtr[index].u[0],surfacePtr[index].u[1],surfacePtr[index].u[2]);
 

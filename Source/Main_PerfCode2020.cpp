@@ -390,7 +390,7 @@ int main()
 		//induced drag
 		Di = CDi*info.S*q_inf;
         
-        printf("CL %lf CY %lf CDi %lf  alfpha %.2lf  Main line 393\n",\
+        printf("CL %lf CY %lf CDi %lf  alpha %.2lf  Main line 393\n",\
                CL,CY,CDi,info.alpha*RtD);
         printf("CFX %lf CFY %lf CFZ %lf  ",\
                CF[0],CF[1],CF[2]);

@@ -216,7 +216,7 @@ int k,span,wing,index,panel;		//loop counters, k=0..(panel.n-1)
 //===================================================================//
 
 //===================================================================//
-		//FUNCTION Panel_Rotation
+		//FUNCTION 101
 //===================================================================//
 void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 {
@@ -257,20 +257,11 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
     
 	for(panel=0;panel<info.nopanel;panel++)
 	{
-        //rotate X1
-        rotateZ(panelPtr[panel].x1,psi,tempA);
-        rotateX(tempA,-nu,tempAA);
-        rotateY(tempAA,eps,panelPtr[panel].x1);
-
-		//rotate X2
-        rotateZ(panelPtr[panel].x2,psi,tempA);
-        rotateX(tempA,-nu,tempAA);
-        rotateY(tempAA,eps,panelPtr[panel].x2);
-        
-//  Ia.  update epsilon of panel if horizontal flight
+        //  Ia.  update epsilon of panel if horizontal flight before rotation of X1 and X2
         if(info.flagHORZ)
         {
-            {   //code block taken from FUNCTION Surface_DVE_Generation
+            {   //finding leading edge dihedral (because if vertical surface, no adjustment needed)
+                //code block taken from FUNCTION Surface_DVE_Generation
                 //xquart: vector along leading edge of panel
                 scalar(panelPtr[panel].x1,-1,tempA);    //negates x1
                 vsum(panelPtr[panel].x2,tempA,tempAA); //x_l.e. = x1/4_2-x1/4_1
@@ -281,10 +272,20 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
                 //leading edge dihedral
                 wingNu = asin(tempAA[2]/tempS);
             }
-            //correcting epsilons for alpha considering dihedral (wingNu) and bank (nu)
-            panelPtr[panel].eps1 += eps*cos(nu+wingNu);
-            panelPtr[panel].eps2 += eps*cos(nu+wingNu);
+            //correcting epsilons for alpha considering dihedral (wingNu)
+            panelPtr[panel].eps1 += eps*cos(wingNu);
+            panelPtr[panel].eps2 += eps*cos(wingNu);
         } //END if(info.flagHORZ)
+        
+        //rotate X1
+        rotateZ(panelPtr[panel].x1,psi,tempA);
+        rotateX(tempA,-nu,tempAA);
+        rotateY(tempAA,eps,panelPtr[panel].x1);
+
+		//rotate X2
+        rotateZ(panelPtr[panel].x2,psi,tempA);
+        rotateX(tempA,-nu,tempAA);
+        rotateY(tempAA,eps,panelPtr[panel].x2);
     }//END loop over panels
 
 //  II.     updated CG location (RefPt)

@@ -129,24 +129,38 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			//and the drag force (eD) directions (which can be different for every spanwise
 			//section).  Now we rotate into wind axis system
             if(info.flagCIRC) //turning flight -> rotate vector to wind-axis frame
-            {   //rotating by omega
-                tempA[0] = Span_force[span][0]*cosOm + Span_force[span][1]*sinOm;
-                tempA[1] = -Span_force[span][0]*sinOm + Span_force[span][1]*cosOm;
-                tempA[2] = Span_force[span][2];
+            {   
+				tempA[0] = Span_force[span][0];
+				tempA[1] = Span_force[span][1];
+				tempA[2] = Span_force[span][2];
+				//reassigning and rotation by bank angle
+				Span_force[span][0] = tempA[0];
+				Span_force[span][1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
+				Span_force[span][2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;
+
+				//rotating by omega
+                tempA[0] = tempA[0] *cosOm + tempA[1]*sinOm;
+                tempA[1] = -tempA[0] *sinOm + tempA[1]*cosOm;
+                tempA[2] = tempA[2];
 
 				//rotate by alpha. This also works with horizontal flight because we force alpha = 0
-				//in wing_geometry line 299. 
-				tempA[0] = Span_force[span][0] * cos(info.alpha) + Span_force[span][2] * sin(info.alpha);
-				tempA[1] = Span_force[span][1];
-				tempA[2] = -Span_force[span][0] * sin(info.alpha) + Span_force[span][2] * cos(info.alpha);
+				//in wing_geometry line 299. This may need a beta rot as well!
+				Span_force[span][0] = tempA[0]*cos(info.alpha) + tempA[2]*sin(info.alpha);
+				Span_force[span][1] = tempA[1];
+				Span_force[span][2] = -tempA[0]*sin(info.alpha) + tempA[2]*cos(info.alpha);
 
 
-                //reassigning and rotation by bank angle
-                Span_force[span][0] = tempA[0];
-                Span_force[span][1] = tempA[1]*cosPhi + tempA[2]*sinPhi;
-                Span_force[span][2] = -tempA[1]*sinPhi + tempA[2]*cosPhi;
+
              }
 
+			else //still need to rotate by alpha even if not circling flight. Maybe also need Beta. Also this
+				//assumes that bank is 0 and decending flight! 
+			{
+				Span_force[span][0] = Span_force[span][0] * cos(info.alpha) + Span_force[span][2] * sin(info.alpha);
+				Span_force[span][1] = Span_force[span][1];
+				Span_force[span][2] = -Span_force[span][0] * sin(info.alpha) + Span_force[span][2] * cos(info.alpha);
+
+			}
 			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1);
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################

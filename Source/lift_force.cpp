@@ -80,6 +80,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
             for(m=0;m<panelPtr[panel].m;m++)
             {
                 //normal force direction
+				// This eN is in the global frame, which rotates during circling flight. 
                 eN[0] = N_force[index][6];
                 eN[1] = N_force[index][7];
                 eN[2] = N_force[index][8];
@@ -108,30 +109,43 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
               {
                  // Added by D.F.B. 03-2020 because of circling flight
                  // If there is circling flight, set the DVE drag
-                 // direction to the velocitiy direction at the TE
+                 // direction to the velocitiy direction at the TE.
+				 // This eD is in the global frame, which rotates during circling flight. 
                  tempS = 1/norm2(surfacePtr[span].uTE[0]);
                  eD[0] = surfacePtr[index].uTE[0][0]*tempS;
                  eD[1] = surfacePtr[index].uTE[0][1]*tempS;
                  eD[2] = surfacePtr[index].uTE[0][2]*tempS;
-              }
+              } 
+			CreateQuiverFile(surfacePtr[index].xTE, eD, 1);
             
             //adding drag
             Span_force[span][0] += eD[0]*D_force[span];
             Span_force[span][1] += eD[1]*D_force[span];
             Span_force[span][2] += eD[2]*D_force[span];
             
+			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1);
 //################################################
-            //rotate into wind axis system
+            //At this point, the Span_force vector is alligned with the Normal force (eN)
+			//and the drag force (eD) directions (which can be different for every spanwise
+			//section).  Now we rotate into wind axis system
             if(info.flagCIRC) //turning flight -> rotate vector to wind-axis frame
             {   //rotating by omega
                 tempA[0] = Span_force[span][0]*cosOm + Span_force[span][1]*sinOm;
                 tempA[1] = -Span_force[span][0]*sinOm + Span_force[span][1]*cosOm;
                 tempA[2] = Span_force[span][2];
+
+				tempA[0] = Span_force[span][0] * cos(info.alpha) + Span_force[span][2] * sin(info.alpha);
+				tempA[1] = Span_force[span][1];
+				tempA[2] = -Span_force[span][0] * sin(info.alpha) + Span_force[span][2] * cos(info.alpha);
+
+
                 //reassigning and rotation by bank angle
                 Span_force[span][0] = tempA[0];
                 Span_force[span][1] = tempA[1]*cosPhi + tempA[2]*sinPhi;
                 Span_force[span][2] = -tempA[1]*sinPhi + tempA[2]*cosPhi;
              }
+
+			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1);
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\

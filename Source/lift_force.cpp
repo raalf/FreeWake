@@ -134,6 +134,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
                 tempA[1] = -Span_force[span][0]*sinOm + Span_force[span][1]*cosOm;
                 tempA[2] = Span_force[span][2];
 
+				//rotate by alpha. This also works with horizontal flight because we force alpha = 0
+				//in wing_geometry line 299. 
 				tempA[0] = Span_force[span][0] * cos(info.alpha) + Span_force[span][2] * sin(info.alpha);
 				tempA[1] = Span_force[span][1];
 				tempA[2] = -Span_force[span][0] * sin(info.alpha) + Span_force[span][2] * cos(info.alpha);

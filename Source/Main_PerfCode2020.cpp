@@ -351,7 +351,7 @@ int main()
 
 		printf("\nalpha = %.2lf \n",info.alpha*RtD);
 
-		//computes free stream velocity vector
+		//computes free stream velocity vector. THIS GETS REBUILT INSIDE PANEL ROT FUNCTION if CIRC. 
 		{
 			info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
 			info.U[1]=info.Uinf			*sin(info.beta);
@@ -360,7 +360,7 @@ int main()
 
         //new free stream velocities at panel edges
 			//ATTENTION: NO SPANWISE VELOCITY VARIATION !!!
-		for(i=0;i<info.nopanel;i++)
+		for(i=0;i<info.nopanel;i++) //THIS GETS REBUILT INSIDE CIRCLING_UINF if CIRC
 		{
 			panelPtr[i].u1[0]= info.U[0];
 			panelPtr[i].u1[1]= info.U[1];

@@ -555,7 +555,7 @@ for (i=0;i<info.nopanel;i++)
         //        Changed by D.F.B. 03-2020
         //vector along the bound vortex along LE
         tempA[0]=0; tempA[1]=1; tempA[2]=0;
-        //transforming into local reference frame
+        //transforming into gobal reference frame
         Star_Glob(tempA,0,surfacePtr[l].epsilon,surfacePtr[l].psi,spandir);
 
         cross(surfacePtr[l].u,spandir,tempA);        //#    UxS
@@ -564,7 +564,7 @@ for (i=0;i<info.nopanel;i++)
 
  //        printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
  //        printf("spandir\t%f %f %f\n",spandir[0],spandir[1],spandir[2]);
- //        printf("DVEu\t%f %f %f\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);
+ //       printf("DVEu\t%f %f %f\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);
           
 
          //***Removed by D.F.B. 03-2020
@@ -577,11 +577,9 @@ for (i=0;i<info.nopanel;i++)
 //         printf("\neL\t%f %f %f\n",eL[0],eL[1],eL[2]);
 //         printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
          
-/* ************************ Quiver output of lift vector *************************
-         if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, eL,0);}
-         else{CreateQuiverFile(surfacePtr[l].xo, eL,1);}
-
-         CreateQuiverFile(surfacePtr[l].xo, eL,1);
+//* ************************ Quiver output of lift vector *************************
+		CreateQuiverFile(surfacePtr[l].xo, eN, 0);
+		CreateQuiverFile(surfacePtr[l].xo, eL, 1);
 // ************************* Quiver output of lift vector *************************/
 
          //the side force direction eS=UxeL/|UxeL|
@@ -590,8 +588,9 @@ for (i=0;i<info.nopanel;i++)
          cross(surfacePtr[l].u,eL,tempA);
          tempS=1/norm2(tempA);
          scalar(tempA,tempS,eS);
-
-
+		 
+		 CreateQuiverFile(surfacePtr[l].xo, eS, 1);
+		 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 1);
  //#printf(" U = %lf\t%lf\t%lf\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);//#
  //#printf("S = %lf  %lf  %lf  %lf\n",S[0],S[1],S[2],norm2(S));//#
  //printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#
@@ -627,7 +626,7 @@ for (i=0;i<info.nopanel;i++)
 		N_force[l][1] = dot(R,eL);			//induced lift
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
 
-//* ************************ Quiver output of normal vector *************************
+/* ************************ Quiver output of normal vector *************************
          scalar(eN,N_free/info.Uinf,tempA);
 		if(i==0 && j==0 && k ==0)
                 CreateQuiverFile(surfacePtr[l].xo, tempA,0);

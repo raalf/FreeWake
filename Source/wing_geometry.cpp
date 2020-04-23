@@ -299,9 +299,9 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 
     
 //  IV.  adjust freestream vector (info.U), also to include upwind info.Ws
-    info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
-    info.U[1]=info.Uinf            *sin(info.beta);
-    info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta)-info.Ws;
+	info.U[0] = info.Uinf*cos(info.alpha)*cos(info.beta); //this is never used.
+	info.U[1] = info.Uinf            *sin(info.beta); //this is never used. 
+    info.U[2]= info.Uinf*sin(info.alpha)*cos(info.beta)-info.Ws; //this is used to add to the omega velocities in circUINF
 
 		
 }

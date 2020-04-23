@@ -1263,10 +1263,14 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 	for(i=0;i<info.noelement;i++)
 	{
 
-		// Create Omega vector
+		// Create Omega vector using only the component of the rotation in the 
+		//XY plane. This assumes that Vk = Vinf*cos(alpha). 
+		//This also works with horizontal flight because we force alpha = 0
+		//in wing_geometry line 299.
 		omega[0] = 0;
 		omega[1] = 0;
-        omega[2] = -info.gradient*cos(info.alpha);
+        omega[2] = -info.gradient*cos(info.alpha); 
+		
 
 		// ********************* Calculate u,u1,u2 *********************
 		// Calculate r, the vector from the center of rotation to the DVE

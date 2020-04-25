@@ -133,22 +133,31 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				tempA[0] = Span_force[span][0];
 				tempA[1] = Span_force[span][1];
 				tempA[2] = Span_force[span][2];
-				//reassigning and rotation by bank angle
-				Span_force[span][0] = tempA[0];
-				Span_force[span][1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
-				Span_force[span][2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;
-
-				//rotating by omega
-                tempA[0] = tempA[0] *cosOm + tempA[1]*sinOm;
-                tempA[1] = -tempA[0] *sinOm + tempA[1]*cosOm;
-                tempA[2] = tempA[2];
 
 				//rotate by alpha. This also works with horizontal flight because we force alpha = 0
 				//in wing_geometry line 299. This may need a beta rot as well!
-				Span_force[span][0] = tempA[0]*cos(info.alpha) + tempA[2]*sin(info.alpha);
-				Span_force[span][1] = tempA[1];
-				Span_force[span][2] = -tempA[0]*sin(info.alpha) + tempA[2]*cos(info.alpha);
+				Span_force[span][0] = tempA[0] * cosOm + tempA[1] * sinOm;
+				Span_force[span][1] = -tempA[0] * sinOm + tempA[1] * cosOm;
+				Span_force[span][2] = tempA[2];
 
+				tempA[0] = Span_force[span][0];
+				tempA[1] = Span_force[span][1];
+				tempA[2] = Span_force[span][2];
+
+				Span_force[span][0] = tempA[0];
+				Span_force[span][1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
+				Span_force[span][2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;							
+
+				tempA[0] = Span_force[span][0];
+				tempA[1] = Span_force[span][1];
+				tempA[2] = Span_force[span][2];
+
+				Span_force[span][0] = tempA[0] * cos(info.alpha) + tempA[2] * sin(info.alpha);
+				Span_force[span][1] = tempA[1];
+				Span_force[span][2] = -tempA[0] * sin(info.alpha) + tempA[2] * cos(info.alpha);
+
+
+				//reassigning and rotation by bank angle
 
 
              }
@@ -161,7 +170,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Span_force[span][2] = -Span_force[span][0] * sin(info.alpha) + Span_force[span][2] * cos(info.alpha);
 
 			}
-			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1);
+			
+			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 2);
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
@@ -216,7 +226,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     Nt_ind[1]=0;
     Nt_ind[2]=0;
 
-    printf("\n");
+    //printf("\n");
     
     //loop over number of surfaceDVEs
     for (l=0;l<info.noelement;l++)
@@ -252,7 +262,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     CLi = Nt_ind[0]*q;
     CYi = Nt_ind[1]*q;
 
- //   printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
+    //printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
            CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#
 
     //===================================================================//
@@ -589,8 +599,8 @@ for (i=0;i<info.nopanel;i++)
         //        Changed by D.F.B. 03-2020
         //vector along the bound vortex along LE
         tempA[0]=0; tempA[1]=1; tempA[2]=0;
-        //transforming into local reference frame
-        Star_Glob(tempA,0,surfacePtr[l].epsilon,surfacePtr[l].psi,spandir);
+        //transforming into gobal reference frame
+        Star_Glob(tempA,0,surfacePtr[l].epsilon,surfacePtr[l].psi,spandir); //is this supposed to be zero? consider roll angle vs dihedral/winglet. 
 
         cross(surfacePtr[l].u,spandir,tempA);        //#    UxS
         Uxspandir=norm2(tempA);                        //    |UxS|
@@ -598,7 +608,7 @@ for (i=0;i<info.nopanel;i++)
 
  //        printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
  //        printf("spandir\t%f %f %f\n",spandir[0],spandir[1],spandir[2]);
- //        printf("DVEu\t%f %f %f\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);
+ //       printf("DVEu\t%f %f %f\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);
           
 
          //***Removed by D.F.B. 03-2020
@@ -611,11 +621,14 @@ for (i=0;i<info.nopanel;i++)
 //         printf("\neL\t%f %f %f\n",eL[0],eL[1],eL[2]);
 //         printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
          
-/* ************************ Quiver output of lift vector *************************
-         if(i==0 & j==0 & k ==0){CreateQuiverFile(surfacePtr[l].xo, eL,0);}
-         else{CreateQuiverFile(surfacePtr[l].xo, eL,1);}
-
-         CreateQuiverFile(surfacePtr[l].xo, eL,1);
+//* ************************ Quiver output of lift vector *************************
+		if (timestep ==info.maxtime && k ==0){
+			CreateQuiverFile(surfacePtr[l].xo, eN, 0);
+		}
+		else {
+			CreateQuiverFile(surfacePtr[l].xo, eN, 1);
+		}
+		CreateQuiverFile(surfacePtr[l].xo, eL, 1);
 // ************************* Quiver output of lift vector *************************/
 
          //the side force direction eS=UxeL/|UxeL|
@@ -624,8 +637,9 @@ for (i=0;i<info.nopanel;i++)
          cross(surfacePtr[l].u,eL,tempA);
          tempS=1/norm2(tempA);
          scalar(tempA,tempS,eS);
-
-
+		 
+		 CreateQuiverFile(surfacePtr[l].xo, eS, 1);
+		 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 1);
  //#printf(" U = %lf\t%lf\t%lf\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);//#
  //#printf("S = %lf  %lf  %lf  %lf\n",S[0],S[1],S[2],norm2(S));//#
  //printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#
@@ -661,7 +675,7 @@ for (i=0;i<info.nopanel;i++)
 		N_force[l][1] = dot(R,eL);			//induced lift
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
 
-//* ************************ Quiver output of normal vector *************************
+/* ************************ Quiver output of normal vector *************************
          scalar(eN,N_free/info.Uinf,tempA);
 		if(i==0 && j==0 && k ==0)
                 CreateQuiverFile(surfacePtr[l].xo, tempA,0);

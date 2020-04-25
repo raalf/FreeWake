@@ -775,6 +775,7 @@ FILE *fp;		//output file
 if(idx==0){fp = fopen("output/quiver.txt", "w");}
 else{fp = fopen("output/quiver.txt", "a");}
 
+if (idx == 2) fprintf(fp, "\n");
 // Write vector position and vector components to file
 fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t\n",pos[0],pos[1],pos[2],vec[0],vec[1],vec[2]);
 

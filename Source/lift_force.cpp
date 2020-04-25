@@ -133,22 +133,31 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				tempA[0] = Span_force[span][0];
 				tempA[1] = Span_force[span][1];
 				tempA[2] = Span_force[span][2];
-				//reassigning and rotation by bank angle
-				Span_force[span][0] = tempA[0];
-				Span_force[span][1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
-				Span_force[span][2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;
-
-				//rotating by omega
-                tempA[0] = tempA[0] *cosOm + tempA[1]*sinOm;
-                tempA[1] = -tempA[0] *sinOm + tempA[1]*cosOm;
-                tempA[2] = tempA[2];
 
 				//rotate by alpha. This also works with horizontal flight because we force alpha = 0
 				//in wing_geometry line 299. This may need a beta rot as well!
-				Span_force[span][0] = tempA[0]*cos(info.alpha) + tempA[2]*sin(info.alpha);
-				Span_force[span][1] = tempA[1];
-				Span_force[span][2] = -tempA[0]*sin(info.alpha) + tempA[2]*cos(info.alpha);
+				Span_force[span][0] = tempA[0] * cosOm + tempA[1] * sinOm;
+				Span_force[span][1] = -tempA[0] * sinOm + tempA[1] * cosOm;
+				Span_force[span][2] = tempA[2];
 
+				tempA[0] = Span_force[span][0];
+				tempA[1] = Span_force[span][1];
+				tempA[2] = Span_force[span][2];
+
+				Span_force[span][0] = tempA[0];
+				Span_force[span][1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
+				Span_force[span][2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;							
+
+				tempA[0] = Span_force[span][0];
+				tempA[1] = Span_force[span][1];
+				tempA[2] = Span_force[span][2];
+
+				Span_force[span][0] = tempA[0] * cos(info.alpha) + tempA[2] * sin(info.alpha);
+				Span_force[span][1] = tempA[1];
+				Span_force[span][2] = -tempA[0] * sin(info.alpha) + tempA[2] * cos(info.alpha);
+
+
+				//reassigning and rotation by bank angle
 
 
              }
@@ -161,7 +170,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Span_force[span][2] = -Span_force[span][0] * sin(info.alpha) + Span_force[span][2] * cos(info.alpha);
 
 			}
-			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1);
+			
+			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 2);
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
@@ -590,7 +600,7 @@ for (i=0;i<info.nopanel;i++)
         //vector along the bound vortex along LE
         tempA[0]=0; tempA[1]=1; tempA[2]=0;
         //transforming into gobal reference frame
-        Star_Glob(tempA,0,surfacePtr[l].epsilon,surfacePtr[l].psi,spandir);
+        Star_Glob(tempA,0,surfacePtr[l].epsilon,surfacePtr[l].psi,spandir); //is this supposed to be zero? consider roll angle vs dihedral/winglet. 
 
         cross(surfacePtr[l].u,spandir,tempA);        //#    UxS
         Uxspandir=norm2(tempA);                        //    |UxS|
@@ -612,7 +622,12 @@ for (i=0;i<info.nopanel;i++)
 //         printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
          
 //* ************************ Quiver output of lift vector *************************
-		CreateQuiverFile(surfacePtr[l].xo, eN, 0);
+		if (timestep ==info.maxtime && k ==0){
+			CreateQuiverFile(surfacePtr[l].xo, eN, 0);
+		}
+		else {
+			CreateQuiverFile(surfacePtr[l].xo, eN, 1);
+		}
 		CreateQuiverFile(surfacePtr[l].xo, eL, 1);
 // ************************* Quiver output of lift vector *************************/
 

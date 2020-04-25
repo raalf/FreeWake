@@ -85,7 +85,7 @@ int *pivot;				//holds information for pivoting D
 	if(info.flagCIRC)
     {
         circCenter[0] = XCG[0];
-        circCenter[1] = XCG[1]-info.Uinf/info.gradient;
+        circCenter[1] = XCG[1]-(info.Uinf*cos(info.alpha)/info.gradient); //added alpha rotation BB Apr 2020
         circCenter[2] = XCG[2];
         Circling_UINF(info,surfacePtr,xCG);
                 //Subroutine in wing_geometry.cpp

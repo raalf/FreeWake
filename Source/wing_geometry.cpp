@@ -279,20 +279,21 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
         
         //rotate X1
         rotateZ(panelPtr[panel].x1,psi,tempA);
-        rotateX(tempA,-nu,tempAA);
-        rotateY(tempAA,eps,panelPtr[panel].x1);
+		rotateY(tempA, -eps, tempAA);
+        rotateX(tempAA,-nu, panelPtr[panel].x1);
+
 
 		//rotate X2
         rotateZ(panelPtr[panel].x2,psi,tempA);
-        rotateX(tempA,-nu,tempAA);
-        rotateY(tempAA,eps,panelPtr[panel].x2);
+		rotateY(tempA, -eps, tempAA);
+		rotateX(tempAA, -nu, panelPtr[panel].x2);
     }//END loop over panels
 
 //  II.     updated CG location (RefPt)
 	//rotate reference point (CG)
 	rotateZ(info.RefPt,psi,tempA);
-    rotateX(tempA,-nu,tempAA);
-    rotateY(tempAA,eps,info.RefPt);
+	rotateY(tempA, eps, tempAA);
+	rotateX(tempAA, -nu, info.RefPt);
 
 //  III. adjust beta and if horizontal flight alpha
     info.beta = 0;
@@ -1269,7 +1270,7 @@ void Circling_UINF(GENERAL info, DVE* surfacePtr,const double circCenter[3])
 		//in wing_geometry line 299.
 		omega[0] = 0;
 		omega[1] = 0;
-        omega[2] = -info.gradient*cos(info.alpha); 
+        omega[2] = -info.gradient; 
 		
 
 		// ********************* Calculate u,u1,u2 *********************

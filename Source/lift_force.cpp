@@ -47,6 +47,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     double eN[3],eD[3];         //normal force and drag directions
     double omega,cosOm,sinOm;               //turn angle
     double cosPhi,sinPhi;           //bank angles
+	double cosAlpha, sinAlpha;		//alpha angles
     double tempS,tempA[3];
     double q = 1/(0.5*info.Uinf*info.Uinf*info.S); 	//1/(ref. area* dyn. pressure/density)
     double q_local;         //1/(ref. area dyn. pressure) of DVE
@@ -61,6 +62,10 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
          
          cosPhi = cos(info.bank);   //bank angle cosine
          sinPhi = sin(info.bank);   //bank angle sine
+
+		 cosAlpha = cos(info.alpha);
+		 sinAlpha = sin(info.alpha);
+
      }
 
     span = 0;       //initializing span index
@@ -152,9 +157,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				tempA[1] = Span_force[span][1];
 				tempA[2] = Span_force[span][2];
 
-				Span_force[span][0] = tempA[0] * cos(info.alpha) + tempA[2] * sin(info.alpha);
+				Span_force[span][0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
 				Span_force[span][1] = tempA[1];
-				Span_force[span][2] = -tempA[0] * sin(info.alpha) + tempA[2] * cos(info.alpha);
+				Span_force[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
 
 
 				//reassigning and rotation by bank angle
@@ -165,9 +170,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			else //still need to rotate by alpha even if not circling flight. Maybe also need Beta. Also this
 				//assumes that bank is 0 and decending flight! 
 			{
-				Span_force[span][0] = Span_force[span][0] * cos(info.alpha) + Span_force[span][2] * sin(info.alpha);
+				Span_force[span][0] = Span_force[span][0] * cosAlpha + Span_force[span][2] * sinAlpha;
 				Span_force[span][1] = Span_force[span][1];
-				Span_force[span][2] = -Span_force[span][0] * sin(info.alpha) + Span_force[span][2] * cos(info.alpha);
+				Span_force[span][2] = -Span_force[span][0] * sinAlpha + Span_force[span][2] * cosAlpha;
 
 			}
 			

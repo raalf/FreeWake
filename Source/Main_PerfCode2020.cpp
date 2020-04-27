@@ -58,7 +58,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 
 
 
-int main()
+int main(int argc, char *argv[])
 
 {
 // This program computes the drag of an aircraft configuration.
@@ -138,9 +138,31 @@ int main()
 //						   info.m,info.nopanel);
 //						   //Subroutine in read_input.cpp
 
-	// Define input filename, input.txt by default
-	//sprintf(info.inputfilename,"%s","inputs/Baseline.txt"); //Call to inputs folder
-	sprintf(info.inputfilename,"%s","input.txt");
+
+	
+	
+
+// Define input filename
+	if (argc < 2) //argc is the number of inputs
+				  
+	{
+		sprintf(info.inputfilename, "%s", "input.txt");	//no input name: assume input.txt in the working dir
+		printf("Input Filename : %s\n", "input.txt");
+	}
+	else if(argc ==2)//with an input filename: use it. 
+	{
+		 //argv[0] will be the .exe, argv[1] will be the filename
+		sprintf(info.inputfilename, "%s", argv[1]);
+		printf("Input Filename : %s\n", argv[1]);
+	}
+	else
+	{
+		printf("Incorrect inputs passed to exe. Format should be:\n");
+		printf("FreeWake2020.exe input_filename.txt\n");
+		scanf("%c", &answer);
+		exit(1);
+	}
+	
 
 
 	General_Info_from_File(info,alpha1,alpha2,alphastep);

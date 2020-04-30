@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
 						   //Subroutine in read_input.cpp
 
 	info.AR = info.b*info.b/info.S;  //reference aspect ratio
-
-	//allocates mememory for panel information in 'panelPtr'
+	
+//allocates mememory for panel information in 'panelPtr'
 	//for 'nopanel'-number panels
 	ALLOC1D(&panelPtr,info.nopanel);
 
@@ -372,6 +372,10 @@ int main(int argc, char *argv[])
 		info.alpha = alpha1+a*alphastep;
 
 		printf("\nalpha = %.2lf \n",info.alpha*RtD);
+
+		if (info.gradient == 0) {
+			info.gradient = (9.81*tan(info.bank)) / (info.Uinf); //this Uinf will need to include Ws too!
+		}
 
 		//computes free stream velocity vector. THIS GETS REBUILT INSIDE PANEL ROT FUNCTION if CIRC. 
 		{

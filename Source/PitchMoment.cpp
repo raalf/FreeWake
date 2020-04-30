@@ -85,7 +85,7 @@ int *pivot;				//holds information for pivoting D
 	if(info.flagCIRC)
     {
         circCenter[0] = XCG[0];
-        circCenter[1] = XCG[1]-(info.Uinf*cos(info.alpha)/info.gradient); //added alpha rotation BB Apr 2020
+        circCenter[1] = XCG[1]-(info.Uinf*cos(info.alpha)/info.gradient); //added alpha rotation BB Apr 2020. Should be gamma not alpha
         circCenter[2] = XCG[2];
         Circling_UINF(info,surfacePtr,xCG);
                 //Subroutine in wing_geometry.cpp
@@ -394,7 +394,7 @@ printf("\n");
  
             //computes total lift and side force/density, and ascoefficients
             DVE_Wing_Normal_Forces(info,panelPtr,surfacePtr,timestep,\
-                N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi);
+                N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi,XCG);
                                             //Subroutine in lift_force.cpp
 
             printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
@@ -457,7 +457,7 @@ printf("\n");
 
 	//the residual-moment coefficient
 	CM_resid = Moment*qc;  
-	//printf("\nCM_resid is: %f\n",CM_resid);
+	printf("\nCM_resid is: %f\n", CM_resid);
 	//printf("Moment: %f\t qc: %f\t\n",Moment,qc);
 	if(info.sym==1) CM_resid*=2;
 	//printf("CM resid %lf  \n",CM_resid);

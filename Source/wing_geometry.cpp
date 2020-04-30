@@ -460,6 +460,15 @@ double xH1[3],xH2[3];	//hinge location
 				eps2 += epsC2;
 			}
 
+			// If there is a hinge deflection, do it now for this panel
+			if (panelPtr[i].deflect1 != 0) {
+				DeflectAboutHinge(panelPtr, panelPtr[i].deflect1, x1, x2, m, i, \
+					nu, &epsH1, &epsH2, xH1, xH2);
+				eps1 += epsH1; //If there is camber, add the epsilon to that value
+				eps2 += epsH2;
+			}
+
+
 			// If there is trim adjust the tail at its hinge according to 
 			//the deflection of epsilonHT
 			if(info.trim){
@@ -489,7 +498,7 @@ double xH1[3],xH2[3];	//hinge location
 					surfacePtr[l].xsi=0.5*(chord1+tempS*(chord2-chord1)/panelPtr[i].n);
 					//temporary incidence angle at half span of DVE using camber info
 					surfacePtr[l].epsilon = eps1 + tempS*(eps2-eps1)/panelPtr[i].n;
-				} else if(info.trim){
+				} else if(info.trim || panelPtr[i].deflect1 != 0){
 					//If camber is off but trim is on
 					//half-chord length at midspan of DVE
 					surfacePtr[l].xsi=0.5*(delchord1+delchord*tempS); 

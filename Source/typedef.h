@@ -65,6 +65,7 @@ struct PANEL
 	int BC1;			//boundary condition at panel side 1
     int airfoil1;       //airfoil at panel side 1  added GB 2-14-20
     double hinge1;		//hinge location in %c on side 1 of panel
+	double deflect1;	//hinge deflection in deg on side 1 of panel +TE DN
 
     double x2[3];		//panel side 2 leading edge coordinates
     double c2, eps2;	//panel side 2 chord and incident angle
@@ -72,7 +73,8 @@ struct PANEL
 	int BC2;			//boundary condition at panel side 2
     int airfoil2;       //airfoil at panel side 2   added GB 2-14-20
     double hinge2;		//hinge location in %c on side 2 of panel
-
+	double deflect2;	//hinge deflection in deg on side 2 of panel (+TE DN, must be the same as deflect1)
+	
 	int left, right;	//left and right panel neighbors. 0 -> free end
     int n;				//number of spanwise elementary wings
     int m;              //number of chordwise elementary wings GB 2-9-20

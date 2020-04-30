@@ -13,34 +13,34 @@ Using camber (1) or no camber (0)  camber 	= 	0
 Symmetrical geometry (yes 1, no 0):	sym =		0
 Longitudinal trim (yes 1, no 0):	trim =		0	
 
-Max. number of time steps:	maxtime =	5
+Max. number of time steps:	maxtime =	2
 Width of each time step (sec):	deltime =	.5
 Convergence delta-span effic.:	deltae =	0.00	(0 if only timestepping)
 
-Freestream velocity (leave value 1):	Uinf =		5
-AOA beginning, end, step size [deg]:	alpha=		10 10 1
+Freestream velocity (leave value 1):	Uinf =		10
+AOA beginning, end, step size [deg]:	alpha=		15 15 1
 Sideslip angle [deg]:			beta =		0 
 
 Circling flight information
 Circling flight on (1) off (0):		circling = 1
-Turning in horizontal plane (1)		horizontal = 1   if (0), a/c descends
-Bank angle (deg)			phi = 45
+Turning in horizontal plane (1)		horizontal = 0 if (0), a/c descends
+Bank angle (deg)			phi = 20
 Upwind velocity (m/s)			Ws = 0
-Velocity gradient (1/s)			gradient =  .00000000001  0.3864  .03141592654  
+Velocity gradient (1/s)			gradient =  0 .00000000001   0 .58925 .00000000001   .3864 .00000000001    .03141592654 .03141592654     
 
 Density:				density =	1.225
 Kinematic viscosity:			nu =		1.420000e-05
 
-Reference area:			S =	19.5
-Reference span:			b =	15
+Reference area:			S =	20
+Reference span:			b =	20
 
-Mean aerodynamic chord:		cmac =	0.67
+Mean aerodynamic chord:		cmac =	1
 Aircraft weight (N):		W =	3000.0
-CG location (x y z):		cg =    0 0 0
-CMo of wing:				CMo =	-0.150000000
+CG location (x y z):		cg =    0.25 0 0
+CMo of wing:				CMo =	0.00000000
 
 No. of wings (max. 5):		wings =		1
-No. of panels:			panels =	1
+No. of panels:			panels =	2
 No. of airfoils (max. 15):	airfoils =	2
 
 
@@ -57,51 +57,40 @@ Hinge is in percentage chord:
 Defines leading edge of wing, all measured in metres:
 
 
-Panel #:1. Number of elements across span n = 1 and chord m = 1
-Neighbouring panels (0 for none) left: 0 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.	-5	0.00	1.00	0.00	100	6	1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-.000	5.000	0.000   1.      0.000	100	6 	 1
-
-
-Panel #:1. Number of elements across span n = 4 and chord m = 3
+Panel #:1. Number of elements across span n = 2 and chord m = 8
 Neighbouring panels (0 for none) left: 0 right: 2
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.15	-7.50	0.00	.300	.00	100	6		1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-.000	0.000	0.000   1.    .000	220	6 	 
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+0.0	-10	0.00	1.00	0.00	010	6		0.75	0
+xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+0.0	0	0.000   1.      0.000	220	6 	 0.75	0
 
-Panel #:2. Number of elements across span n = 4 and chord m = 3
+Panel #:2. Number of elements across span n = 2 and chord m = 8
 Neighbouring panels (0 for none) left: 1 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-.000	0.000	0.000   1.000   .000	220	6 		1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.150	7.500	0.00	0.300	.00	100	6 		1
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+0.0	-0	0.00	1.00	0.00	220	6		0.75	-9
+xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+0.0	10	0.000   1.      0.000	010	6 	 0.75	-9
 
-
-
-
-Panel #:3. Number of elements across span n = 3 and chord m = 2
+Panel #:3. Number of elements across span n = 3 and chord m = 4
 Neighbouring panels (0 for none) left: 0 right: 4
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-10.15	-2.00	2.00	0.600	.00	100	6 		1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-10.15	.00	2.00	0.600	.00	220	6 		1
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+10.15	-2.00	2.00	0.600	.00	100	6 		0.75	0
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+10.15	.00	2.00	0.600	.00	220	6 		0.75	0
 
-Panel #:4. Number of elements across span n = 3 and chord m = 2
+Panel #:4. Number of elements across span n = 3 and chord m = 4
 Neighbouring panels (0 for none) left: 3 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-10.15	.00	2.00	0.600	.00	220	6 		1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-10.15	2.00	2.00	0.600	.00	100	6 		1
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+10.15	.00	2.00	0.600	.00	220	6 		0.75	0
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+10.15	2.00	2.00	0.600	.00	100	6 		0.75	0
 
-Panel #:5. Number of elements across span n = 3 and chord m = 2
+Panel #:5. Number of elements across span n = 2 and chord m = 4
 Neighbouring panels (0 for none) left: 0 right: 4
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-10.15	.00	.00	0.600	.00	100	6 		1
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-10.15	.00	2.00	0.600	.00	220	6 		1
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+10.15	.00	.00	0.600	.00	100	6 		0.75	0
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+10.15	.00	2.00	0.600	.00	220	6 		0.75	0
 
 
 

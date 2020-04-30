@@ -1,12 +1,12 @@
 //computes pitching moment
 double PitchingMoment(GENERAL &,PANEL *,const double,DVE *&,\
-						const double,const int,const double [3],\
+						const double,const int, double [3],\
 						double &,double &,double **&,double *&,double **&,\
 						double &,double &,double &,double ***);
 
 double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 						const double cmac, const double epsilonHT,\
-						const int HTpanel,const double xCG[3],\
+						const int HTpanel, double xCG[3],\
 						double &CLht,double &CLhti,\
 						double **&N_force,double *&D_force,double **&Span_force,\
 						double &CL,double &CY,double &CDi_finit, double ***camberPtr)
@@ -56,7 +56,7 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 	double MomArm,deltaM;//moment arm of lift forces, moment of single DVE
 	double Moment,CM_resid;//residual pitch moment and moment coefficient
 	double XCG[3];		//CG location in this routine is moved with wing
-				XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
+				
 	double circCenter[3];  	//Center of circling flight added D.F.B. 03-20
 
 double *R,**D;			//resultant vector and matrix
@@ -69,7 +69,8 @@ int *pivot;				//holds information for pivoting D
 //only applies for turning flight
 	if(info.flagCIRC) Panel_Rotation(info,panelPtr);
 							//Subroutine in wing_geometry.cpp
-
+	xCG[0] = info.RefPt[0]; xCG[1] = info.RefPt[1]; xCG[2] = info.RefPt[2];
+	XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
 //===================================================================//
 		//END rotating panels for horizontal flight sim
 //===================================================================//

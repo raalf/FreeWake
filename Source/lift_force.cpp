@@ -91,48 +91,48 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     for(panel=0;panel<info.nopanel;panel++)
     {
         //loop over panel span (along leading edge indices)
-        for(n=panelPtr[panel].LE1;n<=panelPtr[panel].LE2;n++)
-        {
-            index = n; //setting index to first chordwise DVE of span location
-            
-            //initializing
-            Span_force[span][0]=0; Span_force[span][1]=0; Span_force[span][2]=0;
+		for (n = panelPtr[panel].LE1; n <= panelPtr[panel].LE2; n++)
+		{
+			index = n; //setting index to first chordwise DVE of span location
+
+			//initializing
+			Span_force[span][0] = 0; Span_force[span][1] = 0; Span_force[span][2] = 0;
 			Moment[span][0] = 0;
 			Moment[span][1] = 0;
 			Moment[span][2] = 0;
 
-            //loop over chord of panel
-            for(m=0;m<panelPtr[panel].m;m++)
-            {
+			//loop over chord of panel
+			for (m = 0; m < panelPtr[panel].m; m++)
+			{
 
 
-                //normal force direction
+				//normal force direction
 				// This eN is in the global frame, which rotates during circling flight. 
-                eN[0] = N_force[index][6];
-                eN[1] = N_force[index][7];
-                eN[2] = N_force[index][8];
- 
-                //adding normal forces to force
-                tempS = (N_force[index][4]+N_force[index][5]); //total normal force
+				eN[0] = N_force[index][6];
+				eN[1] = N_force[index][7];
+				eN[2] = N_force[index][8];
+
+				//adding normal forces to force
+				tempS = (N_force[index][4] + N_force[index][5]); //total normal force
 
 				tempVEC[0] = eN[0] * tempS;
 				tempVEC[1] = eN[1] * tempS;
 				tempVEC[2] = eN[2] * tempS;
 
-                Span_force[span][0] += tempVEC[0];
-                Span_force[span][1] += tempVEC[1];
-                Span_force[span][2] += tempVEC[2];
+				Span_force[span][0] += tempVEC[0];
+				Span_force[span][1] += tempVEC[1];
+				Span_force[span][2] += tempVEC[2];
 
 				//adding normal force to moment
 				//moment will be FxR
 				//Normal force is located at the LE of each element
-				lemid[0] = (surfacePtr[index].x1[0] + surfacePtr[index].x2[0])/2;
-				lemid[1] = (surfacePtr[index].x1[1] + surfacePtr[index].x2[1])/2;
-				lemid[2] = (surfacePtr[index].x1[2] + surfacePtr[index].x2[2])/2;
+				lemid[0] = (surfacePtr[index].x1[0] + surfacePtr[index].x2[0]) / 2;
+				lemid[1] = (surfacePtr[index].x1[1] + surfacePtr[index].x2[1]) / 2;
+				lemid[2] = (surfacePtr[index].x1[2] + surfacePtr[index].x2[2]) / 2;
 
-				momarm[0]= XCG[0] - lemid[0] ; //will be momarm 
-				momarm[1] = XCG[1] - lemid[1] ;
-				momarm[2] = XCG[2] - lemid[2] ;
+				momarm[0] = XCG[0] - lemid[0]; //will be momarm 
+				momarm[1] = XCG[1] - lemid[1];
+				momarm[2] = XCG[2] - lemid[2];
 
 				cross(tempVEC, momarm, tempA);
 
@@ -149,45 +149,45 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Moment[span][1] += tempVEC[1] * tempS;
 				Moment[span][2] += tempVEC[2] * tempS;
 
-                index +=panelPtr[panel].n; //surfaceDVE indexing down the chord
-            }//next chord element; 'index' should be value of surfaceDVE at trailing edge
+				index += panelPtr[panel].n; //surfaceDVE indexing down the chord
+			}//next chord element; 'index' should be value of surfaceDVE at trailing edge
 
-            index = index - panelPtr[panel].n; //adjusting surfaceDVE
- 
+			index = index - panelPtr[panel].n; //adjusting surfaceDVE
+
 //################################################
-            // drag force direction
-            if(!info.flagCIRC)
-              {
-                  //drag force direction
-                  eD[0] = surfacePtr[index].U[0];
-                  eD[1] = surfacePtr[index].U[1];
-                  eD[2] = surfacePtr[index].U[2];
-              }
-              else
-              {
-                 // Added by D.F.B. 03-2020 because of circling flight
-                 // If there is circling flight, set the DVE drag
-                 // direction to the velocitiy direction at the TE.
-				 // This eD is in the global frame, which rotates during circling flight. 
-                 tempS = 1/norm2(surfacePtr[span].uTE[0]);
-                 eD[0] = surfacePtr[index].uTE[0][0]*tempS;
-                 eD[1] = surfacePtr[index].uTE[0][1]*tempS;
-                 eD[2] = surfacePtr[index].uTE[0][2]*tempS;
-              } 
-			CreateQuiverFile(surfacePtr[index].xTE, eD, 1);
-            
-            //adding drag to force 
+			// drag force direction
+			if (!info.flagCIRC)
+			{
+				//drag force direction
+				eD[0] = surfacePtr[index].U[0];
+				eD[1] = surfacePtr[index].U[1];
+				eD[2] = surfacePtr[index].U[2];
+			}
+			else
+			{
+				// Added by D.F.B. 03-2020 because of circling flight
+				// If there is circling flight, set the DVE drag
+				// direction to the velocitiy direction at the TE.
+				// This eD is in the global frame, which rotates during circling flight. 
+				tempS = 1 / norm2(surfacePtr[span].uTE[0]);
+				eD[0] = surfacePtr[index].uTE[0][0] * tempS;
+				eD[1] = surfacePtr[index].uTE[0][1] * tempS;
+				eD[2] = surfacePtr[index].uTE[0][2] * tempS;
+			}
+			CreateQuiverFile(surfacePtr[index].xTE, eD, 1, 1);
+
+			//adding drag to force 
 			tempVEC[0] = eD[0] * D_force[span];
 			tempVEC[1] = eD[1] * D_force[span];
 			tempVEC[2] = eD[2] * D_force[span];
 
-            Span_force[span][0] += tempVEC[0];
-            Span_force[span][1] += tempVEC[1];
+			Span_force[span][0] += tempVEC[0];
+			Span_force[span][1] += tempVEC[1];
 			Span_force[span][2] += tempVEC[2];
-            
+
 			//adding drag to moment
 			//drag is located at the TE (WRONG)
-			momarm[0] = XCG[0] - surfacePtr[index].xTE[0] ; //will be momarm 
+			momarm[0] = XCG[0] - surfacePtr[index].xTE[0]; //will be momarm 
 			momarm[1] = XCG[1] - surfacePtr[index].xTE[1];
 			momarm[2] = XCG[2] - surfacePtr[index].xTE[2];
 
@@ -205,10 +205,13 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			Moment[span][1] += tempVEC[1] * tempS;
 			Moment[span][2] += tempVEC[2] * tempS;
 
-
-			CreateQuiverFile(surfacePtr[index].xo,Moment[span], 1);
-			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1);
-
+			if (time == info.maxtime && panel == 0 && n == panelPtr[panel].LE1) {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 0, 3);
+			}
+			else {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 3);
+			}
+			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 3);
 //################################################
             //At this point, the Span_force vector is alligned with the Normal force (eN)
 			//and the drag force (eD) directions (which can be different for every spanwise
@@ -297,8 +300,13 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Moment[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
 
 			}
-			
-			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 2);
+			if (time == info.maxtime && panel == 0 && n == panelPtr[panel].LE1) {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 0, 4);
+			}
+			else {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 4);
+			}
+			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 4);
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
@@ -336,23 +344,34 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 //===================================================================//
                     //total forces
 //===================================================================//
-    //computing CFX,CFY and CFZ
-    CF[0] = 0; CF[1] = 0; CF[2] = 0; //initialzing aircraft coefficients
-	RollMoment = 0;
-	PitchMoment = 0;
-	YawMoment = 0;
 
+    tempA[0] = 0; tempA[1] = 0; tempA[2] = 0; //initialzing aircraft coefficients
+
+	tempVEC[0] = 0; tempVEC[1] = 0; tempVEC[2] = 0;
+
+	//computing CFX,CFY and CFZ, and 3 total moments
     for(span=0;span<info.nospanelement;span++)
     {
-      CF[0] += Span_force[span][0];
-      CF[1] += Span_force[span][1];
-      CF[2] += Span_force[span][2];
+      tempA[0] += Span_force[span][0];
+      tempA[1] += Span_force[span][1];
+      tempA[2] += Span_force[span][2];
 
-
-	  RollMoment += Moment[span][0];
-	  PitchMoment += Moment[span][1];
-	  YawMoment += Moment[span][2];
+	  tempVEC[0] += Moment[span][0];
+	  tempVEC[1] += Moment[span][1];
+	  tempVEC[2] += Moment[span][2];
     }
+
+	CF[0] = tempA[0];
+	CF[1] = tempA[1];
+	CF[2] = tempA[2];
+
+	RollMoment = tempVEC[0];
+	PitchMoment = tempVEC[1];
+	YawMoment = tempVEC[2];
+
+	CreateQuiverFile(surfacePtr[index].xo, tempVEC, 0, 5);
+	CreateQuiverFile(surfacePtr[index].xo, CF, 1, 5);
+
     scalar(CF,q,CF);
 
 	
@@ -764,15 +783,7 @@ for (i=0;i<info.nopanel;i++)
 //         printf("\neL\t%f %f %f\n",eL[0],eL[1],eL[2]);
 //         printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
          
-//* ************************ Quiver output of lift vector *************************
-		if (timestep ==info.maxtime && k ==0){
-			CreateQuiverFile(surfacePtr[l].xo, eN, 0);
-		}
-		else {
-			CreateQuiverFile(surfacePtr[l].xo, eN, 1);
-		}
-		CreateQuiverFile(surfacePtr[l].xo, eL, 1);
-// ************************* Quiver output of lift vector *************************/
+
 
          //the side force direction eS=UxeL/|UxeL|
          // cross(eL,surfacePtr[l].u,tempA);  \\ Removed by D.F.B. 03-2020
@@ -781,8 +792,21 @@ for (i=0;i<info.nopanel;i++)
          tempS=1/norm2(tempA);
          scalar(tempA,tempS,eS);
 		 
-		 CreateQuiverFile(surfacePtr[l].xo, eS, 1);
-		 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 1);
+		 //* ************************ Quiver output of vectors *************************
+		 if (timestep == info.maxtime && i==0 && j==0 && k==0) {
+			 CreateQuiverFile(surfacePtr[l].xo, eN, 0, 1);
+			 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 0, 2);
+		 }
+		 else {
+			 CreateQuiverFile(surfacePtr[l].xo, eN, 1, 1);
+			 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 1, 2);
+		 }
+		 CreateQuiverFile(surfacePtr[l].xo, eL, 1, 1);
+		 CreateQuiverFile(surfacePtr[l].xo, eS, 1, 1);
+		 // ************************* Quiver output of vectors *************************/
+
+
+
  //#printf(" U = %lf\t%lf\t%lf\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);//#
  //#printf("S = %lf  %lf  %lf  %lf\n",S[0],S[1],S[2],norm2(S));//#
  //printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#

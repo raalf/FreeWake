@@ -278,7 +278,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
         } //END if(info.flagHORZ)
         
         //rotate X1
-        rotateZ(panelPtr[panel].x1,psi,tempA);
+        rotateZ(panelPtr[panel].x1,psi,tempA); //%note! this is beta, NOT yaw for circ. flight. 
 		rotateY(tempA, -eps, tempAA);
         rotateX(tempAA,-nu, panelPtr[panel].x1);
 
@@ -292,7 +292,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 //  II.     updated CG location (RefPt)
 	//rotate reference point (CG)
 	rotateZ(info.RefPt,psi,tempA);
-	rotateY(tempA, eps, tempAA);
+	rotateY(tempA, -eps, tempAA);
 	rotateX(tempAA, -nu, info.RefPt);
 
 //  III. adjust beta and if horizontal flight alpha
@@ -934,6 +934,13 @@ double rotAngle; // How many radian to rotate points
 			surfacePtr[i].xo[1] -= delx[1];
 			surfacePtr[i].xo[2] -= delx[2];
 
+			surfacePtr[i].x1[0] -= delx[0];
+			surfacePtr[i].x1[1] -= delx[1];
+			surfacePtr[i].x1[2] -= delx[2];
+
+			surfacePtr[i].x2[0] -= delx[0];
+			surfacePtr[i].x2[1] -= delx[1];
+			surfacePtr[i].x2[2] -= delx[2];
 
 		}
 		// Updating CG location was moved from PitchMoment - D.F.B. 03-2020

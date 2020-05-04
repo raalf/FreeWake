@@ -40,7 +40,7 @@ CG location (x y z):		cg =    0.25 0 0
 CMo of wing:				CMo =	0.00000000
 
 No. of wings (max. 5):		wings =		1
-No. of panels:			panels =	2
+No. of panels:			panels =	5
 No. of airfoils (max. 15):	airfoils =	2
 
 

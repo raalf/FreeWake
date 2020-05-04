@@ -278,7 +278,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
         } //END if(info.flagHORZ)
         
         //rotate X1
-        rotateZ(panelPtr[panel].x1,psi,tempA);
+        rotateZ(panelPtr[panel].x1,psi,tempA); //%note! this is beta, NOT yaw for circ. flight. 
 		rotateY(tempA, -eps, tempAA);
         rotateX(tempAA,-nu, panelPtr[panel].x1);
 
@@ -292,7 +292,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 //  II.     updated CG location (RefPt)
 	//rotate reference point (CG)
 	rotateZ(info.RefPt,psi,tempA);
-	rotateY(tempA, eps, tempAA);
+	rotateY(tempA, -eps, tempAA);
 	rotateX(tempAA, -nu, info.RefPt);
 
 //  III. adjust beta and if horizontal flight alpha
@@ -301,9 +301,9 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 
     
 //  IV.  adjust freestream vector (info.U), also to include upwind info.Ws
-    info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
-    info.U[1]=info.Uinf            *sin(info.beta);
-    info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta)-info.Ws;
+	info.U[0] = info.Uinf*cos(info.alpha)*cos(info.beta); //this is never used.
+	info.U[1] = info.Uinf            *sin(info.beta); //this is never used. 
+    info.U[2]= info.Uinf*sin(info.alpha)*cos(info.beta)-info.Ws; //this is used to add to the omega velocities in circUINF
 
 		
 }
@@ -460,6 +460,15 @@ double xH1[3],xH2[3];	//hinge location
 				eps2 += epsC2;
 			}
 
+			// If there is a hinge deflection, do it now for this panel
+			if (panelPtr[i].deflect1 != 0) {
+				DeflectAboutHinge(panelPtr, panelPtr[i].deflect1, x1, x2, m, i, \
+					nu, &epsH1, &epsH2, xH1, xH2);
+				eps1 += epsH1; //If there is camber, add the epsilon to that value
+				eps2 += epsH2;
+			}
+
+
 			// If there is trim adjust the tail at its hinge according to 
 			//the deflection of epsilonHT
 			if(info.trim){
@@ -489,7 +498,7 @@ double xH1[3],xH2[3];	//hinge location
 					surfacePtr[l].xsi=0.5*(chord1+tempS*(chord2-chord1)/panelPtr[i].n);
 					//temporary incidence angle at half span of DVE using camber info
 					surfacePtr[l].epsilon = eps1 + tempS*(eps2-eps1)/panelPtr[i].n;
-				} else if(info.trim){
+				} else if(info.trim || panelPtr[i].deflect1 != 0){
 					//If camber is off but trim is on
 					//half-chord length at midspan of DVE
 					surfacePtr[l].xsi=0.5*(delchord1+delchord*tempS); 
@@ -934,6 +943,13 @@ double rotAngle; // How many radian to rotate points
 			surfacePtr[i].xo[1] -= delx[1];
 			surfacePtr[i].xo[2] -= delx[2];
 
+			surfacePtr[i].x1[0] -= delx[0];
+			surfacePtr[i].x1[1] -= delx[1];
+			surfacePtr[i].x1[2] -= delx[2];
+
+			surfacePtr[i].x2[0] -= delx[0];
+			surfacePtr[i].x2[1] -= delx[1];
+			surfacePtr[i].x2[2] -= delx[2];
 
 		}
 		// Updating CG location was moved from PitchMoment - D.F.B. 03-2020

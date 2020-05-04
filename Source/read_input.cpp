@@ -395,6 +395,8 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 
 		//read in hinge as %chord on edge 1 DFB 2-25-20
 		fscanf(fp," %lf",&(panelPtr[i].hinge1));
+		fscanf(fp, "%lf", &(panelPtr[i].deflect1));
+		panelPtr[i].deflect1 *= DtR;	//changes deg. to radians
 
 		panelPtr[i].u1[0]=0; panelPtr[i].u1[1]=0; panelPtr[i].u1[2]=0;
 
@@ -421,7 +423,8 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 	
 		//read in hinge as %chord on edge 2 DFB 2-25-20
 		fscanf(fp," %lf",&(panelPtr[i].hinge2));
-
+		fscanf(fp, "%lf", &(panelPtr[i].deflect2));
+		panelPtr[i].deflect2 *= DtR;	//changes deg. to radians
 
 		panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;
 

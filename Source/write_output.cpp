@@ -31,7 +31,7 @@ void Save_Timestep(const GENERAL,const int,DVE **,const DVE *,double **);
 //saves forces and moments of surface DVEs
 void Save_SurfaceDVE_Loads(const GENERAL,const int,const DVE *);
 
-void CreateQuiverFile(const double[3], const double[3],const int);
+void CreateQuiverFile(const double[3], const double[3],const int,const int);
 
 //===================================================================//
 		//START OF File_Initializing
@@ -747,8 +747,8 @@ char filename[133];	//file path and name
 //===================================================================//
 		//START of CreateQuiverFile
 //===================================================================//
-void CreateQuiverFile(const double pos[3], const double vec[3],const int idx)
-{	
+void CreateQuiverFile(const double pos[3], const double vec[3], const int idx, const int filenum)
+{
 	// This function create the quiver file used for Main_PlotQuiverPY.cpp
 	// 	The vector (vec) will be added to the quiver.txt
 	//
@@ -758,6 +758,7 @@ void CreateQuiverFile(const double pos[3], const double vec[3],const int idx)
 	//		idx 		- Determine if adding or starting the file
 	//						idx == 0 opens file and begins new file
 	//						idx != 0 adds to file  
+	//		filenum		- Number to add to filename (ex. quiver4.txt) Zero will not add any value
 	// 
 	// Example of use to plot eN
 	//	for(i=0;i<info.noelements;i++){
@@ -769,11 +770,19 @@ void CreateQuiverFile(const double pos[3], const double vec[3],const int idx)
 	// D.F.B. in Braunschweig, Germany, Mar. 2020
 
 
-FILE *fp;		//output file
+	FILE *fp;		//output file
+	char filename[126];	//file path and name 
 
-// Either open file or add to file
-if(idx==0){fp = fopen("output/quiver.txt", "w");}
-else{fp = fopen("output/quiver.txt", "a");}
+	if (filenum == 0) {
+		// Either open file or add to file
+		if (idx == 0) { fp = fopen("output/quiver.txt", "w"); }
+		else { fp = fopen("output/quiver.txt", "a"); }
+	}
+	else {
+		sprintf(filename, "%s%d%s","output/quiver", filenum, ".txt");
+		if (idx == 0) { fp = fopen(filename, "w"); }
+		else { fp = fopen(filename, "a"); }
+	}
 
 if (idx == 2) fprintf(fp, "\n");
 // Write vector position and vector components to file

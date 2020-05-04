@@ -1,12 +1,12 @@
 //computes pitching moment
 double PitchingMoment(GENERAL &,PANEL *,const double,DVE *&,\
-						const double,const int,const double [3],\
+						const double,const int, double [3],\
 						double &,double &,double **&,double *&,double **&,\
 						double &,double &,double &,double ***);
 
 double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 						const double cmac, const double epsilonHT,\
-						const int HTpanel,const double xCG[3],\
+						const int HTpanel, double xCG[3],\
 						double &CLht,double &CLhti,\
 						double **&N_force,double *&D_force,double **&Span_force,\
 						double &CL,double &CY,double &CDi_finit, double ***camberPtr)
@@ -56,7 +56,7 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 	double MomArm,deltaM;//moment arm of lift forces, moment of single DVE
 	double Moment,CM_resid;//residual pitch moment and moment coefficient
 	double XCG[3];		//CG location in this routine is moved with wing
-				XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
+				
 	double circCenter[3];  	//Center of circling flight added D.F.B. 03-20
 
 double *R,**D;			//resultant vector and matrix
@@ -69,7 +69,8 @@ int *pivot;				//holds information for pivoting D
 //only applies for turning flight
 	if(info.flagCIRC) Panel_Rotation(info,panelPtr);
 							//Subroutine in wing_geometry.cpp
-
+	xCG[0] = info.RefPt[0]; xCG[1] = info.RefPt[1]; xCG[2] = info.RefPt[2];
+	XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
 //===================================================================//
 		//END rotating panels for horizontal flight sim
 //===================================================================//
@@ -85,7 +86,7 @@ int *pivot;				//holds information for pivoting D
 	if(info.flagCIRC)
     {
         circCenter[0] = XCG[0];
-        circCenter[1] = XCG[1]-(info.Uinf*cos(info.alpha)/info.gradient); //added alpha rotation BB Apr 2020
+        circCenter[1] = XCG[1]-(info.Uinf*cos(info.alpha)/info.gradient); //added alpha rotation BB Apr 2020. Should be gamma not alpha
         circCenter[2] = XCG[2];
         Circling_UINF(info,surfacePtr,xCG);
                 //Subroutine in wing_geometry.cpp
@@ -394,7 +395,7 @@ printf("\n");
  
             //computes total lift and side force/density, and ascoefficients
             DVE_Wing_Normal_Forces(info,panelPtr,surfacePtr,timestep,\
-                N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi);
+                N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi,XCG);
                                             //Subroutine in lift_force.cpp
 
             printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
@@ -457,7 +458,7 @@ printf("\n");
 
 	//the residual-moment coefficient
 	CM_resid = Moment*qc;  
-	//printf("\nCM_resid is: %f\n",CM_resid);
+	printf("\nCM_resid is: %f\n", CM_resid);
 	//printf("Moment: %f\t qc: %f\t\n",Moment,qc);
 	if(info.sym==1) CM_resid*=2;
 	//printf("CM resid %lf  \n",CM_resid);

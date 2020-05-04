@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
 						   //Subroutine in read_input.cpp
 
 	info.AR = info.b*info.b/info.S;  //reference aspect ratio
-
-	//allocates mememory for panel information in 'panelPtr'
+	
+//allocates mememory for panel information in 'panelPtr'
 	//for 'nopanel'-number panels
 	ALLOC1D(&panelPtr,info.nopanel);
 
@@ -373,7 +373,11 @@ int main(int argc, char *argv[])
 
 		printf("\nalpha = %.2lf \n",info.alpha*RtD);
 
-		//computes free stream velocity vector
+		if (info.gradient == 0) {
+			info.gradient = (9.81*tan(info.bank)) / (info.Uinf); //this Uinf will need to include Ws too!
+		}
+
+		//computes free stream velocity vector. THIS GETS REBUILT INSIDE PANEL ROT FUNCTION if CIRC. 
 		{
 			info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
 			info.U[1]=info.Uinf			*sin(info.beta);
@@ -382,7 +386,7 @@ int main(int argc, char *argv[])
 
         //new free stream velocities at panel edges
 			//ATTENTION: NO SPANWISE VELOCITY VARIATION !!!
-		for(i=0;i<info.nopanel;i++)
+		for(i=0;i<info.nopanel;i++) //THIS GETS REBUILT INSIDE CIRCLING_UINF if CIRC
 		{
 			panelPtr[i].u1[0]= info.U[0];
 			panelPtr[i].u1[1]= info.U[1];
@@ -632,7 +636,7 @@ int main(int argc, char *argv[])
 	fclose(Performance);//close output file of performance calc's
 //printf("done\n");
 //printf("push any key and return ",PROGRAM_VERSION);
-//scanf("%c",&answer);
+scanf("%c",&answer);
 //scanf("%c",&answer);
 	//return(0);
 }

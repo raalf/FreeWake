@@ -387,7 +387,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	/*/* ************************ Quiver output of vectors *************************
 	CreateQuiverFile(XCG, tempVEC, 0, 5);
 	CreateQuiverFile(XCG, CF, 1,5 );
-	******************************************************************************* /
+	*******************************************************************************/
 
     scalar(CF,q,CF); //non dimensionalize
 	Cl = MX * qb;     // roll  moment
@@ -858,9 +858,9 @@ for (i=0;i<info.nopanel;i++)
 
 		N_force[l][1] = dot(R,eL);			//induced lift
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
+		scalar(eN, N_free / info.Uinf, tempA);
 
 /* ************************ Quiver output of normal vector *************************
-         scalar(eN,N_free/info.Uinf,tempA);
 		if(i==0 && j==0 && k ==0)
                 CreateQuiverFile(surfacePtr[l].xo, tempA,0);
 		else    CreateQuiverFile(surfacePtr[l].xo, tempA,1);

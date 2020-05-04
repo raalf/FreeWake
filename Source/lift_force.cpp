@@ -372,18 +372,15 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	MY = tempVEC[1];
 	MZ = tempVEC[2];
 
+	//will need to double if sym on!
+
+	CreateQuiverFile(XCG, tempVEC, 0, 5);
+	CreateQuiverFile(XCG, CF, 1,5 );
+
+    scalar(CF,q,CF); //non dimensionalize
 	Cl = MX * qb;     // roll  moment
 	Cm = MY * qc;     // pitch moment
 	Cn = MZ * qb;    // yaw   moment
-
-
-	CreateQuiverFile(XCG, tempVEC, 0, 5);
-
-
-	CreateQuiverFile(XCG, CF, 1,5 );
-
-    scalar(CF,q,CF);
-
 	
     //initializing
     Nt_free[0]=0;

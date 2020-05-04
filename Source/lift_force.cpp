@@ -50,8 +50,11 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	double cosAlpha, sinAlpha;		//alpha angles
     double tempS,tempA[3],tempVEC[3];
     double q = 1/(0.5*info.Uinf*info.Uinf*info.S); 	//1/(ref. area* dyn. pressure/density)
+	double qc = 1 / (0.5*info.Uinf*info.Uinf*info.S*info.cmac);
+	double qb = 1 / (0.5*info.Uinf*info.Uinf*info.S*info.b);
 	double q_local;         //1/(ref. area dyn. pressure) of DVE
-	double PitchMoment, RollMoment, YawMoment; //moments in the wind axis
+	double MY, MX, MZ; //moments in the wind axis
+	double Cn, Cl, Cm; //nondimensionalized moments
 	double **Moment; //
 	double momarm[3];
 	double lemid[3];
@@ -365,12 +368,19 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	CF[1] = tempA[1];
 	CF[2] = tempA[2];
 
-	RollMoment = tempVEC[0];
-	PitchMoment = tempVEC[1];
-	YawMoment = tempVEC[2];
+	MX = tempVEC[0];
+	MY = tempVEC[1];
+	MZ = tempVEC[2];
 
-	CreateQuiverFile(surfacePtr[index].xo, tempVEC, 0, 5);
-	CreateQuiverFile(surfacePtr[index].xo, CF, 1, 5);
+	Cl = MX * qb;     // roll  moment
+	Cm = MY * qc;     // pitch moment
+	Cn = MZ * qb;    // yaw   moment
+
+
+	CreateQuiverFile(XCG, tempVEC, 0, 5);
+
+
+	CreateQuiverFile(XCG, CF, 1,5 );
 
     scalar(CF,q,CF);
 
@@ -419,11 +429,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     CLi = Nt_ind[0]*q;
     CYi = Nt_ind[1]*q;
 
-
-
-
+	
 	printf("\nROLL %lf PITCH %lf YAW %lf\n", \
-		RollMoment, PitchMoment, YawMoment);//#
+		Cl, Cm, Cn);//#
     //printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
            CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#
 

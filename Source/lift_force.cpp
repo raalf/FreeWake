@@ -177,7 +177,10 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				eD[1] = surfacePtr[index].uTE[0][1] * tempS;
 				eD[2] = surfacePtr[index].uTE[0][2] * tempS;
 			}
+
+			/*/* ************************ Quiver output of vectors *************************
 			CreateQuiverFile(surfacePtr[index].xTE, eD, 1, 1);
+			*******************************************************************************/
 
 			//adding drag to force 
 			tempVEC[0] = eD[0] * D_force[span];
@@ -208,6 +211,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			Moment[span][1] += tempVEC[1] * tempS;
 			Moment[span][2] += tempVEC[2] * tempS;
 
+			/*/* ************************ Quiver output of vectors *************************
 			if (time == info.maxtime && panel == 0 && n == panelPtr[panel].LE1) {
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 0, 3);
 			}
@@ -215,6 +219,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 3);
 			}
 			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 3);
+			*******************************************************************************/
+
 //################################################
             //At this point, the Span_force vector is alligned with the Normal force (eN)
 			//and the drag force (eD) directions (which can be different for every spanwise
@@ -303,6 +309,8 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Moment[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
 
 			}
+
+			/*/* ************************ Quiver output of vectors *************************
 			if (time == info.maxtime && panel == 0 && n == panelPtr[panel].LE1) {
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 0, 4);
 			}
@@ -310,6 +318,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 4);
 			}
 			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 4);
+			*******************************************************************************/
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
@@ -374,8 +383,11 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 
 	//will need to double if sym on!
 
+
+	/*/* ************************ Quiver output of vectors *************************
 	CreateQuiverFile(XCG, tempVEC, 0, 5);
 	CreateQuiverFile(XCG, CF, 1,5 );
+	******************************************************************************* /
 
     scalar(CF,q,CF); //non dimensionalize
 	Cl = MX * qb;     // roll  moment
@@ -797,7 +809,7 @@ for (i=0;i<info.nopanel;i++)
          tempS=1/norm2(tempA);
          scalar(tempA,tempS,eS);
 		 
-		 //* ************************ Quiver output of vectors *************************
+		 /*/* ************************ Quiver output of vectors *************************
 		 if (timestep == info.maxtime && i==0 && j==0 && k==0) {
 			 CreateQuiverFile(surfacePtr[l].xo, eN, 0, 1);
 			 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 0, 2);

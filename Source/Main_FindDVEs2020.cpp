@@ -25,6 +25,7 @@ int main()
 	double tempA[3],tempAA[3];
 	char iofile[125];	//input-output-file
 	char ch;			//generic character
+	char outputfilepath[125]; //output file path 
 	FILE *fp;			//output file
 
 //	1. user input of timestep and intervalls that is to be plotted
@@ -36,6 +37,7 @@ int main()
 	printf("Please enter number of timestep");
 	printf(" whose wake needs to be plotted: ");
 	scanf("%d",&timestep);
+	scanf("%s", &outputfilepath);
 
 	printf("\nWhat time intervalls are desired? ");
 	intervall = 1; //hardcoded to 1
@@ -54,7 +56,7 @@ int main()
 
 	//creates file name timestep##.txt ## is number of timestep
 //	sprintf(iofile,"%s%s%d%s",OUTPUT_PATH,"timestep",timestep,".txt");
-	sprintf(iofile,"%s%d%s","timestep",timestep,".txt");
+	sprintf(iofile,"%s%s%d%s", outputfilepath,"/timestep",timestep,".txt");
 
 	// checks if input file exists
 	if ((fp = fopen(iofile, "r"))== NULL)

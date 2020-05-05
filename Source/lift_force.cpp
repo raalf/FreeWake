@@ -180,7 +180,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 
 			/*/* ************************ Quiver output of vectors *************************
 			CreateQuiverFile(surfacePtr[index].xTE, eD, 1, 1);
-			*******************************************************************************/
+			//*******************************************************************************/
 
 			//adding drag to force 
 			tempVEC[0] = eD[0] * D_force[span];
@@ -219,7 +219,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 3);
 			}
 			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 3);
-			*******************************************************************************/
+			//*******************************************************************************/
 
 //################################################
             //At this point, the Span_force vector is alligned with the Normal force (eN)
@@ -318,7 +318,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 4);
 			}
 			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 4);
-			*******************************************************************************/
+			//*******************************************************************************/
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
@@ -387,7 +387,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	/*/* ************************ Quiver output of vectors *************************
 	CreateQuiverFile(XCG, tempVEC, 0, 5);
 	CreateQuiverFile(XCG, CF, 1,5 );
-	*******************************************************************************/
+	//*******************************************************************************/
 
     scalar(CF,q,CF); //non dimensionalize
 	Cl = MX * qb;     // roll  moment
@@ -443,6 +443,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 		Cl, Cm, Cn);//#
     //printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
            CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#
+
+
+	FREE2D(&Moment, info.nospanelement, 3);
 
     //===================================================================//
     //===================================================================//
@@ -530,14 +533,16 @@ double Uxspandir;
 //loop over number of panels
 for (i=0;i<info.nopanel;i++)
 {
-  if(panelPtr[i].m>1) //if more than one lifting line
-  {    //allocating temporary memory for the induced velocity of upstream DVE
+  //if(panelPtr[i].m>1) //if more than one lifting line
+ // {    //allocating temporary memory for the induced velocity of upstream DVE
         //needed for averaging velocity induced at lifting lines
-        //added GB 2-9-20
+        //added GB 2-9-20. Compiler gives a warning if we only alloc
+		//when m>1, so lets always allocate
         ALLOC2D(&U1,panelPtr[i].n,3);
         ALLOC2D(&Uo,panelPtr[i].n,3);
         ALLOC2D(&U2,panelPtr[i].n,3);
-  }
+ // }
+
 
   //loop over number of chordwise elements 'info.m'
   for (j=0;j<panelPtr[i].m;j++)
@@ -645,7 +650,7 @@ for (i=0;i<info.nopanel;i++)
 			//###################################
 
 			  //computing the ind. velocity at left (1) edge of bound vortex
-			  scalar(tempAA,-eta8,tempA);
+			  scalar(tempAA,-eta8,X);
 			  vsum(xoLE,X,tempA);
 			  DVE_Induced_Velocity\
 			   					(info,tempA,surfacePtr,wakePtr,timestep,U1[k]);
@@ -877,13 +882,13 @@ for (i=0;i<info.nopanel;i++)
 	 }	//End loop over k - loop over span of panel
   }	//End loop over j - loop over chord of panel
     
-  if(panelPtr[i].m>1)
-  {    //temporary variable of induced velocity of upstream DVE
+  //if(panelPtr[i].m>1)
+  //{    //temporary variable of induced velocity of upstream DVE
       // added GB 2-9-20
         FREE2D(&U1,panelPtr[i].n,3);
         FREE2D(&Uo,panelPtr[i].n,3);
         FREE2D(&U2,panelPtr[i].n,3);
-  }
+  //}
 } //End loop over i - loop over panels
     
 }

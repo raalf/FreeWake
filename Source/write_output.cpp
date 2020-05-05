@@ -1,6 +1,6 @@
 //this file includes all the subroutine that handle writing to files.
 //the path to the directory in which the files are stored is defined in
-//OUTPUT_PATH, which is defined in general.h
+//OUTPUT_PATH and stored in info.output, which is defined in general.h
 
 //deletes previous timestep files
 void Delete_timestep();
@@ -23,9 +23,11 @@ void Time_Stepping_Results(const GENERAL,double **,double *,const double,\
 void Time_Stepping_End_Results(const GENERAL,const int,const int,double **,\
 							double *,const double,const double,\
 						   const double,const double,const double);
-
 //save information of surface DVEs to file
 void Save_Surface_DVEs(const GENERAL info,const DVE *surfacePtr);
+//save input file to output directory
+void Save_Input_File(const char [126],const char [126]);
+//void Save_Input_File(const GENERAL);
 //saves results of current timestep to file
 void Save_Timestep(const GENERAL,const int,DVE **,const DVE *,double **);
 //saves forces and moments of surface DVEs
@@ -43,7 +45,7 @@ void Delete_timestep()
 	char comand[160];	//system command to delete previous timestep files
 
 	//deletes previous timestep files
-	sprintf(comand,"%s%s%s","del ",OUTPUT_PATH,"timestep*");
+	sprintf(comand,"%s%s%s","del ",info.output,"timestep*");
 	system(comand);
 }
 //===================================================================//
@@ -61,7 +63,7 @@ void Save_Elementary_Wings(const GENERAL info,const BOUND_VORTEX* elementPtr)
 	char filename[137];	//file path and name
 
 	//creates file "Elementary_Wings.txt in directory "output"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"Elementary_Wings.txt");
+	sprintf(filename,"%s%s",info.output,"Elementary_Wings.txt");
 	fp = fopen(filename, "w");
 
 	//writes header
@@ -111,7 +113,7 @@ void Save_Trailing_Edge(const GENERAL info,const BOUND_VORTEX* trailedgePtr)
 	char filename[137];	//file path and name
 
 	//opens file for appending
-	sprintf(filename,"%s%s",OUTPUT_PATH,"Elementary_Wings.txt");
+	sprintf(filename,"%s%s",info.output,"Elementary_Wings.txt");
 	fp = fopen(filename, "a");
 
 	//writes header
@@ -157,7 +159,7 @@ void Horstmann_Results(const GENERAL info,const BOUND_VORTEX* elementPtr,\
 	char filename[126];	//file path and name
 
 	//creates file "output\results.txt"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"results.txt");
+	sprintf(filename,"%s%s",info.output,"results.txt");
 	fp = fopen(filename, "w"); 			//###/
 
 	fprintf(fp,"\n\n\nProgram Version: %s\n",PROGRAM_VERSION);
@@ -277,7 +279,7 @@ void Header(const GENERAL info,const BOUND_VORTEX* elementPtr,\
 	char filename[126];	//file path and name
 
 	//creates file "output\results.txt"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"results.txt");
+	sprintf(filename,"%s%s",info.output,"results.txt");
 	fp = fopen(filename, "w"); 			//###/
 
 	fprintf(fp,"\n\n\nProgram Version: %s\n",PROGRAM_VERSION);
@@ -343,7 +345,7 @@ void Time_Stepping_Results(const GENERAL info,int const first, int const last,\
 	char filename[126];	//file path and name
 
 	//creates file "output\results.txt"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"results.txt");
+	sprintf(filename,"%s%s",info.output,"results.txt");
 	fp = fopen(filename, "a"); 			//###/
 
 /*	//header
@@ -395,7 +397,7 @@ void Time_Stepping_End_Results(const GENERAL info,const int steps,\
 	char filename[126];	//file path and name
 
 	//creates file "output\results.txt"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"results.txt");
+	sprintf(filename,"%s%s",info.output,"results.txt");
 	fp = fopen(filename, "a"); 			//###/
 
 	first=int(timestep/steps+0.5);
@@ -432,7 +434,7 @@ void Save_Surface_DVEs(const GENERAL info,const DVE *surfacePtr)
 	char filename[132];	//file path and name
 
 	//creates file "output\Surface_DVE.txt"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"Surface_DVE.txt");
+	sprintf(filename,"%s%s",info.output,"Surface_DVE.txt");
 	fp = fopen(filename, "w");
 
 	//writes header
@@ -466,6 +468,50 @@ void Save_Surface_DVEs(const GENERAL info,const DVE *surfacePtr)
 //===================================================================//
 		//END of Save_Surface_DVEs
 //===================================================================//
+
+//===================================================================//
+        //START of Save_Input_File
+//===================================================================//
+//save input file to output directory
+void Save_Input_File(const char sourcefile[126],const char targetdir[126])
+{
+    //copies the input file from input directory to output directory
+    //adapted from https://www.programmingsimplified.com/c-program-copy-file
+    //sourcefile  - input file for FreeWake
+    //targetdrive - output directory
+    
+    FILE *source,*target;
+    char ch,targetfile[126];
+
+    source = fopen(sourcefile, "r");
+
+    if (source == NULL)
+    {
+       printf(" couldn't copy input file\nPress any key to exit...\n");
+       exit(EXIT_FAILURE);
+    }
+
+    sprintf(targetfile, "%s%s",targetdir,sourcefile);
+
+    target = fopen(targetfile, "w");
+
+    if (target == NULL)
+    {
+       fclose(source);
+       printf(" couldn't copy input file\nPress any key to exit...\n");
+       exit(EXIT_FAILURE);
+    }
+
+    while ((ch = fgetc(source)) != EOF)
+       fputc(ch, target);
+
+    fclose(source);
+    fclose(target);
+}
+//===================================================================//
+        //END of Save_Input_File
+//===================================================================//
+
 //===================================================================//
 		//START of Save_Timestep
 //===================================================================//
@@ -479,7 +525,7 @@ void Save_Timestep(const GENERAL info,const int timestep,DVE **wakePtr,\
 	char filename[133];	//file path and name
 
 	//creates file name timestep##.txt ## is number of timestep
-	sprintf(filename,"%s%s%d%s",OUTPUT_PATH,"timestep",timestep,".txt");
+	sprintf(filename,"%s%s%d%s",info.output,"timestep",timestep,".txt");
 
 	//creates file in subdirectory output
 	fp = fopen(filename, "w");
@@ -624,7 +670,7 @@ void Save_SurfaceDVE_Loads(const GENERAL info,const int timestep,\
 	char filename[133];	//file path and name
 
 	//creates file name timestep##.txt ## is number of timestep
-	sprintf(filename,"%s%s%d%s",OUTPUT_PATH,"SDVE_loads",timestep,".txt");
+	sprintf(filename,"%s%s%d%s",info.output,"SDVE_loads",timestep,".txt");
 
 	//creates file in subdirectory output
 	fp = fopen(filename, "w");
@@ -716,7 +762,7 @@ char filename[133];	//file path and name
  FILE *fp;
 
 	//creates file name timestep##.txt ## is number of timestep
-	sprintf(filename,"%s%s",OUTPUT_PATH,"test.txt");
+	sprintf(filename,"%s%s",info.output,"test.txt");
 
 	 fp = fopen(filename, "a");
 	 //writes header line

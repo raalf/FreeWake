@@ -3,6 +3,7 @@
 #include <stdlib.h>
 //#include <iostream.h>
 #include <math.h>
+#include <sys/stat.h>
 
 #include "typedef.h"
 #include "alloc.h"

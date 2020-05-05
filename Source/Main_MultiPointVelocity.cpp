@@ -16,7 +16,7 @@ int main()
 //
 //		!!!ATTENTION!!!
 //
-// The output path is OUTPUT_PATH, which is defined in general.h!!
+// The output path is OUTPUT_PATH (info.output), which is defined in general.h!!
 //
 	struct Points
 	{double x;
@@ -55,7 +55,7 @@ int main()
 //===================================================================//
 
 	//creates file name for file with point information
-	sprintf(iofile,"%s%s",OUTPUT_PATH,"pointinfo.txt");
+	sprintf(iofile,"%s%s",info.output,"pointinfo.txt");
 
 	// checks if input file exists
 	if ((fp = fopen(iofile, "r"))== NULL)
@@ -90,7 +90,7 @@ int main()
 
 
 	//creates file name timestep##.txt ## is number of timestep
-	sprintf(iofile,"%s%s%d%s",OUTPUT_PATH,"timestep",timestep,".txt");
+	sprintf(iofile,"%s%s%d%s",info.output,"timestep",timestep,".txt");
 
 	// checks if input file exists
 	if ((fp = fopen(iofile, "r"))== NULL)
@@ -304,7 +304,7 @@ int main()
 
 
 // Create Output file
-sprintf(iofile,"%s%s",OUTPUT_PATH,"velocityinfo.txt");
+sprintf(iofile,"%s%s",info.output,"velocityinfo.txt");
 
 	// checks if input file exists
 	// if ((fp = fopen(iofile, "r"))== NULL)

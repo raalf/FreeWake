@@ -139,21 +139,23 @@ int main(int argc, char *argv[])
 //						   //Subroutine in read_input.cpp
 
 
-	
-	
 
-// Define input filename
+// Define input filename and output directory
+    
 	if (argc < 2) //argc is the number of inputs
-				  
-	{
-		sprintf(info.inputfilename, "%s", "input.txt");	//no input name: assume input.txt in the working dir
-		printf("Input Filename : %s\n", "input.txt");
+	{//no input name: assume input.txt in the working dir
+		sprintf(info.inputfilename, "%s", "input.txt");
+        sprintf(info.output, "%s", OUTPUT_PATH);
 	}
 	else if(argc ==2)//with an input filename: use it. 
 	{
 		 //argv[0] will be the .exe, argv[1] will be the filename
-		sprintf(info.inputfilename, "%s", argv[1]);
-		printf("Input Filename : %s\n", argv[1]);
+		sprintf(info.inputfilename, "%s.txt", argv[1]);
+        sprintf(info.output, "%s%s/", OUTPUT_PATH,argv[1]);
+        mkdir(info.output,0777);//create output directory in output/
+//        if(mkdir(info.output,0700)!=0)
+//            {printf("error creating output directory\n"); exit(1);}
+        
 	}
 	else
 	{
@@ -162,8 +164,11 @@ int main(int argc, char *argv[])
 		scanf("%c", &answer);
 		exit(1);
 	}
-	
-
+    printf("\nInput Filename : %s\n", info.inputfilename);
+    printf("Output directory : %s\n", info.output);
+    //saves input file to output directory
+    Save_Input_File(info.inputfilename,info.output);//in write_output.cpp
+    
 
 	General_Info_from_File(info,alpha1,alpha2,alphastep);
 						   //Subroutine in read_input.cpp
@@ -325,7 +330,7 @@ int main(int argc, char *argv[])
 
 	//Trim itereation
 	//creates file "TrimSol.txt in directory "output"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"TrimSol.txt");
+    sprintf(filename,"%s%s",info.output,"TrimSol.txt");
 	//open output file
 	MomSol = fopen(filename, "w");
 
@@ -337,7 +342,7 @@ int main(int argc, char *argv[])
 
 	//Performance results
 	//creates file "Performance.txt in directory "output"
-	sprintf(filename,"%s%s",OUTPUT_PATH,"Performance.txt");
+	sprintf(filename,"%s%s",info.output,"Performance.txt");
 	//open output file
 	Performance = fopen(filename, "w");
 
@@ -636,7 +641,6 @@ int main(int argc, char *argv[])
 	fclose(Performance);//close output file of performance calc's
 //printf("done\n");
 //printf("push any key and return ",PROGRAM_VERSION);
-scanf("%c",&answer);
 //scanf("%c",&answer);
 	//return(0);
 }

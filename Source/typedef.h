@@ -3,7 +3,8 @@
 // definition of type general //
 struct GENERAL
 {
-	char inputfilename[126]; 
+	char inputfilename[126];
+    char output[126];
 	bool flagVISCOUS; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	bool flagCAMBER; // Turn on/off camber (O = OFF, 1 = ON)
     

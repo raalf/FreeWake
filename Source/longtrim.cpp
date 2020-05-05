@@ -177,7 +177,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 //			save spanwise information, lift and drag distribution
 //===================================================================//
 	//creates file name AOA#.##.txt ## is angle of attack
-	sprintf(filename,"%s%s%.2lf%s",OUTPUT_PATH,"AOA",info.alpha*RtD,".txt");
+	sprintf(filename,"%s%s%.2lf%s",info.output,"AOA",info.alpha*RtD,".txt");
 
 	//creates file in subdirectory output
 	spaninfo = fopen(filename, "w");

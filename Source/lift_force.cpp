@@ -860,11 +860,12 @@ for (i=0;i<info.nopanel;i++)
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
 		scalar(eN, N_free / info.Uinf, tempA);
 
-/* ************************ Quiver output of normal vector *************************
+//************************ Quiver output of normal vector ************************
+/*
 		if(i==0 && j==0 && k ==0)
                 CreateQuiverFile(surfacePtr[l].xo, tempA,0);
 		else    CreateQuiverFile(surfacePtr[l].xo, tempA,1);
-//************************* Quiver output of normal vector *************************/
+//  ************************* Quiver output of normal vector *************************/
 
 //*****************************************************************************
 	  	 //the SIDE FORCE/density is the force in y-direction or N*eN[y]

@@ -398,8 +398,8 @@ printf("\n");
                 N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi,XCG);
                                             //Subroutine in lift_force.cpp
 
-//            printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
-//            printf(" CN %lf CDi %lf\n",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
+            printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
+            printf(" CN %lf CDi %lf\n",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
 
 //===================================================================//
             //END wing-force computation

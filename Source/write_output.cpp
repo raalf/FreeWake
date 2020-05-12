@@ -804,12 +804,12 @@ void CreateQuiverFile(const double pos[3], const double vec[3], const int idx, c
 	//		idx 		- Determine if adding or starting the file
 	//						idx == 0 opens file and begins new file
 	//						idx != 0 adds to file  
-	//		filenum		- Number to add to filename (ex. quiver4.txt) Zero will not add any value
+	//		filenum		- Number to add to filename (ex. quiver4.txt). Zero will not add any value
 	// 
 	// Example of use to plot eN
 	//	for(i=0;i<info.noelements;i++){
-	//	if(i==0){CreateQuiverFile(surfacePtr[l].xo, eN,0);}
-	//	else{CreateQuiverFile(surfacePtr[l].xo, eN,1);}
+	//	if(i==0){CreateQuiverFile(surfacePtr[l].xo, eN,0,0);}
+	//	else{CreateQuiverFile(surfacePtr[l].xo, eN,1,0);}
 	//	}
 	//
 	//

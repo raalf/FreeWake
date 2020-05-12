@@ -8,7 +8,7 @@ void Wing_Generation(const PANEL*,int,int[5],int[5],int[5],int[5],\
 //Rotates panels for attitude during turning flight
 void Panel_Rotation(GENERAL &,PANEL *);
 //generates surface DVE elements
-void Surface_DVE_Generation(const GENERAL,const PANEL *,DVE *,double ***,\
+void Surface_DVE_Generation(GENERAL &,PANEL *,DVE *,double ***,\
 							const double);
 //moves wing by delta x every time step,
 void Move_Wing(const GENERAL, DVE*, const double[3],double[3]);
@@ -315,7 +315,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 //===================================================================//
 		//FUNCTION Surface_DVE_Generation
 //===================================================================//
-void Surface_DVE_Generation(const GENERAL info,const PANEL* panelPtr,\
+void Surface_DVE_Generation(GENERAL &info,PANEL* panelPtr,\
 							DVE* surfacePtr, double ***camberPtr, \
 							const double epsilonHT)
 {
@@ -354,8 +354,7 @@ void Surface_DVE_Generation(const GENERAL info,const PANEL* panelPtr,\
 int i,m,n,wing;			//loop counters
 int l=0;			//l => suface DVE counter,
 double singfct;		//decay rate of singularity at edge of vortex sheet
-double tempS,tempA[3],tempAA[3];
-
+double tempS,tempA[3],tempAA[3]; //temporary variables. 
 double xquart[3];					//1/4chord line of panel, defined in input
 double x1LE[3],x2LE[3],x1[3],x2[3]; //edge points of panel and spanwise rows
 double xLE[3],xsiLE[3];	//vector along LE of a spanewise row of surface DVEs
@@ -370,15 +369,29 @@ double epsC1,epsC2; //epsilon of chordwise section of camber
 double chord1,chord2;	//new chord due to camber
 double xH1[3],xH2[3];	//hinge location 
 
+//init area calculations
+info.AREA = 0;
+info.projAREA = 0;
+
+info.surfAREA = 0;
+
 	//loop over number of panels
 	for (i=0;i<info.nopanel;i++)
 	{
-		//xquart: vector between 1/4 chord points of panel edges
+		//xquart: vector between leading edge corners
 		scalar(panelPtr[i].x1,-1,tempA);	//negates x1
 		vsum(panelPtr[i].x2,tempA,xquart); //x_l.e. = x1/4_2-x1/4_1
 
 		//panel span
 		tempS = sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]); 
+
+		//panel area
+		panelPtr[i].AREA = tempS * (panelPtr[i].c1 + panelPtr[i].c2) / 2;
+		info.AREA += panelPtr[i].AREA;
+
+		//panel area projection to xy plane
+		panelPtr[i].projAREA = xquart[1] * (panelPtr[i].c1 * cos(panelPtr[i].eps1) + panelPtr[i].c2 * cos(panelPtr[i].eps2)) / 2;
+		info.projAREA += panelPtr[i].projAREA;
 
 		//1/4chord line dihedral
 		nu = asin(xquart[2]/tempS);
@@ -416,7 +429,10 @@ double xH1[3],xH2[3];	//hinge location
 		//computing the right leading edge point of panel
 		x2LE[0] = panelPtr[i].x2[0];
 		x2LE[1] = panelPtr[i].x2[1];							
-		x2LE[2] = panelPtr[i].x2[2];															
+		x2LE[2] = panelPtr[i].x2[2];						
+
+
+		panelPtr[i].surfAREA = 0; //init panel surf area. 
 		//loop over number of chordwise elements 'info.m'
 		//removed GB 2-9-20		for (m=0;m<info.m;m++)
         for (m=0;m<panelPtr[i].m;m++)
@@ -602,6 +618,9 @@ double xH1[3],xH2[3];	//hinge location
  				//DVE area 4*eta*xsi  G.B. 8-10-07
 				surfacePtr[l].S = 4* surfacePtr[l].eta*surfacePtr[l].xsi;
 
+				//add up panel surface area
+				panelPtr[i].surfAREA += surfacePtr[l].S;
+
 				//DVE assign airfoil number to element
 				//two airfoils to interpolate between panel edge 1 and 2
 				//GB 2-14-20
@@ -615,7 +634,11 @@ double xH1[3],xH2[3];	//hinge location
 				l++;		//next surface-DVE
 			}//END loop over number of spanwise elements 'n'
 		}//loop over number of chordwise elements 'panel.m'
+
+		info.surfAREA += panelPtr[i].surfAREA;
 	}//END loop over number of panels
+
+
 
 	//##this part has been added 2/9/05 G.B.
 	//computing decaying factor for added singularity at wing tip

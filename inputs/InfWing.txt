@@ -57,10 +57,10 @@ Defines leading edge of wing, all measured in metres:
 
 Panel #:1. Number of spanwise elements (n) = 1 and m = 20
 Neighbouring panels (0 for none) left: 0 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.000	0.000	0.000   1.0     0.000	10	6 0.25
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
-0.0	1	0.0	1	0.000	10	6 0.25
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+0.000	0.000	0.000   1.0     0.000	10	6 0.25 0
+xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
+0.0	1	0.0	1	0.000	10	6 0.25 0
 
 %<- special identifier
 Vertical tail information:

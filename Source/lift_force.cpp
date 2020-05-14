@@ -58,6 +58,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	double **Moment; //
 	double momarm[3];
 	double lemid[3];
+	double A, B, C; //temp circulation coeffs for moment calc
 
 	ALLOC2D(&Moment, info.nospanelement, 3);
 
@@ -96,7 +97,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
         //loop over panel span (along leading edge indices)
 		for (n = panelPtr[panel].LE1; n <= panelPtr[panel].LE2; n++)
 		{
-			index = n; //setting index to first chordwise DVE of span location
+			index = n; //setting index to first chordwise DVE of span location			
 
 			//initializing
 			Span_force[span][0] = 0; Span_force[span][1] = 0; Span_force[span][2] = 0;
@@ -145,8 +146,21 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Moment[span][2] += tempA[2];
 
 				//add additional moment due to moment of each element about control point
-				tempS = (surfacePtr[index].eta * surfacePtr[index].eta *surfacePtr[index].B) / \
-					(3 * surfacePtr[index].A + surfacePtr[index].eta * surfacePtr[index].eta * surfacePtr[index].C);
+				if (m == 0)
+				{
+					A = surfacePtr[index].A;
+					B = surfacePtr[index].B;
+					C = surfacePtr[index].C;
+				}
+				else
+				{
+					A = surfacePtr[index].A - surfacePtr[index - panelPtr[panel].n].A;
+					B = surfacePtr[index].B - surfacePtr[index - panelPtr[panel].n].B;
+					C = surfacePtr[index].C - surfacePtr[index - panelPtr[panel].n].C;
+				}
+
+				tempS = (surfacePtr[index].eta * surfacePtr[index].eta * B) / \
+					(3 * A + surfacePtr[index].eta * surfacePtr[index].eta * C);
 
 				Moment[span][0] += tempVEC[0] * tempS;
 				Moment[span][1] += tempVEC[1] * tempS;
@@ -192,7 +206,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			Span_force[span][2] += tempVEC[2];
 
 			//adding drag to moment
-			//drag is located at the TE (WRONG)
+			//drag is located at the TE
 			momarm[0] = XCG[0] - surfacePtr[index].xTE[0]; //will be momarm 
 			momarm[1] = XCG[1] - surfacePtr[index].xTE[1];
 			momarm[2] = XCG[2] - surfacePtr[index].xTE[2];

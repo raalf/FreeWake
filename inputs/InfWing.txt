@@ -5,19 +5,19 @@ Please note that the program uses equal, number and : signs as special recognize
 The results are written to the sub-directory output'
 This file is created as a baseline case to compare between programs and versions
 
-Relaxed wake (yes 1, no 0):		relax =		1
+Relaxed wake (yes 1, no 0):		relax =		0
 Steady (1) or unsteady (2):		aerodynamics =	1
 Viscous solutions (1) or inviscid (0)  viscous = 	0
-Using camber (1) or no camber (0)  camber = 	1
-Symmetrical geometry (yes 1, no 0):	sym =		1
+Using camber (1) or no camber (0)  camber = 	0
+Symmetrical geometry (yes 1, no 0):	sym =		0
 Longitudinal trim (yes 1, no 0):	trim =		0	(yes means m has to be 1)
 
-Max. number of time steps:	maxtime =	40
+Max. number of time steps:	maxtime =	55
 Width of each time step (sec):	deltime =	0.250000
 Convergence delta-span effic.:	deltae =	0	(0 if onlytimestepping)
 
 Freestream velocity (leave value 1):	Uinf =		1.0
-AOA beginning, end, step size [deg]:	alpha=		2 2 2
+AOA beginning, end, step size [deg]:	alpha=		5 5 1
 Sideslip angle [deg]:			beta =		0.0
 
 Circling flight information
@@ -36,7 +36,7 @@ Reference span:			b =	1
 Mean aerodynamic chord:		cmac =	1
 Aircraft weight (N):		W =	3000.0
 CG location (x y z):		cg =    0.25 0 0
-CMo of wing:			CMo =	-0.150000000
+CMo of wing:			CMo =	0.00000000
 
 No. of wings (max. 5):		wings =		1
 No. of panels:			panels =	1
@@ -55,12 +55,12 @@ Hinge is in percentage chord:
 
 Defines leading edge of wing, all measured in metres:
 
-Panel #:1. Number of spanwise elements (n) = 1 and m = 20
+Panel #:1. Number of spanwise elements (n) = 1 and m = 40
 Neighbouring panels (0 for none) left: 0 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
-0.000	0.000	0.000   1.0     0.000	10	6 0.25 0
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
-0.0	1	0.0	1	0.000	10	6 0.25 0
+xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge
+0.000	-0.5	0.000   1.0     0.000	10	6 0.25 0
+xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge
+0.0	0.5	0.0	1	0.000	10	6 0.25 0
 
 %<- special identifier
 Vertical tail information:

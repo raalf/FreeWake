@@ -152,15 +152,26 @@ int main(int argc, char *argv[])
 		 //argv[0] will be the .exe, argv[1] will be the filename
 		sprintf(info.inputfilename, "%s.txt", argv[1]);
         sprintf(info.output, "%s%s/", OUTPUT_PATH,argv[1]);
-        mkdir(info.output,0777);//create output directory in output/
-//        if(mkdir(info.output,0700)!=0)
-//            {printf("error creating output directory\n"); exit(1);}
+
+		int nError = 0; //check which OS we are compiling on
+#if defined(_WIN32)
+		nError=_mkdir(info.output);//create output directory in output/
+#else 
+		nError=mkdir(info.output, 0700); // can be used on non-Windows
+#endif
+		if (nError != 0) {
+			printf("error creating output directory\n"); 
+			scanf("%c", &answer); 
+			exit(1);
+		}
+
+
         
 	}
 	else
 	{
 		printf("Incorrect inputs passed to exe. Format should be:\n");
-		printf("FreeWake2020.exe input_filename.txt\n");
+		printf("FreeWake2020.exe input_filename\n");
 		scanf("%c", &answer);
 		exit(1);
 	}

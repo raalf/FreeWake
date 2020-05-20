@@ -4,6 +4,7 @@
 //#include <iostream.h>
 #include <math.h>
 #include <sys/stat.h>
+#include "direct.h"
 
 #include "typedef.h"
 #include "alloc.h"

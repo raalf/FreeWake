@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 #if defined(_WIN32)
 		nError=_mkdir(info.output);//create output directory in output/
 #else 
-		nError=mkdir(info.output, 0700); // can be used on non-Windows
+		nError=mkdir(info.output, 0777); // can be used on non-Windows
 #endif
 		if (nError != 0) {
 			printf("error creating output directory\n"); 

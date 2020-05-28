@@ -4,7 +4,12 @@
 //#include <iostream.h>
 #include <math.h>
 #include <sys/stat.h>
-#include "direct.h"
+
+#if defined(_WIN32)
+#include "direct.h" //required only on windows
+//#else 
+#endif
+
 
 #include "typedef.h"
 #include "alloc.h"
@@ -43,7 +48,7 @@ double CF[3];           //total forces in wind axis system (CFX,CFY,CFY)
 double **Cf;            //section forces in wind axis system (Cfx,Cfy,Cfz)
 double *CDi_DVE;		//total ind. drag (Eppler) with DVEs for each timestep
 double CDi_finit;		//total induced drag with DVEs after all timesteps
-
+double Cl, Cm, Cn;		//
 //8-8-07 G.B.
 double alpha1,alpha2,alphastep;	//AOA loop, beginning, end, stepsie
 

@@ -159,11 +159,11 @@ int main(int argc, char *argv[])
 #else 
 		nError=mkdir(info.output, 0777); // can be used on non-Windows
 #endif
-		if (nError != 0) {
+		/*if (nError != 0) {
 			printf("error creating output directory\n"); 
 			scanf("%c", &answer); 
 			exit(1);
-		}
+		}*/
 
 
         

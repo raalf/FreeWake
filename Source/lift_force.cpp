@@ -54,7 +54,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	double qb = 1 / (0.5*info.Uinf*info.Uinf*info.S*info.b);
 	double q_local;         //1/(ref. area dyn. pressure) of DVE
 	double MY, MX, MZ; //moments in the wind axis
-	double Cn, Cl, Cm; //nondimensionalized moments
+	//double Cn, Cl, Cm; //nondimensionalized moments
 	double **Moment; //
 	double momarm[3];
 	double lemid[3];
@@ -453,7 +453,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     CYi = Nt_ind[1]*q;
 
 	
-	printf("\nROLL %lf PITCH %lf YAW %lf\n", \
+	//printf("\nCl %lf Cm %lf Cn %lf\n", \
 		Cl, Cm, Cn);//#
     //printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
            CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#

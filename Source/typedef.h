@@ -42,7 +42,9 @@ struct GENERAL
 	int linear;			//linear theory flag (=1 applied, 0= not applied)
 	int steady;			//steady (=1)/unsteady (default) aerodynamics flag
 	int relax;			//relaxed wake in time stepping scheme (=1 applied, 0=not)
-	int trim;			//longitudinal trim flag (=1 for trimming, =0 no trim; =1 m=1!)
+	int trimPITCH;			//longitudinal trim flag using hstab(=1 for trimming, =0 no trim)
+	int trimROLL;		//trim Cl to 0.0 using ailerons (=1 for trimming, =0 no trim)
+	int trimCL;			//Lift trim flag using alpha (=1 for trim, =0 no trim) 
 	int nowing;			//number of separated wings
 	int wing1[5],wing2[5];//span index of edges 1 (left) and 2 (right) of wing
 	int panel1[5],panel2[5];//indices of panels at left and right edge of wing

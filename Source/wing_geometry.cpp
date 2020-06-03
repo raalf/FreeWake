@@ -316,8 +316,7 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 		//FUNCTION Surface_DVE_Generation
 //===================================================================//
 void Surface_DVE_Generation(GENERAL &info,PANEL* panelPtr,\
-							DVE* surfacePtr, double ***camberPtr, \
-							const double epsilonHT)
+							DVE* surfacePtr, double ***camberPtr)
 {
 //generates surface Distributied-Vorticity elements. The element
 //exists of a leading and
@@ -487,12 +486,13 @@ info.surfAREA = 0;
 
 			// If there is trim adjust the tail at its hinge according to 
 			//the deflection of epsilonHT
-			if(info.trim){
+			//removed and replaced with above block. BB2020
+			/*if(info.trimPITCH){ //removed and replaced with new trimming, BB 2020
 				DeflectAboutHinge(panelPtr,epsilonHT, x1, x2, m, i, \
 								nu, &epsH1, &epsH2, xH1, xH2);
 					eps1 +=epsH1; //If there is camber, add the epsilon to that value
 					eps2 +=epsH2;
-			}
+			}*/
 			
 			//computing vector along LE of current spanwise row of DVEs
 			tempS = 1./panelPtr[i].n;
@@ -514,7 +514,7 @@ info.surfAREA = 0;
 					surfacePtr[l].xsi=0.5*(chord1+tempS*(chord2-chord1)/panelPtr[i].n);
 					//temporary incidence angle at half span of DVE using camber info
 					surfacePtr[l].epsilon = eps1 + tempS*(eps2-eps1)/panelPtr[i].n;
-				} else if(info.trim || panelPtr[i].deflect1 != 0){
+				} else if(panelPtr[i].deflect1 != 0){
 					//If camber is off but trim is on
 					//half-chord length at midspan of DVE
 					surfacePtr[l].xsi=0.5*(delchord1+delchord*tempS); 

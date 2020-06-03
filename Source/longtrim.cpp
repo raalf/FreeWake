@@ -1,8 +1,8 @@
-void LongitudinalTrim(GENERAL,PANEL *,DVE *,int,double *&,double &,\
-						double &,double &,FILE *,double ***);
+void LongitudinalTrim(GENERAL,PANEL *,DVE *,double *&,double &,\
+						double &,double &, double&, double&, FILE *,double ***);
 
-void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpanel,\
-						double *&cn,double &CL,double &CY,double &CDi,\
+void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
+						double *&cn,double &CL,double &CY,double &CDi, double &CLi, double &CYi,\
 						FILE *MomSol,double ***camberPtr)
 {
 // This program finds longitudinal trim solutions for twin wing configurations
@@ -15,7 +15,6 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 // INPUT
 //	info		general information
 //	panelPtr	panel information
-//	HTpanel		index of first panel of HT
 //
 //output
 //	surfaceDVEPtr	geometry of surface elements
@@ -30,15 +29,20 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 //drag distribution in SpanAOA<info.alpha>.txt where <info.alpha>
 //holds the numerical value of the current angle of attack 
 
-	int i,j,k,l,m,n=0;				//loop counter
+	int i,j,k,l,m,n=0,p=0;				//loop counter
 	double epsilonHT;	//HT incident correction [rad]
-	double CM_resid;	//residual moment
+	double epsilonAIL; //aileron incident correction [rad]
+	double CM_resid=0;	//residual pitch moment
+	double Cl_resid=0;	//residual roll moment
+	double *mult; //aileron diferential storage
 	double eps1;		//the HT incidence angle of one iteration previous
+	double eps1ail;		//the aileron incidence angle of one iteration previous
 	double CM_old;		//saving pitching moment of previous iteration step
+	double Cl_old;		//saving roll moment of previous iteration step
 	double CLht,CLhti;	//total and induced lift of HT
 	double *cl,*cy;		//section lift and side force coefficients
 	double *S;			//area of a spanwise strip (sum of areas of DVEs of one span location)
-	double tempS;
+	double tempS, tempsum, tempR;
     int tempI;
 	double **N_force;		//surface DVE's normal forces/density
 					//[0]: free stream lift, [1]: induced lift,
@@ -51,6 +55,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 
 	FILE *spaninfo;			//output file for spanwise information
 	char filename[133];	//file path and name for spanwise information
+	char answer;
 
 	//allocating memory	
 	ALLOC1D(&cl,info.nospanelement);	//section lift coefficient
@@ -60,59 +65,213 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 	ALLOC2D(&N_force,info.noelement,9);	//surface DVE normal forces
 	ALLOC1D(&D_force,info.nospanelement);//Drag force per span element
     ALLOC2D(&Span_force,info.nospanelement,3);//Span force vector per span element
+	ALLOC1D(&mult, 2);	//will store diff aileron info
 
 	//initial HT incident correction
 	epsilonHT = 0;//panelPtr[i].eps1;  	//[rad]
 	eps1 = 0;	//the HT incidence angle of one iteration previous
 
+	//initial ail incident correction
+	epsilonAIL = 0;//panelPtr[i].eps1;  	//[rad]
+	eps1ail = 0;	//the HT incidence angle of one iteration previous
 	//===========================================//
 		//pitching moment computation - Step 0
 	//===========================================//
 
     //computed the residual moment coefficient of wing and tail
-	CM_resid = PitchingMoment\
-				(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
-				HTpanel,info.RefPt,CLht,CLhti,\
-				N_force,D_force,Span_force,CL,CY,CDi,camberPtr);
+	PitchingMoment(info,panelPtr,surfacePtr,info.cmac,\
+				info.RefPt,CLht,CLhti,\
+				N_force,D_force,Span_force,CL,CY,CDi,camberPtr,CLi,CYi);
                                     //Subroutine in PitchMoment.cpp
 
+
 	//adding zero lift of wing only if camber is turned off
-	if(~info.flagCAMBER){CM_resid += info.CMoWing;}
+	if(~info.flagCAMBER){Cm += info.CMoWing;}
 
-	if(info.trim==1)   //longitudinal trim routine
+	CM_resid = Cm; //Cm and Cl are global
+	Cl_resid = Cl;
+
+	if(info.trimPITCH==1 || info.trimROLL==1)   // trim routine for pitch and roll
 	{
-	  if(CM_resid > 0)  	epsilonHT = 0.035; //deflect HT trailing edge 2deg down
-	  else 				epsilonHT =-0.035; //deflect HT trailing edge 2deg up
+		if (info.trimPITCH == 1) {
+			printf("\n-----TRIM FOR PITCH Cm-----Target Cm = 0.0\n");
 
+			//check if there are any elevators defined on wing 2:
+			tempsum = 0;
+			for (i = info.panel1[1]; i <= info.panel2[1]; i++) { //for all panels on wing 2
+				tempsum = +panelPtr[i].deflect1;
+			}
+			if (tempsum == 0) {
+				printf("No elevator defined on wing 2.\n You must define a deflection on at least one panel on wing 2. \n");
+				scanf("%c", &answer);
+				exit(1);
+			}
+		
+			if (CM_resid > 0) {
+
+				epsilonHT = 0.035; //deflect HT trailing edge 2deg down
+			}
+			else {
+				epsilonHT = -0.035; //deflect HT trailing edge 2deg up
+			}
+
+
+			for (i = info.panel1[1]; i <= info.panel2[1]; i++) { //for all panels on wing 2
+				if (panelPtr[i].deflect1 != 0){ //if the user has defined a deflection for this panel, we will overwrite it with our trim epsilon.				
+					panelPtr[i].deflect1 = epsilonHT;
+					panelPtr[i].deflect2 = epsilonHT;
+				}
+			}
+		}
+
+		if (info.trimROLL == 1) {
+			printf("\n-----TRIM FOR ROLL Cl-----Target Cl = 0.0\n");
+			//check if there are any ailerons defined on wing 2:
+			tempsum = 0;
+			for (i = info.panel1[0]; i <= info.panel2[0]; i++) { //for all panels on wing 1
+				tempsum = +panelPtr[i].deflect1;
+			}
+			if (tempsum == 0) {
+				printf("No aileron defined on wing 1.\n You must define a deflection on at least one panel on wing 1. \n");
+				scanf("%c", &answer);
+				exit(1);
+			}
+
+			if (Cl_resid > 0) {
+
+				epsilonAIL = 0.035; //deflect trailing edge 2deg down
+			}
+			else {
+				epsilonAIL = -0.035; //deflect trailing edge 2deg up
+			}
+
+			j = 0;
+			for (i = info.panel1[0]; i <= info.panel2[0]; i++) { //for all panels on wing 1
+				if (panelPtr[i].deflect1 != 0) { 
+					mult[j] = sqrt(panelPtr[i].deflect1* panelPtr[i].deflect1) *RtD;//use the input ail deflection as the multiplier for differential ailerons
+					j++; 
+				}
+			}
+
+			j = 0;
+			for (i = info.panel1[0]; i <= info.panel2[0]; i++) { //for all panels on wing 1
+				if (panelPtr[i].deflect1 != 0) { //if the user has defined a deflection for this panel, we will overwrite it with our trim aileron position. 
+					if (j == 0) { //enter deflection for left wing
+						panelPtr[i].deflect1 = epsilonAIL;
+						panelPtr[i].deflect2 = epsilonAIL;
+					}
+					else if (j == 1) { //reverse if this is the right wing 
+						panelPtr[i].deflect1 = -epsilonAIL;
+						panelPtr[i].deflect2 = -epsilonAIL;
+					}
+					else {
+						printf("Maximum of two ailerons.\n");
+						scanf("%c", &answer);
+						exit(1);
+					}
+
+					if (panelPtr[i].deflect1 > 0) { //use first multiplier if deflecting down 
+						panelPtr[i].deflect1 *= mult[0];
+						panelPtr[i].deflect2 *= mult[0];
+					}
+					else { //use second multiplier if deflecting up
+						panelPtr[i].deflect1 *= mult[1];
+						panelPtr[i].deflect2 *= mult[1];
+					}
+					j++;
+				}
+			}
+
+			eps1ail = 1*DtR; //first run from earlier had a aileron deflection that was entered in the input
+		}
 	//========================================//
 	//	pitching moment iteration loop
 	//========================================//
-	  i=0;	//initializing loop counter
+	  p=0;	//initializing loop counter
 	  do
 	  {
 	//========================================//
 	//	pitching moment computation - Step i
 	//========================================//
+		  if (info.trimPITCH == 1) {
+			  printf("\nelevator = %.2lf deg ", epsilonHT * RtD);
+		  }
+		  if (info.trimROLL == 1) {
+			  printf("\naileron = %.8lf deg * multiplier ", epsilonAIL * RtD);
+		  }
 		//saving pitching moment of previous iteration step
 		CM_old = CM_resid;
+		Cl_old = Cl_resid; 
+
 		//computed the residual moment coefficient of wing and tail
-		CM_resid = PitchingMoment\
-					(info,panelPtr,surfacePtr,info.cmac,epsilonHT,\
-					HTpanel,info.RefPt,CLht,CLhti,\
-					N_force,D_force,Span_force,CL,CY,CDi,camberPtr);
+		PitchingMoment(info,panelPtr,surfacePtr,info.cmac,\
+					info.RefPt,CLht,CLhti,\
+					N_force,D_force,Span_force,CL,CY,CDi,camberPtr,CLi,CYi);
                                     //Subroutine in PitchMoment.cpp
-
-		
+				
 		//adding zero lift of wing only if camber is turned off
-		if (~info.flagCAMBER) { CM_resid += info.CMoWing; } //changed to account for camber, BBB Apr 2020
+		if (~info.flagCAMBER) { Cm += info.CMoWing; } //changed to account for camber, BBB Apr 2020
 
-		//computing new HT incidence angle
-		tempS = epsilonHT - CM_resid*(epsilonHT-eps1)/(CM_resid-CM_old);
-		eps1 = epsilonHT;  epsilonHT = tempS;	//reassigning HT angles
+		CM_resid = Cm; //Cm and Cl are global
+		Cl_resid = Cl;
 
-		i++;	//incrementing loop counter
+		if (info.trimPITCH == 1) {
+			//computing new HT incidence angle
+			tempS = epsilonHT - CM_resid * (epsilonHT - eps1) / (CM_resid - CM_old);
+			
+			eps1 = epsilonHT;  epsilonHT = tempS;	//reassigning HT angles
+			for (i = info.panel1[1]; i <= info.panel2[1]; i++) { //for all panels on wing 2
+				if (panelPtr[i].deflect1 != 0) { //if the user has defined a deflection for this panel, we will overwrite it with our trim epsilon. 
+					panelPtr[i].deflect1 = epsilonHT;
+					panelPtr[i].deflect2 = epsilonHT;
+				}
+			}
+		}
+		else {
+			CM_resid = 0; //set residual pitch moment to 0 if we aren't trimming pitch
+		}
+		if (info.trimROLL == 1) {
+			//computing new aileron incidence angle
+			tempR = epsilonAIL - Cl_resid * (epsilonAIL - eps1ail) / (Cl_resid - Cl_old);
+			
+			eps1ail = epsilonAIL;  epsilonAIL = tempR;	//reassigning aileron angles
+			j = 0;
+			for (i = info.panel1[0]; i <= info.panel2[0]; i++) { //for all panels on wing 1
+				if (panelPtr[i].deflect1 != 0) { //if the user has defined a deflection for this panel, we will overwrite it with our trim aileron position. 
+					if (j == 0) { //enter deflection for left wing
+						panelPtr[i].deflect1 = epsilonAIL;
+						panelPtr[i].deflect2 = epsilonAIL;
+					}
+					else if (j == 1) { //reverse if this is the right wing
+						panelPtr[i].deflect1 = -epsilonAIL;
+						panelPtr[i].deflect2 = -epsilonAIL;
+					}
+					else {
+						printf("Maximum of two ailerons.\n");
+						scanf("%c", &answer);
+						exit(1);
+					}
 
-	  }while((i<20) && (CM_resid*CM_resid>.000025));
+					if (panelPtr[i].deflect1 > 0) { //use first multiplier if deflecting down 
+						panelPtr[i].deflect1 *= mult[0];
+						panelPtr[i].deflect2 *= mult[0];
+					}
+					else { //use second multiplier if deflecting up 
+						panelPtr[i].deflect1 *= mult[1];
+						panelPtr[i].deflect2 *= mult[1];
+					}
+					j++;
+				}
+			}
+		}
+		else {
+			Cl_resid = 0; //set residual roll moment to 0 if we aren't trimming roll
+		}
+		
+
+		p++;	//incrementing loop counter
+
+	  }while((p<20) && ((CM_resid*CM_resid>.000025) || (Cl_resid * Cl_resid > .000025)));
 	//========================================//
 	//	pitching moment iteration loop  END
 	//========================================*///
@@ -243,7 +402,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,int HTpane
 		//write trim results to TrimSol.txt
 //===================================================================//
 	fprintf(MomSol,"%6.2lf   %6.2lf  ",info.alpha*RtD,epsilonHT*RtD);
-	fprintf(MomSol,"%6.3lf %12.8lf  %7.4lf  ",CL,CDi,CM_resid);
+	fprintf(MomSol,"%6.3lf %12.8lf  %7.4lf  ",CL,CDi,Cm);
 	fprintf(MomSol,"%10.6lf  %8.4lf\n",CLht,info.CMoWing);
 	fflush(MomSol);
 

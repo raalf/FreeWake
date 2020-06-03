@@ -1,15 +1,17 @@
 //computes pitching moment
-double PitchingMoment(GENERAL &,PANEL *,const double,DVE *&,\
-						const double,const int, double [3],\
+ void PitchingMoment(GENERAL &,PANEL *, DVE*&, const double,\
+						double [3],\
 						double &,double &,double **&,double *&,double **&,\
-						double &,double &,double &,double ***);
+						double &,double &,double &,double ***,\
+						double&, double&);
 
-double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
-						const double cmac, const double epsilonHT,\
-						const int HTpanel, double xCG[3],\
+ void PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
+						const double cmac, \
+						double xCG[3],\
 						double &CLht,double &CLhti,\
 						double **&N_force,double *&D_force,double **&Span_force,\
-						double &CL,double &CY,double &CDi_finit, double ***camberPtr)
+						double &CL,double &CY,double &CDi_finit, double ***camberPtr,\
+						double &CLi, double &CYi)
 {
 //this routine computes the pitching moment of a given configuration.
 //The moment is computed about the point xCG, which moves with the wing
@@ -20,9 +22,6 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 //	info		general information
 //	panelPtr	panel information
 //  cmac 		mean aerodynamic chord of wing
-//	epsilonHT	additional horizontal tail angle [rad]
-//				positive - trailing edge down
-//	HTpanel		index of first panel of HT
 //	xCG			CG location
 //
 //output
@@ -47,7 +46,7 @@ double PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
 	int saveStep=20;	//number of steps when relaxed wake is saved
 	int timestart=0;	//first timestep of relaxed wake scheme
  //GB 2-9-20 	int HTindex=0;		//the first DVE index of the HT
-	double CLi,CYi;	    //induced lift and side force coefficients
+	//double CLi,CYi;	    //induced lift and side force coefficients
 	double e_old;		//span efficiency of previous time step
 	double deltae;		//square of delta_e of curent and previous time step
 	double tempS,tempA[3];//a temporary variable for a scalar and vector
@@ -67,8 +66,9 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 //Rotates panels to account for sideslip, roll and alpha 
 //only applies for turning flight
-	if(info.flagCIRC) Panel_Rotation(info,panelPtr);
-							//Subroutine in wing_geometry.cpp
+	//if(info.flagCIRC) Panel_Rotation(info,panelPtr);
+							//Subroutine in wing_geometry.cpp . 
+//moved to main, BB 2020
 	xCG[0] = info.RefPt[0]; xCG[1] = info.RefPt[1]; xCG[2] = info.RefPt[2];
 	XCG[0] = xCG[0];	XCG[1] = xCG[1];	XCG[2] = xCG[2];
 //===================================================================//
@@ -79,7 +79,7 @@ int *pivot;				//holds information for pivoting D
 		//START generating surface Distributed-Vorticity Elements
 //===================================================================//
 
-	Surface_DVE_Generation(info,panelPtr,surfacePtr,camberPtr, epsilonHT);
+	Surface_DVE_Generation(info,panelPtr,surfacePtr,camberPtr);
 								//Subroutine in wing_geometry.cpp
 	
 	//if circling flight, calculate the new inflow velocities for each DVE
@@ -398,8 +398,15 @@ printf("\n");
                 N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi,XCG);
                                             //Subroutine in lift_force.cpp
 
-//            printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
-//            printf(" CN %lf CDi %lf\n",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
+            //printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
+            //printf(" CN %lf CDi %lf",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
+			//printf("\nCl %lf Cm %lf Cn %lf\n",	Cl, Cm, Cn);//#
+
+			//printf("\nCL %lf CLi %lf CY %lf CYi %lf CN %lf CDi %lf", CL, CLi, CY, CYi, sqrt(CL * CL + CY * CY), CDi);
+			//printf(" CN %lf CDi %lf",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
+			printf("\nCFX %lf CFY %lf CFZ %lf ", \
+				CF[0], CF[1], CF[2]);
+			printf("Cl %lf Cm %lf Cn %lf\n", Cl, Cm, Cn);//#
 
 //===================================================================//
             //END wing-force computation
@@ -459,7 +466,7 @@ printf("\n");
 
 	//the residual-moment coefficient
 	CM_resid = Moment*qc;  
-	printf("\nCM_resid is: %f\n", CM_resid);
+	//printf("\nCM_resid is: %f\n", CM_resid);
 	//printf("Moment: %f\t qc: %f\t\n",Moment,qc);
 	if(info.sym==1) CM_resid*=2;
 	//printf("CM resid %lf  \n",CM_resid);
@@ -505,7 +512,8 @@ printf("\n");
 	FREE2D(&wakePtr,info.maxtime+1,info.nospanelement);
 	
 	//returning the residual moment coefficient
-	return(CM_resid);
+	//return(CM_resid); //now CM is global, don't need to pass it out. 
+	//BB 2020
 }
 //===================================================================//
 		//END of program

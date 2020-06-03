@@ -11,10 +11,15 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	double cm,CMo;			//section, total zero-lift moment coefficient
 	double cd1,cd2,cm1,cm2;	//section values of panel edge 1 and 2 for interpolation; GB 2-14-20
 	double CL,CY,CD,CDi=0;		//aircraft lift, total and induced drag coefficients
+	double CLi, CYi = 0;	//induced aircraft lift and side force
 	double CLinviscid=0;	//inviscid CL without stall correction
 	double CDprofile=0;		//wing profile drag coefficient
 	double CDfuselage=0;	//fuselage drag coefficeing
 	double CDht=0,CDvt=0;	//horizontal and vertical tail drag coefficeing
+	double CLtarget = 0;	//for trim lift
+	double CLtemp[3];  //for storing temp lift for trim
+	double alpha2old; //for lift trim
+	double alphatemp1, alphatemp2, alphasteptemp;
 	//coefficients with cap C are wrt to wing area
 	
 	double D=0, Di=0;		//total and induced drag
@@ -299,6 +304,8 @@ int main(int argc, char *argv[])
 						info.panel1,info.panel2,info.dve1,info.dve2);
 									//Subroutine in wing_geometry.cpp
 
+
+
 //===================================================================//
 		//END wing generation
 //===================================================================//
@@ -378,263 +385,335 @@ int main(int argc, char *argv[])
 		//looping over AOA
 //===================================================================//
 //===================================================================//
+	//if trimCL is 1, we will trim alpha here to achieve the correct CL.
+	//we will first run alpha 1 and alpha 5, and then interpolate the CL
+	//result linearly and replace the first result with the new result. 
+	//Then, the second result becomes the old result and we iterate this 
+	//process until the condition is met. This should also work for 
+	//visc ON, but it will take more iterations to converge. 
 
-	a2 = int((alpha2-alpha1)/alphastep+.5);  //max. number of alpha increments
-	
-	for(a=0;a<=a2;a++)
+	//if trimCL is 0, we will step through the user defined alphas
+	if (info.trimCL == 1) {
+		q_inf = 0.5 * info.density * info.Uinf * info.Uinf;
+		CLtarget = info.W / (q_inf * info.S * cos(info.bank));
+		printf("\n-----TRIM FOR CL-----Target CL = %.4lf\n", CLtarget);
+		alpha2 = 5* DtR; //starting alphas to run
+		alpha2old = alpha2; 
+		alpha1 = 1* DtR;
+		alphastep = alpha2 - alpha1;
+		CLtemp[0] = 0;
+		CLtemp[1] = 0;
+	}
+	else {
+		CLtarget = 10; //if we aren't trimming for lift we need some logic here
+	}
+
+	while ((CF[2] - CLtarget) * (CF[2] - CLtarget) > 0.000001) //iterate until CL changes less
+		//than this much
+
+		//we could iterate until alpha changes by less than a certain amnt with this:
+		//while (sqrt((alpha1-alpha2old) * (alpha1-alpha2old)) > 0.001*DtR)
 	{
-		//updating AOA info
-		//the new AOA
-		info.alpha = alpha1+a*alphastep;
 
-		printf("\nalpha = %.2lf \n",info.alpha*RtD);
+		a2 = int((alpha2 - alpha1) / alphastep + .5);  //max. number of alpha increments
 
-		if (info.gradient == 0) {
-			info.gradient = (9.81*tan(info.bank)) / (info.Uinf); //this Uinf will need to include Ws too!
-		}
-
-		//computes free stream velocity vector. THIS GETS REBUILT INSIDE PANEL ROT FUNCTION if CIRC. 
+		for (a = 0; a <= a2; a++)
 		{
-			info.U[0]=info.Uinf*cos(info.alpha)*cos(info.beta);
-			info.U[1]=info.Uinf			*sin(info.beta);
-			info.U[2]=info.Uinf*sin(info.alpha)*cos(info.beta)-info.Ws;
-		}
+			//updating AOA info
+			//the new AOA
+			info.alpha = alpha1 + a * alphastep;
 
-        //new free stream velocities at panel edges
-			//ATTENTION: NO SPANWISE VELOCITY VARIATION !!!
-		for(i=0;i<info.nopanel;i++) //THIS GETS REBUILT INSIDE CIRCLING_UINF if CIRC
-		{
-			panelPtr[i].u1[0]= info.U[0];
-			panelPtr[i].u1[1]= info.U[1];
-			panelPtr[i].u1[2]= info.U[2];
-
-			panelPtr[i].u2[0]= info.U[0];
-			panelPtr[i].u2[1]= info.U[1];
-			panelPtr[i].u2[2]= info.U[2];
-		}
-	//===============================================================//
-		//compute induced drag and lift distribution
-	//===============================================================//
-		LongitudinalTrim(info,panelPtr,surfacePtr,info.panel2[1],cn,\
-						 CL,CY,CDi,MomSol,camberPtr);
-                                        //Subroutine in longtrim.cpp
-	//===============================================================//
-		//DONE compute induced drag and lift distribution
-	//===============================================================//
+			printf("\nalpha = %.2lf \n", info.alpha * RtD);
 
 
-	//===============================================================//
-		//computing free stream values
-	//===============================================================//
-		q_inf = info.W/(CL*info.S);
-		V_inf = sqrt(2*q_inf/info.density);
+			
+				alphatemp1 = alpha1;
+				alphatemp2 = alpha2; 
+				alphasteptemp = alphastep;
+				General_Info_from_File(info, alpha1, alpha2, alphastep); //reload all info from input file, since we have rotated it already in panel_rotation
+				Panel_Info_from_File(panelPtr, info);
+				alpha1 = alphatemp1;
+				alpha2 = alphatemp2;
+				alphastep = alphasteptemp;
 
-		//induced drag
-		Di = CDi*info.S*q_inf;
-        
-        printf("CL %lf CY %lf CN %lf CDi %lf  alpha %.2lf  Main line 393\n",\
-               CL,CY, sqrt(CL*CL + CY * CY), CDi,info.alpha*RtD);
-        printf("CFX %lf CFY %lf CFZ %lf  ",\
-               CF[0],CF[1],CF[2]);        
-	//===============================================================//
-		//computing wing/horizontal tail profile drag
-	//===============================================================//
+				if (info.gradient == 0) {
+					info.gradient = (9.81 * tan(info.bank)) / (info.Uinf); //this Uinf will need to include Ws too!
+					if (info.gradient == 0) info.gradient = DBL_EPS;
+				}
 
-		Dprofile=0; Dht=0;	CMo=0;//initialize  variables
-		CDprofile=0;
-
-		tempS = 1/info.nu;	//inverse of kin. viscosity
-
-	if (info.flagVISCOUS){
-		i=0;		//intitaliing span index counter
-		m=0;		//index of leading edge DVE
-		for(k=0;k<info.nopanel;k++)  //loop over panels
-		{
-		  for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
-		  {
-		  	// Calculate Reynolds number.
-			if(info.flagCIRC){//Added for circling flight: D.F.B. 03-2020
-				// For circling flight calculate based on the panel left edge velocity.
-				Re = norm2(surfacePtr[m].u)*2*surfacePtr[m].xsi*tempS*panelPtr[k].m;
-			}else{
-				// For non-circling flight, calculate based on the fixed-lift velocity
-				Re = V_inf*2*surfacePtr[m].xsi*tempS*panelPtr[k].m;
+			//===================================================================//
+			//START rotating panels 
+			//===================================================================//
+			//Rotates panels to account for sideslip, roll and alpha 
+			//only applies for turning flight
+			if (info.flagCIRC) {
+				Panel_Rotation(info, panelPtr);
+				//Subroutine in wing_geometry.cpp
+			}
+			//computes free stream velocity vector. THIS GETS BUILT INSIDE PANEL ROT FUNCTION if CIRC. 
+			else
+			{
+				info.U[0] = info.Uinf * cos(info.alpha) * cos(info.beta);
+				info.U[1] = info.Uinf * sin(info.beta);
+				info.U[2] = info.Uinf * sin(info.alpha) * cos(info.beta) - info.Ws;
 			}
 
-			//interpolation of airfoil drag between airfoil of panel edge 1 and 2
-			//GB 2-14-20
-			airfoil = surfacePtr[m].airfoil[0];		//airfoil number, panel edge 1
-			//computing section drag and moment coefficient based on panel edge 1
-			cd1= SectionDrag(airfoilPtr[airfoil],Re,cn[i],airfoilCol,cm,m);
-			cm1 = cm; //zero-lift moment of panel edge 1 airfoil
+			//new free stream velocities at panel edges
+				//ATTENTION: NO SPANWISE VELOCITY VARIATION !!!
+			for (i = 0; i < info.nopanel; i++) //THIS GETS REBUILT INSIDE CIRCLING_UINF if CIRC
+			{
+				panelPtr[i].u1[0] = info.U[0];
+				panelPtr[i].u1[1] = info.U[1];
+				panelPtr[i].u1[2] = info.U[2];
 
-							//in drag_force.cpp
-			airfoil = surfacePtr[m].airfoil[1];		//airfoil number, panel edge 2
-			//computing section drag and moment coefficient based on panel edge 2
-			cd2 = SectionDrag(airfoilPtr[airfoil],Re,cn[i],airfoilCol,cm,m);
-			cm2 = cm; //zero-lift moment of panel edge 2 airfoil
+				panelPtr[i].u2[0] = info.U[0];
+				panelPtr[i].u2[1] = info.U[1];
+				panelPtr[i].u2[2] = info.U[2];
+			}
+			//===============================================================//
+				//compute induced drag and lift distribution
+			//===============================================================//
+			LongitudinalTrim(info, panelPtr, surfacePtr, cn, \
+				CL, CY, CDi,  CLi, CYi, MomSol, camberPtr);
+			//Subroutine in longtrim.cpp
+//===============================================================//
+	//DONE compute induced drag and lift distribution
+//===============================================================//
 
-			cd = cd1+surfacePtr[m].ratio*(cd2-cd1); //weighted cd based on span location 
-			cm = cm1+surfacePtr[m].ratio*(cm2-cm1); //weighted cmo based on span location 
 
-			Dprofile += cd*surfacePtr[m].S*panelPtr[k].m; //wing drag
+//===============================================================//
+	//computing free stream values
+//===============================================================//
+			//q_inf = info.W / (CL * info.S);
+			//V_inf = sqrt(2 * q_inf / info.density);
+			V_inf = info.Uinf; //will need w added
+			//induced drag
+			Di = CDi * info.S * q_inf;
 
-			//adding section moment coefficients (*S*chord)
-			CMo += cm*surfacePtr[m].S*surfacePtr[m].xsi*2*panelPtr[k].m*panelPtr[k].m;
-			
-			i++;  //next span index 
-			m++;	//index of next leading edge DVE 
-		  }
-		  m += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
-		}
-	
-		Dprofile*=q_inf; Dht*=q_inf;  //multiplying with dyn. pressure
-		if(info.sym == 1)	//symmetrical geometry, double values
-		{
-			Dprofile *=2;
-			Dht *= 2;
-		}	
-		
-		CMo*=2/(info.S*info.cmac);		//non-dimensionalizing 
+			//printf("CL %lf CY %lf CN %lf CDi %lf alpha %.2lf", \
+				CL, CY, sqrt(CL * CL + CY * CY), CDi, info.alpha * RtD);
+			printf("CL %lf CLi %lf CY %lf CYi %lf CN %lf CDi %lf", CL, CLi, CY, CYi, sqrt(CL * CL + CY * CY), CDi);
+			//printf(" CN %lf CDi %lf",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
+			printf("\nCFX %lf CFY %lf CFZ %lf\n", \
+				CF[0], CF[1], CF[2]);
+			printf("Cl %lf Cm %lf Cn %lf\n",Cl, Cm, Cn);//#
+			//===============================================================//
+				//computing wing/horizontal tail profile drag
+			//===============================================================//
 
-		//set new wing-zero lift moment to values of previous AOA
-		info.CMoWing = CMo;
-	}
-	//===============================================================//
-		//DONE computing wing/horizontal tail profile drag
-	//===============================================================//
+			Dprofile = 0; Dht = 0;	CMo = 0;//initialize  variables
+			CDprofile = 0;
 
-	//===============================================================//
-		//START computing vertical-tail profile drag
-	//===============================================================//
-		Dvt=0;	//initialize profile drag variables
+			tempS = 1 / info.nu;	//inverse of kin. viscosity
 
-	if (info.flagVISCOUS){
-		for(i=0;i<info.noVT;i++)  //loop over surface DVEs
-		{
-			
-			Re = V_inf*VTchord[i]/info.nu;	//Reynolds number
+			if (info.flagVISCOUS) {
+				i = 0;		//intitaliing span index counter
+				m = 0;		//index of leading edge DVE
+				for (k = 0; k < info.nopanel; k++)  //loop over panels
+				{
+					for (l = 0; l < panelPtr[k].n; l++)  //loop over span of panel k
+					{
+						// Calculate Reynolds number.
+						if (info.flagCIRC) {//Added for circling flight: D.F.B. 03-2020
+							// For circling flight calculate based on the panel left edge velocity.
+							Re = norm2(surfacePtr[m].u) * 2 * surfacePtr[m].xsi * tempS * panelPtr[k].m;
+						}
+						else {
+							// For non-circling flight, calculate based on the fixed-lift velocity
+							Re = V_inf * 2 * surfacePtr[m].xsi * tempS * panelPtr[k].m;
+						}
 
-			airfoil = VTairfoil[i];		//airfoil number
- 
-			//computing the section drag coefficient, cl=0
-			tempS =0;
-			cd=SectionDrag(airfoilPtr[airfoil],Re,tempS,airfoilCol,cm,i+info.noelement);
-				//subroutine in drag_force.cpp
-		
-			Dvt += cd*VTarea[i];	  //h-tail drag
-		}
-		Dvt*=q_inf;  //multiplying with dyn. pressure
-	}
+						//interpolation of airfoil drag between airfoil of panel edge 1 and 2
+						//GB 2-14-20
+						airfoil = surfacePtr[m].airfoil[0];		//airfoil number, panel edge 1
+						//computing section drag and moment coefficient based on panel edge 1
+						cd1 = SectionDrag(airfoilPtr[airfoil], Re, cn[i], airfoilCol, cm, m);
+						cm1 = cm; //zero-lift moment of panel edge 1 airfoil
 
-	//===============================================================//
-		//END computing vertical-tail profile drag
-	//===============================================================//
+										//in drag_force.cpp
+						airfoil = surfacePtr[m].airfoil[1];		//airfoil number, panel edge 2
+						//computing section drag and moment coefficient based on panel edge 2
+						cd2 = SectionDrag(airfoilPtr[airfoil], Re, cn[i], airfoilCol, cm, m);
+						cm2 = cm; //zero-lift moment of panel edge 2 airfoil
 
-	//===============================================================//
-		//START computing fuselage drag
-	//===============================================================//
-	Dfuselage=0;		//initializing
+						cd = cd1 + surfacePtr[m].ratio * (cd2 - cd1); //weighted cd based on span location 
+						cm = cm1 + surfacePtr[m].ratio * (cm2 - cm1); //weighted cmo based on span location 
 
-	if (info.flagVISCOUS){
-		tempS = V_inf*delFus/info.nu;	//almost local Re#
+						Dprofile += cd * surfacePtr[m].S * panelPtr[k].m; //wing drag
 
-		//loop over fuselae sections
-		for(i=0;i<info.noFus;i++)
-		{
-			//computing local Re#
-			Re=(i+0.5)*tempS;
+						//adding section moment coefficients (*S*chord)
+						CMo += cm * surfacePtr[m].S * surfacePtr[m].xsi * 2 * panelPtr[k].m * panelPtr[k].m;
 
-			if(i<FusLT)		cd=0.664/sqrt(Re);	//laminar flow
-			else			cd=0.0576/pow(Re,0.2);	//turbulent
-			
-			Dfuselage += cd*FusSectS[i];
-		}
-		Dfuselage *=q_inf*1.;  //dyn. pressure and correcting pressure drag	
-	}	
-	//===============================================================//
-		//END computing fuselage drag
-	//===============================================================//
+						i++;  //next span index 
+						m++;	//index of next leading edge DVE 
+					}
+					m += panelPtr[k].n * (panelPtr[k].m - 1);  //index of next LE DVE of next panel
+				}
 
-	//===============================================================//
-		//START total drag
-	//===============================================================//
-	D = Di+Dprofile+Dht+Dvt+Dfuselage+Dmisc;
-	Dint = D * IFdrag;  //interference drag is a fraction of total
-	D += Dint;
-	//===============================================================//
-		//END computing total drag
-	//===============================================================//
-    
-// *
-// *
-// *  Created by Goetz  Bramesfeld on 1/22/11.
-// *
-// *
-    //===============================================================//
-        //adjusting total CL for stalled sections
-    //===============================================================//
-		if (info.flagVISCOUS){
-		i=0;		//intitaliing span index counter
-		m=0;		//index of leading edge DVE
-        tempS=0;        //initializing temporary CL holder
-		for(k=0;k<info.nopanel;k++)  //loop over panels
-		{
-		  	for(l=0;l<panelPtr[k].n;l++)  //loop over span of panel k
-		  	{
-            	//adding local normal force: lift/roh = cn*area*cos(dihedral)
-            	tempS += cn[i]*(surfacePtr[m].S*panelPtr[k].m)\
-                	    *cos(surfacePtr[m].nu);
+				Dprofile *= q_inf; Dht *= q_inf;  //multiplying with dyn. pressure
+				if (info.sym == 1)	//symmetrical geometry, double values
+				{
+					Dprofile *= 2;
+					Dht *= 2;
+				}
 
- 				i++;  //next span index 
-				m++;	//index of next leading edge DVE 
-		  	}
-		  	m += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
+				CMo *= 2 / (info.S * info.cmac);		//non-dimensionalizing 
+
+				//set new wing-zero lift moment to values of previous AOA
+				info.CMoWing = CMo;
+			}
+			//===============================================================//
+				//DONE computing wing/horizontal tail profile drag
+			//===============================================================//
+
+			//===============================================================//
+				//START computing vertical-tail profile drag
+			//===============================================================//
+			Dvt = 0;	//initialize profile drag variables
+
+			if (info.flagVISCOUS) {
+				for (i = 0; i < info.noVT; i++)  //loop over surface DVEs
+				{
+
+					Re = V_inf * VTchord[i] / info.nu;	//Reynolds number
+
+					airfoil = VTairfoil[i];		//airfoil number
+
+					//computing the section drag coefficient, cl=0
+					tempS = 0;
+					cd = SectionDrag(airfoilPtr[airfoil], Re, tempS, airfoilCol, cm, i + info.noelement);
+					//subroutine in drag_force.cpp
+
+					Dvt += cd * VTarea[i];	  //h-tail drag
+				}
+				Dvt *= q_inf;  //multiplying with dyn. pressure
 			}
 
-        	tempS = tempS/info.S*2; //normalizing force/roh to overall CL
-        	printf("check output of new, for stall corrected CL = %lf  old was %lf",tempS, CL);
-        	printf("  both values should be the same (at least very similar) if no stall\n");
-        
-        	CLinviscid=CL;		//inviscid CL without stall correction
-			CL=tempS;        //reassigning CL
-    	
-    	} else{
-		CLinviscid=CL;	// Creating CLinviscid
-		//When viscous corrections are off dont need to re-assign CL
-    	}
-    //===============================================================//
-        //DONE adjusting total CL for stalled sections
-    //===============================================================//
-    
-	//===============================================================//
-		//START write to Performance file
-	//===============================================================//
-		tempS = CLinviscid/CL;  //correction for stalled CL
-		V_inf *= sqrt(tempS);
+			//===============================================================//
+				//END computing vertical-tail profile drag
+			//===============================================================//
+
+			//===============================================================//
+				//START computing fuselage drag
+			//===============================================================//
+			Dfuselage = 0;		//initializing
+
+			if (info.flagVISCOUS) {
+				tempS = V_inf * delFus / info.nu;	//almost local Re#
+
+				//loop over fuselae sections
+				for (i = 0; i < info.noFus; i++)
+				{
+					//computing local Re#
+					Re = (i + 0.5) * tempS;
+
+					if (i < FusLT)		cd = 0.664 / sqrt(Re);	//laminar flow
+					else			cd = 0.0576 / pow(Re, 0.2);	//turbulent
+
+					Dfuselage += cd * FusSectS[i];
+				}
+				Dfuselage *= q_inf * 1.;  //dyn. pressure and correcting pressure drag	
+			}
+			//===============================================================//
+				//END computing fuselage drag
+			//===============================================================//
+
+			//===============================================================//
+				//START total drag
+			//===============================================================//
+			D = Di + Dprofile + Dht + Dvt + Dfuselage + Dmisc;
+			Dint = D * IFdrag;  //interference drag is a fraction of total
+			D += Dint;
+			//===============================================================//
+				//END computing total drag
+			//===============================================================//
+
+		// *
+		// *
+		// *  Created by Goetz  Bramesfeld on 1/22/11.
+		// *
+		// *
+			//===============================================================//
+				//adjusting total CL for stalled sections
+			//===============================================================//
+			if (info.flagVISCOUS) {
+				i = 0;		//intitaliing span index counter
+				m = 0;		//index of leading edge DVE
+				tempS = 0;        //initializing temporary CL holder
+				for (k = 0; k < info.nopanel; k++)  //loop over panels
+				{
+					for (l = 0; l < panelPtr[k].n; l++)  //loop over span of panel k
+					{
+						//adding local normal force: lift/roh = cn*area*cos(dihedral)
+						tempS += cn[i] * (surfacePtr[m].S * panelPtr[k].m)\
+							* cos(surfacePtr[m].nu);
+
+						i++;  //next span index 
+						m++;	//index of next leading edge DVE 
+					}
+					m += panelPtr[k].n * (panelPtr[k].m - 1);  //index of next LE DVE of next panel
+				}
+
+				tempS = tempS / info.S * 2; //normalizing force/roh to overall CL
+				printf("check output of new, for stall corrected CL = %lf  old was %lf", tempS, CL);
+				printf("  both values should be the same (at least very similar) if no stall\n");
+
+				CLinviscid = CL;		//inviscid CL without stall correction
+				CL = tempS;        //reassigning CL
+
+			}
+			else {
+				CLinviscid = CL;	// Creating CLinviscid
+				//When viscous corrections are off dont need to re-assign CL
+			}
+			CLtemp[a] = CF[2]; //storing CL value for iterating 
+			//===============================================================//
+				//DONE adjusting total CL for stalled sections
+			//===============================================================//
+
+			//===============================================================//
+				//START write to Performance file
+			//===============================================================//
+			tempS = CLinviscid / CL;  //correction for stalled CL
+			V_inf *= sqrt(tempS);
+
+			CD = D / (q_inf * info.S);
+
+			fprintf(Performance, "%8.1lf %8.2lf %8.2lf %8.5lf", \
+				info.alpha * RtD, V_inf, CL, CD);
+			fprintf(Performance, " %8.3lf %8.1lf %8.2lf %8.2lf", \
+				D, CL / CD, V_inf * CD / CL, D * V_inf);
+
+			fprintf(Performance, " %8.3lf %8.3lf %8.3lf %8.3lf %8.3lf", \
+				Di, Dprofile, Dht, Dvt, Dfuselage);
+			fprintf(Performance, " %8.3lf %8.3lf %8.3lf", \
+				Dint, Dmisc, info.CMoWing);
+			fprintf(Performance, " \n");
+			fflush(Performance);
+
+			//===============================================================//
+				//END write to Performance file
+			//===============================================================//
+
+		//		printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
+
+
+		}//end loop over 'a' angle of attack
+
+		if (info.trimCL == 1) {
+			//calculate new alpha to run
+			alpha2 = alpha1 + (CLtarget - CLtemp[0]) / ((CLtemp[1] - CLtemp[0]) / (alpha2old - alpha1));
+			alpha2old = alpha1;
+			CLtemp[1] = CLtemp[0];
+
+			alpha1 = alpha2;
+			//alphastep = alpha2 - alpha1;
+		}
+		else{
+			CLtarget = CF[2]; //set here so we dont iterate again if we aren't trimming
+		}
 		
-		CD = D/(q_inf*info.S);
-
-		fprintf(Performance,"%8.1lf %8.2lf %8.2lf %8.5lf",\
-					info.alpha*RtD,     V_inf,  CL,CD);
-		fprintf(Performance," %8.3lf %8.1lf %8.2lf %8.2lf",\
-							D,    CL/CD,  V_inf*CD/CL, D*V_inf);
-
-		fprintf(Performance," %8.3lf %8.3lf %8.3lf %8.3lf %8.3lf",\
-		Di,Dprofile,Dht,Dvt,Dfuselage);
-		fprintf(Performance," %8.3lf %8.3lf %8.3lf",\
-		Dint,Dmisc,info.CMoWing);
-		fprintf(Performance," \n");
-		fflush(Performance);
-
-	//===============================================================//
-		//END write to Performance file
-	//===============================================================//
-
-//		printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
-
-
-	}//end loop over 'a' angle of attack
+	} //end alpha iterations for lift trim
 //===================================================================//
 //			END OF LOOP OVER AOA
 //===================================================================//

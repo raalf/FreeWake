@@ -10,7 +10,9 @@ Steady (1) or unsteady (2):		aerodynamics =	1
 Viscous solutions (1) or inviscid (0)  viscous = 	0
 Using camber (1) or no camber (0)  camber = 	1
 Symmetrical geometry (yes 1, no 0):	sym =		0
-Longitudinal trim (yes 1, no 0):	trim =		0	(yes means m has to be 1)
+Pitch trim (yes 1, no 0):	trimPITCH =		0	
+Roll trim (yes 1, no 0):	trimROLL = 		0
+Lift trim (yes 1, no 0): 	trimCL = 	0
 
 Max. number of time steps:	maxtime =	20
 Width of each time step (sec):	deltime =	0.0250000

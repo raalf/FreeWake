@@ -103,7 +103,22 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	do	ch = fgetc(fp);
 	while (ch!='=');
 	//reads symmetry flag
-	fscanf(fp,"%d", &info.trim);
+	fscanf(fp,"%d", &info.trimPITCH);
+
+	// read roll/lateral trim flag
+//(trim =1 -> aircraft is trimmed, trim=0 -> no trim)
+//find the '='-sign in input file before sym
+	do	ch = fgetc(fp);
+	while (ch != '=');
+	//reads symmetry flag
+	fscanf(fp, "%d", &info.trimROLL);
+
+	// read lift trim flag
+//find the '='-sign in input file before sym
+	do	ch = fgetc(fp);
+	while (ch != '=');
+	//reads symmetry flag
+	fscanf(fp, "%d", &info.trimCL);
 
 	//read max. number of time steps
 	//find the '='-sign in input file before maxtime

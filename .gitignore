@@ -46,9 +46,12 @@ Temporary Items
 /output/*.txt
 /output/*.py
 /output/*.dat
+# Output folders
+/output/*
 
 # Source Stuff
 *.obj
+/Source/gitparams.h
 
 # fw executable to remove issues with merging
 fw

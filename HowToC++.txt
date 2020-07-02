@@ -12,3 +12,14 @@ compiles Main_PerfCode2020.cpp to fw
 
 executes fw
 
+
+How to run Vogen (generates input file for fw)
+in directory freeWakeImpDev_D2C
+
+compile in VoGenDevelop
+gcc -c *.c
+gcc -o vogen -lm *.o
+with "vogue" name of executable, needs to be copied into freeWakeImpDev_D2C
+
+./vogen predesignD2C.inp
+

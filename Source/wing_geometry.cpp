@@ -353,7 +353,7 @@ void Surface_DVE_Generation(GENERAL &info,PANEL* panelPtr,\
 int i,m,n,wing;			//loop counters
 int l=0;			//l => suface DVE counter,
 double singfct;		//decay rate of singularity at edge of vortex sheet
-double tempS,tempA[3],tempAA[3]; //temporary variables. 
+double tempS, tempSpan,tempA[3],tempAA[3]; //temporary variables. 
 double xquart[3];					//1/4chord line of panel, defined in input
 double x1LE[3],x2LE[3],x1[3],x2[3]; //edge points of panel and spanwise rows
 double xLE[3],xsiLE[3];	//vector along LE of a spanewise row of surface DVEs
@@ -367,6 +367,11 @@ double epsH1,epsH2;	//epsilon of chordwise section of hinge
 double epsC1,epsC2; //epsilon of chordwise section of camber
 double chord1,chord2;	//new chord due to camber
 double xH1[3],xH2[3];	//hinge location 
+double check1, check2;		//Checks to see if hinge is a DVE LE
+int closeLL =0;			//closest lifting line to hinge
+double adjust1, adjust2;	//distance to shift lifting lines if they are not on a hinge
+double adjust1next, adjust2next;	//distance to shift lifting lines if they are not on a hinge
+char answer;	//error handling
 
 //init area calculations
 info.AREA = 0;
@@ -382,10 +387,10 @@ info.surfAREA = 0;
 		vsum(panelPtr[i].x2,tempA,xquart); //x_l.e. = x1/4_2-x1/4_1
 
 		//panel span
-		tempS = sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]); 
+		tempSpan = sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]); 
 
 		//panel area
-		panelPtr[i].AREA = tempS * (panelPtr[i].c1 + panelPtr[i].c2) / 2;
+		panelPtr[i].AREA = tempSpan * (panelPtr[i].c1 + panelPtr[i].c2) / 2;
 		info.AREA += panelPtr[i].AREA;
 
 		//panel area projection to xy plane
@@ -393,17 +398,20 @@ info.surfAREA = 0;
 		info.projAREA += panelPtr[i].projAREA;
 
 		//1/4chord line dihedral
-		nu = asin(xquart[2]/tempS);
+		nu = asin(xquart[2]/ tempSpan);
 
+		//note: delchord is only temporary and may be changed as elements are redistributed
+		//below
 		delchord1 = panelPtr[i].c1/panelPtr[i].m;	//chordwise increment left side
 		delchord2 = panelPtr[i].c2/panelPtr[i].m;	//chordwise increment right side
-		delchord  = (delchord2-delchord1)/panelPtr[i].n;//chord/span increment
+		//delchord  = (delchord2-delchord1)/panelPtr[i].n;//chord/span increment
 
 		//tangent of change in sweep angle of each chordwise row
-		delTANphi = (delchord2-delchord1)/tempS;
+		//removed BB 2020, replaces below for each m
+		//delTANphi = (delchord2-delchord1)/tempSpan;
 
 		//spanwise incident increments
-		deleps = (panelPtr[i].eps2-panelPtr[i].eps1)/panelPtr[i].n;
+		//deleps = (panelPtr[i].eps2-panelPtr[i].eps1)/panelPtr[i].n; //removed BB 2020, replaced with local eps calcs
 
 		/* Changed 20.02.20 D.F.B. User now defined panel at LE and the wing
 		/ pitch is adjusted about the LE of the wing (instead of the 1/4 chord)
@@ -431,7 +439,39 @@ info.surfAREA = 0;
 		x2LE[2] = panelPtr[i].x2[2];						
 
 
-		panelPtr[i].surfAREA = 0; //init panel surf area. 
+		panelPtr[i].surfAREA = 0; //init panel surf area.
+
+		//should throw an error here if we have a hinge but m = 1
+		if ((panelPtr[i].hinge1 != 0.0 || panelPtr[i].hinge2 != 0.0) && panelPtr[i].m == 1) {
+			//in this case we have defined a hinge, but m=1, so we will raise an error
+			printf("You have defined a hinge, but this is impossible with m=1\n");
+			printf("Either increase m or set the hinge location to 0.0\n");
+			printf("---Exiting program---\n");
+			scanf("%c", &answer);
+			exit(0);
+		}
+
+		//determine the closest lifting line to the hinge, and how far we have to move the lifting lines
+		//to have them line up with the hinge
+		adjust1 = 0;
+		adjust2 = 0;
+		adjust1next = 0;
+		adjust2next = 0;
+		check1 = (panelPtr[i].m * panelPtr[i].hinge1 - round(panelPtr[i].m * panelPtr[i].hinge1));
+		check2 = (panelPtr[i].m * panelPtr[i].hinge2 - round(panelPtr[i].m * panelPtr[i].hinge1));
+		if (fabs(check1) > DBL_EPS || fabs(check2) > DBL_EPS) {
+			//hinge on either side of panel not at lifting line
+			//this will be the lifting line which is the closest to the hinge
+			//on the left side of the hinge
+			closeLL = round(panelPtr[i].m * panelPtr[i].hinge1);
+			if (closeLL == 0) closeLL = 1; //cannot move LE
+			else if (closeLL == panelPtr[i].m) closeLL = panelPtr[i].m - 1; //cannot move TE
+			//how far to move the LL to have it be at the hinge:
+			//adjust1 = ((double(closeLL) / panelPtr[i].m) - panelPtr[i].hinge1) * -panelPtr[i].c1;
+			//adjust2 = ((double(closeLL) / panelPtr[i].m) - panelPtr[i].hinge2) * -panelPtr[i].c2;
+		}
+
+
 		//loop over number of chordwise elements 'info.m'
 		//removed GB 2-9-20		for (m=0;m<info.m;m++)
         for (m=0;m<panelPtr[i].m;m++)
@@ -452,16 +492,71 @@ info.surfAREA = 0;
 			x2[2] = x2LE[2]-delchord2*tempS*sin(panelPtr[i].eps2)*cos(nu);
 			*/
 			//computing left LE locations of current spanwise row of DVEs
-			x1[0] = x1LE[0]+delchord1*m*cos(panelPtr[i].eps1);
-			x1[1] = x1LE[1]+delchord1*m*sin(panelPtr[i].eps1)*sin(nu);
-			x1[2] = x1LE[2]-delchord1*m*sin(panelPtr[i].eps1)*cos(nu);
+
+			
+			if (m < closeLL) {
+				//how far to move the LL:
+				adjust1 = (((panelPtr[i].hinge1 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
+				adjust2 = (((panelPtr[i].hinge2 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
+
+				adjust1next = (((panelPtr[i].hinge1 / double(closeLL)) * (double(m) +1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
+				adjust2next = (((panelPtr[i].hinge2 / double(closeLL)) * (double(m) +1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
+
+				//new chord:
+				chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
+				chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
+
+			}
+
+			else { //m>closeLL
+				adjust1 = ( (1-(((1-panelPtr[i].hinge1) / (panelPtr[i].m-double(closeLL))) * (panelPtr[i].m- double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
+				adjust2 = ( (1-(((1-panelPtr[i].hinge2) / (panelPtr[i].m- double(closeLL))) * (panelPtr[i].m- double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
+
+				adjust1next = ( (1-(((1 - panelPtr[i].hinge1) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
+				adjust2next = ( (1-(((1 - panelPtr[i].hinge2) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
+
+				chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
+				chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
+			}
+
+			
+			
+			//chord1 = (delchord1* (m + 1) + adjust1) - ((delchord1 * m) + adjust1);
+
+			x1[0] = x1LE[0]+(delchord1*m + adjust1)*cos(panelPtr[i].eps1);
+			x1[1] = x1LE[1]+(delchord1*m + adjust1)*sin(panelPtr[i].eps1)*sin(nu);
+			x1[2] = x1LE[2]-(delchord1*m + adjust1)*sin(panelPtr[i].eps1)*cos(nu);
 
 			//computing right LE locations of current spanwise row of DVEs
-			x2[0] = x2LE[0]+delchord2*m*cos(panelPtr[i].eps2);
-			x2[1] = x2LE[1]+delchord2*m*sin(panelPtr[i].eps2)*sin(nu);
-			x2[2] = x2LE[2]-delchord2*m*sin(panelPtr[i].eps2)*cos(nu);
+			//chord2 = (delchord2 * (m + 1) + adjust2) - ((delchord2 * m) + adjust2);
+			x2[0] = x2LE[0] + (delchord2* m + adjust2) * cos(panelPtr[i].eps2);
+			x2[1] = x2LE[1] + (delchord2* m + adjust2) * sin(panelPtr[i].eps2) * sin(nu);
+			x2[2] = x2LE[2] - (delchord2* m + adjust2) * sin(panelPtr[i].eps2) * cos(nu);
 
-			// Assign espilon of m section as the panel edge eps 
+			//if (m == 0) {
+			//	//if we are on the first line, don't move it
+			//	chord1 = (delchord1 * (m + 1) + adjust1) - ((delchord1 * m));
+			//	chord2 = (delchord2 * (m + 1) + adjust2) - ((delchord2 * m));
+			//	x1[0] = x1LE[0] + (delchord1 * m) * cos(panelPtr[i].eps1);
+			//	x1[1] = x1LE[1] + (delchord1 * m) * sin(panelPtr[i].eps1) * sin(nu);
+			//	x1[2] = x1LE[2] - (delchord1 * m) * sin(panelPtr[i].eps1) * cos(nu);
+
+			//	x2[0] = x2LE[0] + (delchord2) * m * cos(panelPtr[i].eps2);
+			//	x2[1] = x2LE[1] + (delchord2) * m * sin(panelPtr[i].eps2) * sin(nu);
+			//	x2[2] = x2LE[2] - (delchord2) * m * sin(panelPtr[i].eps2) * cos(nu);
+			//}
+			//else if (m == panelPtr[i].m - 1) {
+			//	//if we are at the TE, don't move it
+			//	chord1 = (delchord1 * (m + 1)) - ((delchord1 * m) + adjust1);
+			//	chord2 = (delchord2 * (m + 1)) - ((delchord2 * m) + adjust2);
+			//}
+
+
+		
+
+			delTANphi = (chord2 - chord1) / tempSpan; //define this here, before updating chord with camber
+
+				// Assign espilon of m section as the panel edge eps 
 			// Needed for camber or trim
 			eps1 = panelPtr[i].eps1;
 			eps2 = panelPtr[i].eps2;
@@ -475,8 +570,17 @@ info.surfAREA = 0;
 				eps2 += epsC2;
 			}
 
-			// If there is a hinge deflection, do it now for this panel
+			// If there is a hinge deflection, do it now for this element
 			if (panelPtr[i].deflect1 != 0) {
+
+				if ((panelPtr[i].deflect1 != panelPtr[i].deflect2)) {
+					
+					printf("Hinge deflection must be equal for each side of a panel\n");
+					printf("---Exiting program---\n");
+					scanf("%c", &answer);
+					exit(0);
+				}
+
 				DeflectAboutHinge(panelPtr, panelPtr[i].deflect1, x1, x2, m, i, \
 					nu, &epsH1, &epsH2, xH1, xH2);
 				eps1 += epsH1; //If there is camber, add the epsilon to that value
@@ -509,25 +613,31 @@ info.surfAREA = 0;
 			{
 				tempS = (0.5+n);
 
+				//half-chord length at midspan of DVE
+				surfacePtr[l].xsi = 0.5 * (chord1 + tempS * (chord2 - chord1) / panelPtr[i].n);
+				//temporary incidence angle at half span of DVE
+				surfacePtr[l].epsilon = eps1 + tempS * (eps2 - eps1) / panelPtr[i].n;
+
+				/* removed BB 2020, rewritten above to work for all cases
 				if(info.flagCAMBER){
 					//half-chord length at midspan of DVE using camber info
 					surfacePtr[l].xsi=0.5*(chord1+tempS*(chord2-chord1)/panelPtr[i].n);
 					//temporary incidence angle at half span of DVE using camber info
 					surfacePtr[l].epsilon = eps1 + tempS*(eps2-eps1)/panelPtr[i].n;
-				} else if(panelPtr[i].deflect1 != 0){
+				}// /*else if(panelPtr[i].deflect1 != 0){
 					//If camber is off but trim is on
 					//half-chord length at midspan of DVE
-					surfacePtr[l].xsi=0.5*(delchord1+delchord*tempS); 
+					surfacePtr[l].xsi = 0.5 * (chord1 + tempS * (chord2 - chord1) / panelPtr[i].n);
 					//temporary incidence angle at half span of DVE using camber info
-					surfacePtr[l].epsilon = eps1+ + tempS*(eps2-eps1)/panelPtr[i].n;
-				}
+					surfacePtr[l].epsilon = eps1+  tempS*(eps2-eps1)/panelPtr[i].n;
+				}///
 				else{
 					//half-chord length at midspan of DVE
-					surfacePtr[l].xsi=0.5*(delchord1+delchord*tempS); 
+					surfacePtr[l].xsi = 0.5 * (chord1 + tempS * (chord2 - chord1) / panelPtr[i].n);
 					//temporary incidence angle at half span of DVE
-					surfacePtr[l].epsilon = panelPtr[i].eps1 + tempS*deleps;
+					surfacePtr[l].epsilon = eps1 + tempS * (eps2 - eps1) / panelPtr[i].n;
 				}
-
+			*/
 				ceps  = cos(surfacePtr[l].epsilon); //needed for tempA below
 				seps  = sin(surfacePtr[l].epsilon);
 
@@ -1076,30 +1186,42 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	// Seach for index where (current m)/(total m) is nearest the camber data
 	j = 0;
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil1][j][0]<(double(m)/double(panelPtr[i].m)));
+	//while(camberPtr[panelPtr[i].airfoil1][j][0]<(double(m)/double(panelPtr[i].m)));
+	while (camberPtr[panelPtr[i].airfoil1][j][0] < (tempx1[0] / panelPtr[i].c1));
 
 	//Calculate the z/c by linearly interpolate the using the above define index 
-	tempZ1 = camberPtr[panelPtr[i].airfoil1][j-1][1] + ((double(m)/double(panelPtr[i].m)-camberPtr[panelPtr[i].airfoil1][j-1][0])*\
+	tempZ1 = camberPtr[panelPtr[i].airfoil1][j-1][1] + ((tempx1[0] / panelPtr[i].c1 -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
+	//tempZ1 = camberPtr[panelPtr[i].airfoil1][j - 1][1] + ((double(m) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil1][j - 1][0]) * \
+		(camberPtr[panelPtr[i].airfoil1][j][1] - camberPtr[panelPtr[i].airfoil1][j - 1][1]) / \
+		(camberPtr[panelPtr[i].airfoil1][j][0] - camberPtr[panelPtr[i].airfoil1][j - 1][0]));
 	//Scale z/c from camber data to the chordlength of the edge
 	tempx1[2] +=(tempZ1*panelPtr[i].c1); 
 
 	//Repeat for TE left side
 	j = 0;
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil1][j][0]<(double(m+1)/double(panelPtr[i].m)));
-
-	tempZTE1= camberPtr[panelPtr[i].airfoil1][j-1][1] + ((double(m+1)/double(panelPtr[i].m)-camberPtr[panelPtr[i].airfoil1][j-1][0])*\
+	while(camberPtr[panelPtr[i].airfoil1][j][0]<((tempx1[0] + *chord1) / panelPtr[i].c1));
+	//while (camberPtr[panelPtr[i].airfoil1][j][0] < double(m+1)/double(panelPtr[i].m));
+	tempZTE1= camberPtr[panelPtr[i].airfoil1][j-1][1] + ((((tempx1[0] + *chord1) / panelPtr[i].c1) -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
-
+	//tempZTE1 = camberPtr[panelPtr[i].airfoil1][j - 1][1] + ((double(m + 1) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil1][j - 1][0]) * \
+		(camberPtr[panelPtr[i].airfoil1][j][1] - camberPtr[panelPtr[i].airfoil1][j - 1][1]) / \
+		(camberPtr[panelPtr[i].airfoil1][j][0] - camberPtr[panelPtr[i].airfoil1][j - 1][0]));
 	//Repeat for LE right side
 	j = 0;
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil2][j][0]<(double(m)/double(panelPtr[i].m)));
+	//while(camberPtr[panelPtr[i].airfoil2][j][0]<(double(m)/double(panelPtr[i].m)));
+	while (camberPtr[panelPtr[i].airfoil2][j][0] < (tempx2[0] / panelPtr[i].c2));
 
-	tempZ2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((double(m)/double(panelPtr[i].m)-camberPtr[panelPtr[i].airfoil2][j-1][0])*\
+	//tempZ2 = camberPtr[panelPtr[i].airfoil2][j - 1][1] + ((double(m)/double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil2][j - 1][0]) * \
+		(camberPtr[panelPtr[i].airfoil2][j][1] - camberPtr[panelPtr[i].airfoil2][j - 1][1]) / \
+		(camberPtr[panelPtr[i].airfoil2][j][0] - camberPtr[panelPtr[i].airfoil2][j - 1][0]));
+	//tempx2[2] += (tempZ2 * panelPtr[i].c2);
+
+	tempZ2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((tempx2[0] / panelPtr[i].c2 -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil2][j][1]-camberPtr[panelPtr[i].airfoil2][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
 	tempx2[2] +=(tempZ2*panelPtr[i].c2); 
@@ -1107,24 +1229,32 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	//Repeat for TE right side
 	j = 0;
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil2][j][0]<(double(m+1)/double(panelPtr[i].m)));
-
-	tempZTE2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((double(m+1)/double(panelPtr[i].m)-camberPtr[panelPtr[i].airfoil2][j-1][0])*\
+	while(camberPtr[panelPtr[i].airfoil2][j][0]< ((tempx2[0] + *chord2) / panelPtr[i].c2));
+	//while (camberPtr[panelPtr[i].airfoil2][j][0] < (double(m + 1) / double(panelPtr[i].m)));
+	tempZTE2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((((tempx2[0] + *chord2) / panelPtr[i].c2) -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
 		(camberPtr[panelPtr[i].airfoil2][j][1]-camberPtr[panelPtr[i].airfoil2][j-1][1])/\
 		(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
-
+	//tempZTE2 = camberPtr[panelPtr[i].airfoil2][j - 1][1] + ((double(m + 1) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil2][j - 1][0]) * \
+		(camberPtr[panelPtr[i].airfoil2][j][1] - camberPtr[panelPtr[i].airfoil2][j - 1][1]) / \
+		(camberPtr[panelPtr[i].airfoil2][j][0] - camberPtr[panelPtr[i].airfoil2][j - 1][0]));
 
 	//Calculate delta z from LE to TE on left edge and on right edge
 	leftZ = (tempZ1-tempZTE1)*panelPtr[i].c1;
 	rightZ =(tempZ2-tempZTE2)*panelPtr[i].c2;
 
-	//New section chord on left and right edges
-	*chord1 = sqrt(leftZ*leftZ+(panelPtr[i].c1/panelPtr[i].m)*(panelPtr[i].c1/panelPtr[i].m));
-	*chord2 = sqrt(rightZ*rightZ+(panelPtr[i].c2/panelPtr[i].m)*(panelPtr[i].c2/panelPtr[i].m));
-
 	// Calculate mid-span eps
-	*epsC1 = atan(leftZ/(panelPtr[i].c1/panelPtr[i].m));
-	*epsC2 = atan(rightZ/(panelPtr[i].c2/panelPtr[i].m));
+	//*epsC1 = atan(leftZ / (panelPtr[i].c1 / panelPtr[i].m));
+	//*epsC2 = atan(rightZ / (panelPtr[i].c2 / panelPtr[i].m));
+	// Calculate mid-span eps
+	*epsC1 = atan(leftZ / *chord1);
+	*epsC2 = atan(rightZ / *chord2);
+
+
+	//New section chord on left and right edges
+	//*chord1 = sqrt(leftZ*leftZ+(panelPtr[i].c1/panelPtr[i].m)*(panelPtr[i].c1/panelPtr[i].m));
+	//*chord2 = sqrt(rightZ*rightZ+(panelPtr[i].c2/panelPtr[i].m)*(panelPtr[i].c2/panelPtr[i].m));
+	*chord1 = sqrt(leftZ * leftZ + (*chord1) * (*chord1));
+	*chord2 = sqrt(rightZ * rightZ + (*chord2) * (*chord2));
 
 	// Convert new LE points to the global reference frame 
 	Star_Glob(tempx1,nu,panelPtr[i].eps1,0,x1);
@@ -1132,7 +1262,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 
 }
 //===================================================================//
-		//END FUNCTION Move_Wing
+		//END FUNCTION Apply_Camber
 //===================================================================//
 
 
@@ -1175,42 +1305,48 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 	double tempxH1[3],tempxH2[3];	//Hinge location in local reference frame
 
 
+	//removed BB 2020, since we move lifting lines outside and chordwise dist. is no
+	//longer uniform, this check will not work. Therefore, we assume that there will be a
+	//lifting line at the hinge line by this point.
+
 	// Check if hinge point is at the LE of an element
-	check1 = (panelPtr[i].m*panelPtr[i].hinge1 - round(panelPtr[i].m*panelPtr[i].hinge1));
-	check2 = (panelPtr[i].m*panelPtr[i].hinge2 - round(panelPtr[i].m*panelPtr[i].hinge2));
+	//check1 = (panelPtr[i].m*panelPtr[i].hinge1 - round(panelPtr[i].m*panelPtr[i].hinge1));
+	//check2 = (panelPtr[i].m*panelPtr[i].hinge2 - round(panelPtr[i].m*panelPtr[i].hinge2));
 
 	// Give a warning message and exit program if left panel hinge isnt at a DVE LE
-	if(fabs(check1)>DBL_EPS){
-		printf("Hinge line of the left edge of panel %d  is not at a DVE LE.\n",i+1);
-		printf("Adjust the number of chordwise elements or hinge location.\n");
-		printf("---Exiting program---\n");
-		exit(0);
-	}
+	//if(fabs(check1)>DBL_EPS){
+	//	printf("Hinge line of the left edge of panel %d  is not at a DVE LE.\n",i+1);
+	//	printf("Adjust the number of chordwise elements or hinge location.\n");
+	//	printf("---Exiting program---\n");
+	//	exit(0);
+	//}
 	// Give a warning message and exit program if right panel hinge isnt at a DVE LE
-	if(fabs(check2)>DBL_EPS){
-		printf("Hinge line of the right edge of panel %d not at a DVE LE.\n",i+1);
-		printf("Adjust the number of chordwise elements or hinge location.\n");
-		printf("---Exiting program---\n");
-		exit(0);
-	}
+	//if(fabs(check2)>DBL_EPS){
+	//	printf("Hinge line of the right edge of panel %d not at a DVE LE.\n",i+1);
+	//	printf("Adjust the number of chordwise elements or hinge location.\n");
+	//	printf("---Exiting program---\n");
+	//	exit(0);
+	//}
 
 
 
 	// ================== Deflecting about hinge begins here ==================
 	// First deflect left side of panel
-	if(double(m)/double(panelPtr[i].m)<panelPtr[i].hinge1){
-		// Check if left point is in front of hinge. If it is, set epsH1 to 0
-		*epsH1 = 0;
+	Glob_Star(x1, nu, panelPtr[i].eps1, 0, tempx1);
 
-	}else if(fabs(double(m)/double(panelPtr[i].m)-panelPtr[i].hinge1)<DBL_EPS){
-		// Check if left point is in at hinge. If it is, set epsH1 to deflection
-		// angle but dont move points
+	if(tempx1[0] /panelPtr[i].c1 < panelPtr[i].hinge1){
+		// left point is in front of hinge. If it is, set epsH1 to 0
+		*epsH1 = 0;
+		
+	}else if(((tempx1[0] / panelPtr[i].c1) -panelPtr[i].hinge1) <DBL_EPS){
+		// left point at hinge
 		*epsH1 = deflection;
 		
 		//save this point as hinge point for future calcs
 		for(j=0;j<3;j++){xH1[j]=x1[j];}
 	}else{
-		// Check if left point is in at hinge. If it is, set epsH1 to deflection
+		// assume element is downstream of hinge		
+		// set epsH1 to deflection
 		// angle and move the LE point accordingly
 		*epsH1 = deflection;
 
@@ -1231,17 +1367,21 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 
 		// Put new LE point into global reference frame
 		Star_Glob(tempx1,nu,panelPtr[i].eps1,0,x1);
+		
 	}
 
 
 
 	// Repeat everything for right edge (see above for detailed comments)
-	if(double(m)/double(panelPtr[i].m)<panelPtr[i].hinge2){
+	Glob_Star(x2, nu, panelPtr[i].eps2, 0, tempx2);
+
+	if(tempx2[0] / panelPtr[i].c2 < panelPtr[i].hinge2){
 		*epsH2 = 0;	
-	}else if(fabs(double(m)/double(panelPtr[i].m)-panelPtr[i].hinge2)<DBL_EPS){
+	}else if(((tempx2[0] / panelPtr[i].c2 )-panelPtr[i].hinge2)<DBL_EPS){
 		*epsH2 = deflection;
 		for(j=0;j<3;j++){xH2[j]=x2[j];}
 	}else{
+		
 		*epsH2 = deflection;
 
 		Glob_Star(x2,nu,panelPtr[i].eps2,0,tempx2);
@@ -1253,6 +1393,7 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 		tempx2[2] = vecX*sin(-deflection)+vecZ*cos(-deflection)+tempxH2[2];
 		
 		Star_Glob(tempx2,nu,panelPtr[i].eps2,0,x2);
+		
 	}
 
 }

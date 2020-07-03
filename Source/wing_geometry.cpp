@@ -15,10 +15,10 @@ void Move_Wing(const GENERAL, DVE*, const double[3],double[3]);
 //moves flexible wing by delta x every time step,
 void Move_Flex_Wing(const GENERAL, DVE*);
 //moves DVEs according do the input camber line
-void Apply_Camber(const PANEL*, double[3], double[3] ,double ***, int, \
+void Apply_Camber(const PANEL*, double[3], double[3] , double[3], double[3],double ***, int, \
 	int, double,double *,double *,double *,double *);
 //deflects DVEs about the hinge
-void DeflectAboutHinge(const PANEL*, const double, double[3], double[3], \
+void DeflectAboutHinge(const PANEL*, const double, double[3], double[3], double[3], double[3], \
 	int, int, double, double *,double *m,double[3], double[3]);
 //calculates U_inf for circling flight
 void Circling_UINF(GENERAL, DVE*,double[3], const double [3]);
@@ -564,7 +564,7 @@ info.surfAREA = 0;
 			// If there is camber, add it to x1 and x2 and compute new
 			//chord and epsilon values
 			if(info.flagCAMBER){
-				Apply_Camber(panelPtr,x1,x2,camberPtr, m, i, nu, \
+				Apply_Camber(panelPtr,x1,x2, x1LE,x2LE,camberPtr, m, i, nu, \
 					&epsC1, &epsC2, &chord1, &chord2);
 				eps1 += epsC1;
 				eps2 += epsC2;
@@ -581,7 +581,7 @@ info.surfAREA = 0;
 					exit(0);
 				}
 
-				DeflectAboutHinge(panelPtr, panelPtr[i].deflect1, x1, x2, m, i, \
+				DeflectAboutHinge(panelPtr, panelPtr[i].deflect1, x1, x2, x1LE,x2LE, m, i, \
 					nu, &epsH1, &epsH2, xH1, xH2);
 				eps1 += epsH1; //If there is camber, add the epsilon to that value
 				eps2 += epsH2;
@@ -1147,8 +1147,8 @@ double rotAngle; // How many radian to rotate points
 		//START FUNCTION Apply_Camber 
 //===================================================================//
 void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
-	double ***camberPtr, int m, int i, double nu, \
-	double *epsC1, double *epsC2, double *chord1, double *chord2)
+	double x1LE[3], double x2LE[3],	double ***camberPtr, int m, int i,\
+	double nu, double *epsC1, double *epsC2, double *chord1, double *chord2)
 {
 	// The function Apply_Camber determines changed the LE panel points to follow
 	// 		the curvature of the camber line.
@@ -1176,21 +1176,33 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	double tempZ1, tempZ2; 		//Z LE offsets
 	double tempZTE1, tempZTE2;	//Z TE offsets
 	double tempx1[3],tempx2[3];	//Local reference frame LE pts
+	double tempA[3], tempAA[3];
+	double tempx1LE[3], tempx2LE[3];	//Local reference panel LE pts
 	double leftZ, rightZ;		//Delta Z from LE to TE
 
 	// Bring the input x1 and x2 into the local DVE ref frame
 	Glob_Star(x1,nu,panelPtr[i].eps1,0,tempx1);
 	Glob_Star(x2,nu,panelPtr[i].eps2,0,tempx2);
+	Glob_Star(x1LE, nu, panelPtr[i].eps1, 0, tempx1LE);
+	Glob_Star(x2LE, nu, panelPtr[i].eps2, 0, tempx2LE);
+
+	tempA[0] = tempx1[0] - tempx1LE[0];
+	tempA[1] = tempx1[1] - tempx1LE[1];
+	tempA[2] = tempx1[2] - tempx1LE[2];
+
+	tempAA[0] = tempx2[0] - tempx2LE[0];
+	tempAA[1] = tempx2[1] - tempx2LE[1];
+	tempAA[2] = tempx2[2] - tempx2LE[2];
 
 	//First consider LE left side
 	// Seach for index where (current m)/(total m) is nearest the camber data
 	j = 0;
 	do{j++;}
 	//while(camberPtr[panelPtr[i].airfoil1][j][0]<(double(m)/double(panelPtr[i].m)));
-	while (camberPtr[panelPtr[i].airfoil1][j][0] < (tempx1[0] / panelPtr[i].c1));
+	while (camberPtr[panelPtr[i].airfoil1][j][0] < (tempA[0] / panelPtr[i].c1));
 
 	//Calculate the z/c by linearly interpolate the using the above define index 
-	tempZ1 = camberPtr[panelPtr[i].airfoil1][j-1][1] + ((tempx1[0] / panelPtr[i].c1 -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
+	tempZ1 = camberPtr[panelPtr[i].airfoil1][j-1][1] + ((tempA[0] / panelPtr[i].c1 -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
 	//tempZ1 = camberPtr[panelPtr[i].airfoil1][j - 1][1] + ((double(m) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil1][j - 1][0]) * \
@@ -1202,9 +1214,9 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	//Repeat for TE left side
 	j = 0;
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil1][j][0]<((tempx1[0] + *chord1) / panelPtr[i].c1));
+	while(camberPtr[panelPtr[i].airfoil1][j][0]<((tempA[0] + *chord1) / panelPtr[i].c1) );
 	//while (camberPtr[panelPtr[i].airfoil1][j][0] < double(m+1)/double(panelPtr[i].m));
-	tempZTE1= camberPtr[panelPtr[i].airfoil1][j-1][1] + ((((tempx1[0] + *chord1) / panelPtr[i].c1) -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
+	tempZTE1= camberPtr[panelPtr[i].airfoil1][j-1][1] + ((((tempA[0] + *chord1) / panelPtr[i].c1) -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
 	//tempZTE1 = camberPtr[panelPtr[i].airfoil1][j - 1][1] + ((double(m + 1) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil1][j - 1][0]) * \
@@ -1214,14 +1226,14 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	j = 0;
 	do{j++;}
 	//while(camberPtr[panelPtr[i].airfoil2][j][0]<(double(m)/double(panelPtr[i].m)));
-	while (camberPtr[panelPtr[i].airfoil2][j][0] < (tempx2[0] / panelPtr[i].c2));
+	while (camberPtr[panelPtr[i].airfoil2][j][0] < (tempAA[0] / panelPtr[i].c2));
 
 	//tempZ2 = camberPtr[panelPtr[i].airfoil2][j - 1][1] + ((double(m)/double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil2][j - 1][0]) * \
 		(camberPtr[panelPtr[i].airfoil2][j][1] - camberPtr[panelPtr[i].airfoil2][j - 1][1]) / \
 		(camberPtr[panelPtr[i].airfoil2][j][0] - camberPtr[panelPtr[i].airfoil2][j - 1][0]));
 	//tempx2[2] += (tempZ2 * panelPtr[i].c2);
 
-	tempZ2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((tempx2[0] / panelPtr[i].c2 -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
+	tempZ2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((tempAA[0] / panelPtr[i].c2 -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil2][j][1]-camberPtr[panelPtr[i].airfoil2][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
 	tempx2[2] +=(tempZ2*panelPtr[i].c2); 
@@ -1229,9 +1241,9 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	//Repeat for TE right side
 	j = 0;
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil2][j][0]< ((tempx2[0] + *chord2) / panelPtr[i].c2));
+	while(camberPtr[panelPtr[i].airfoil2][j][0]< ((tempAA[0] + *chord2) / panelPtr[i].c2) );
 	//while (camberPtr[panelPtr[i].airfoil2][j][0] < (double(m + 1) / double(panelPtr[i].m)));
-	tempZTE2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((((tempx2[0] + *chord2) / panelPtr[i].c2) -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
+	tempZTE2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((((tempAA[0] + *chord2) / panelPtr[i].c2) -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
 		(camberPtr[panelPtr[i].airfoil2][j][1]-camberPtr[panelPtr[i].airfoil2][j-1][1])/\
 		(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
 	//tempZTE2 = camberPtr[panelPtr[i].airfoil2][j - 1][1] + ((double(m + 1) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil2][j - 1][0]) * \
@@ -1270,7 +1282,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 		//START FUNCTION DeflectAboutHinge 
 //===================================================================//
 void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
-	double x1[3], double x2[3], int m, int i, double nu, \
+	double x1[3], double x2[3], double x1LE[3], double x2LE[3],  int m, int i, double nu, \
 	double *epsH1, double *epsH2, double xH1[3], double xH2[3])
 {
 	// The function DeflectAboutHinge deflects the DVEs aft of a hinge by some
@@ -1303,8 +1315,8 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 	double tempx1[3],tempx2[3];	//Local reference frame LE pts
 	double vecX, vecZ;				//x and z of a vector from hinge to LE pt. (in local)
 	double tempxH1[3],tempxH2[3];	//Hinge location in local reference frame
-
-
+	double tempx1LE[3], tempx2LE[3]; //Leading edge of panel in local
+	double tempA[3], tempAA[3];
 	//removed BB 2020, since we move lifting lines outside and chordwise dist. is no
 	//longer uniform, this check will not work. Therefore, we assume that there will be a
 	//lifting line at the hinge line by this point.
@@ -1333,12 +1345,17 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 	// ================== Deflecting about hinge begins here ==================
 	// First deflect left side of panel
 	Glob_Star(x1, nu, panelPtr[i].eps1, 0, tempx1);
+	Glob_Star(x1LE, nu, panelPtr[i].eps1, 0, tempx1LE);
 
-	if(tempx1[0] /panelPtr[i].c1 < panelPtr[i].hinge1){
+
+	tempA[0] = tempx1[0] - tempx1LE[0];
+	tempA[2] = tempx1[2] - tempx1LE[2];
+
+	if(tempA[0] /panelPtr[i].c1 < panelPtr[i].hinge1 && (panelPtr[i].hinge1 - (tempA[0] / panelPtr[i].c1)) > DBL_EPS) {
 		// left point is in front of hinge. If it is, set epsH1 to 0
 		*epsH1 = 0;
 		
-	}else if(((tempx1[0] / panelPtr[i].c1) -panelPtr[i].hinge1) <DBL_EPS){
+	}else if(((tempA[0] / panelPtr[i].c1) -panelPtr[i].hinge1) <DBL_EPS){
 		// left point at hinge
 		*epsH1 = deflection;
 		
@@ -1374,10 +1391,14 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 
 	// Repeat everything for right edge (see above for detailed comments)
 	Glob_Star(x2, nu, panelPtr[i].eps2, 0, tempx2);
+	Glob_Star(x2LE, nu, panelPtr[i].eps2, 0, tempx2LE);
 
-	if(tempx2[0] / panelPtr[i].c2 < panelPtr[i].hinge2){
+	tempAA[0] = tempx2[0] - tempx2LE[0];
+	tempAA[2] = tempx2[2] - tempx2LE[2];
+
+	if(tempAA[0] / panelPtr[i].c2 < panelPtr[i].hinge2 && (panelPtr[i].hinge2-(tempAA[0] / panelPtr[i].c2)) > DBL_EPS){
 		*epsH2 = 0;	
-	}else if(((tempx2[0] / panelPtr[i].c2 )-panelPtr[i].hinge2)<DBL_EPS){
+	}else if(((tempAA[0] / panelPtr[i].c2 )-panelPtr[i].hinge2)<DBL_EPS){
 		*epsH2 = deflection;
 		for(j=0;j<3;j++){xH2[j]=x2[j];}
 	}else{

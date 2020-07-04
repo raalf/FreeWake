@@ -402,8 +402,8 @@ info.surfAREA = 0;
 
 		//note: delchord is only temporary and may be changed as elements are redistributed
 		//below
-		delchord1 = panelPtr[i].c1/panelPtr[i].m;	//chordwise increment left side
-		delchord2 = panelPtr[i].c2/panelPtr[i].m;	//chordwise increment right side
+		delchord1 = panelPtr[i].c1/double(panelPtr[i].m);	//chordwise increment left side
+		delchord2 = panelPtr[i].c2/double(panelPtr[i].m);	//chordwise increment right side
 		//delchord  = (delchord2-delchord1)/panelPtr[i].n;//chord/span increment
 
 		//tangent of change in sweep angle of each chordwise row
@@ -493,66 +493,50 @@ info.surfAREA = 0;
 			*/
 			//computing left LE locations of current spanwise row of DVEs
 
-			
-			if (m < closeLL) {
-				//how far to move the LL:
-				adjust1 = (((panelPtr[i].hinge1 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
-				adjust2 = (((panelPtr[i].hinge2 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
+			//need to move lifting lines if checks failed:
+			if (fabs(check1) > DBL_EPS || fabs(check2) > DBL_EPS) {
+				if (m < closeLL) {
+					//how far to move the LL:
+					adjust1 = (((panelPtr[i].hinge1 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
+					adjust2 = (((panelPtr[i].hinge2 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
 
-				adjust1next = (((panelPtr[i].hinge1 / double(closeLL)) * (double(m) +1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
-				adjust2next = (((panelPtr[i].hinge2 / double(closeLL)) * (double(m) +1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
+					adjust1next = (((panelPtr[i].hinge1 / double(closeLL)) * (double(m) + 1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
+					adjust2next = (((panelPtr[i].hinge2 / double(closeLL)) * (double(m) + 1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
 
-				//new chord:
-				chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
-				chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
+					//new chord:
+					chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
+					chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
 
+				}
+
+				else { //m>closeLL
+					adjust1 = ((1 - (((1 - panelPtr[i].hinge1) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
+					adjust2 = ((1 - (((1 - panelPtr[i].hinge2) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
+
+					adjust1next = ((1 - (((1 - panelPtr[i].hinge1) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
+					adjust2next = ((1 - (((1 - panelPtr[i].hinge2) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
+
+					chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
+					chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
+				}
 			}
-
-			else { //m>closeLL
-				adjust1 = ( (1-(((1-panelPtr[i].hinge1) / (panelPtr[i].m-double(closeLL))) * (panelPtr[i].m- double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
-				adjust2 = ( (1-(((1-panelPtr[i].hinge2) / (panelPtr[i].m- double(closeLL))) * (panelPtr[i].m- double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
-
-				adjust1next = ( (1-(((1 - panelPtr[i].hinge1) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
-				adjust2next = ( (1-(((1 - panelPtr[i].hinge2) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
-
-				chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
-				chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
+			else { //we do not need to move LL
+				chord1 = panelPtr[i].c1 / panelPtr[i].m;
+				chord2 = panelPtr[i].c2 / panelPtr[i].m;
 			}
-
 			
-			
-			//chord1 = (delchord1* (m + 1) + adjust1) - ((delchord1 * m) + adjust1);
+			//computing left LE locations of current spanwise row of DVEs
 
 			x1[0] = x1LE[0]+(delchord1*m + adjust1)*cos(panelPtr[i].eps1);
 			x1[1] = x1LE[1]+(delchord1*m + adjust1)*sin(panelPtr[i].eps1)*sin(nu);
 			x1[2] = x1LE[2]-(delchord1*m + adjust1)*sin(panelPtr[i].eps1)*cos(nu);
 
 			//computing right LE locations of current spanwise row of DVEs
-			//chord2 = (delchord2 * (m + 1) + adjust2) - ((delchord2 * m) + adjust2);
 			x2[0] = x2LE[0] + (delchord2* m + adjust2) * cos(panelPtr[i].eps2);
 			x2[1] = x2LE[1] + (delchord2* m + adjust2) * sin(panelPtr[i].eps2) * sin(nu);
 			x2[2] = x2LE[2] - (delchord2* m + adjust2) * sin(panelPtr[i].eps2) * cos(nu);
 
-			//if (m == 0) {
-			//	//if we are on the first line, don't move it
-			//	chord1 = (delchord1 * (m + 1) + adjust1) - ((delchord1 * m));
-			//	chord2 = (delchord2 * (m + 1) + adjust2) - ((delchord2 * m));
-			//	x1[0] = x1LE[0] + (delchord1 * m) * cos(panelPtr[i].eps1);
-			//	x1[1] = x1LE[1] + (delchord1 * m) * sin(panelPtr[i].eps1) * sin(nu);
-			//	x1[2] = x1LE[2] - (delchord1 * m) * sin(panelPtr[i].eps1) * cos(nu);
 
-			//	x2[0] = x2LE[0] + (delchord2) * m * cos(panelPtr[i].eps2);
-			//	x2[1] = x2LE[1] + (delchord2) * m * sin(panelPtr[i].eps2) * sin(nu);
-			//	x2[2] = x2LE[2] - (delchord2) * m * sin(panelPtr[i].eps2) * cos(nu);
-			//}
-			//else if (m == panelPtr[i].m - 1) {
-			//	//if we are at the TE, don't move it
-			//	chord1 = (delchord1 * (m + 1)) - ((delchord1 * m) + adjust1);
-			//	chord2 = (delchord2 * (m + 1)) - ((delchord2 * m) + adjust2);
-			//}
-
-
-		
 
 			delTANphi = (chord2 - chord1) / tempSpan; //define this here, before updating chord with camber
 
@@ -1186,23 +1170,23 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	Glob_Star(x1LE, nu, panelPtr[i].eps1, 0, tempx1LE);
 	Glob_Star(x2LE, nu, panelPtr[i].eps2, 0, tempx2LE);
 
-	tempA[0] = tempx1[0] - tempx1LE[0];
-	tempA[1] = tempx1[1] - tempx1LE[1];
-	tempA[2] = tempx1[2] - tempx1LE[2];
+	//tempA[0] = tempx1[0] - tempx1LE[0];
+	//tempA[1] = tempx1[1] - tempx1LE[1];
+	//tempA[2] = tempx1[2] - tempx1LE[2];
 
-	tempAA[0] = tempx2[0] - tempx2LE[0];
-	tempAA[1] = tempx2[1] - tempx2LE[1];
-	tempAA[2] = tempx2[2] - tempx2LE[2];
+	//tempAA[0] = tempx2[0] - tempx2LE[0];
+	//tempAA[1] = tempx2[1] - tempx2LE[1];
+	//tempAA[2] = tempx2[2] - tempx2LE[2];
 
 	//First consider LE left side
 	// Seach for index where (current m)/(total m) is nearest the camber data
 	j = 0;
 	do{j++;}
 	//while(camberPtr[panelPtr[i].airfoil1][j][0]<(double(m)/double(panelPtr[i].m)));
-	while (camberPtr[panelPtr[i].airfoil1][j][0] < (tempA[0] / panelPtr[i].c1));
+	while (camberPtr[panelPtr[i].airfoil1][j][0] < ((tempx1[0] - tempx1LE[0]) / panelPtr[i].c1));
 
 	//Calculate the z/c by linearly interpolate the using the above define index 
-	tempZ1 = camberPtr[panelPtr[i].airfoil1][j-1][1] + ((tempA[0] / panelPtr[i].c1 -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
+	tempZ1 = camberPtr[panelPtr[i].airfoil1][j-1][1] + (((tempx1[0] - tempx1LE[0]) / panelPtr[i].c1 -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
 	//tempZ1 = camberPtr[panelPtr[i].airfoil1][j - 1][1] + ((double(m) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil1][j - 1][0]) * \
@@ -1213,10 +1197,12 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 
 	//Repeat for TE left side
 	j = 0;
+	tempA[0] = tempx1[0] + *chord1 - tempx1LE[0];
+	if (tempA[0] > 1.0) tempA[0] = 1.0; //because of small errors, this can end up off the trailing edge and the interp will throw an error
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil1][j][0]<((tempA[0] + *chord1) / panelPtr[i].c1) );
+	while(camberPtr[panelPtr[i].airfoil1][j][0]<((tempA[0]) / panelPtr[i].c1) );
 	//while (camberPtr[panelPtr[i].airfoil1][j][0] < double(m+1)/double(panelPtr[i].m));
-	tempZTE1= camberPtr[panelPtr[i].airfoil1][j-1][1] + ((((tempA[0] + *chord1) / panelPtr[i].c1) -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
+	tempZTE1= camberPtr[panelPtr[i].airfoil1][j-1][1] + (((((tempA[0])) / panelPtr[i].c1) -camberPtr[panelPtr[i].airfoil1][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil1][j][1]-camberPtr[panelPtr[i].airfoil1][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil1][j][0]-camberPtr[panelPtr[i].airfoil1][j-1][0]));
 	//tempZTE1 = camberPtr[panelPtr[i].airfoil1][j - 1][1] + ((double(m + 1) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil1][j - 1][0]) * \
@@ -1226,24 +1212,26 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	j = 0;
 	do{j++;}
 	//while(camberPtr[panelPtr[i].airfoil2][j][0]<(double(m)/double(panelPtr[i].m)));
-	while (camberPtr[panelPtr[i].airfoil2][j][0] < (tempAA[0] / panelPtr[i].c2));
+	while (camberPtr[panelPtr[i].airfoil2][j][0] < ((tempx2[0] - tempx2LE[0]) / panelPtr[i].c2));
 
 	//tempZ2 = camberPtr[panelPtr[i].airfoil2][j - 1][1] + ((double(m)/double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil2][j - 1][0]) * \
 		(camberPtr[panelPtr[i].airfoil2][j][1] - camberPtr[panelPtr[i].airfoil2][j - 1][1]) / \
 		(camberPtr[panelPtr[i].airfoil2][j][0] - camberPtr[panelPtr[i].airfoil2][j - 1][0]));
 	//tempx2[2] += (tempZ2 * panelPtr[i].c2);
 
-	tempZ2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((tempAA[0] / panelPtr[i].c2 -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
+	tempZ2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + (((tempx2[0] - tempx2LE[0]) / panelPtr[i].c2 -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
 			(camberPtr[panelPtr[i].airfoil2][j][1]-camberPtr[panelPtr[i].airfoil2][j-1][1])/\
 			(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
 	tempx2[2] +=(tempZ2*panelPtr[i].c2); 
 
 	//Repeat for TE right side
 	j = 0;
+	tempAA[0] = tempx2[0] + *chord2 - tempx2LE[0];
+	if (tempAA[0] > 1.0) tempAA[0] = 1.0; //because of small errors, this can end up off the trailing edge and the interp will throw an error
 	do{j++;}
-	while(camberPtr[panelPtr[i].airfoil2][j][0]< ((tempAA[0] + *chord2) / panelPtr[i].c2) );
+	while(camberPtr[panelPtr[i].airfoil2][j][0]< ((tempAA[0]) / panelPtr[i].c2) );
 	//while (camberPtr[panelPtr[i].airfoil2][j][0] < (double(m + 1) / double(panelPtr[i].m)));
-	tempZTE2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + ((((tempAA[0] + *chord2) / panelPtr[i].c2) -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
+	tempZTE2 = camberPtr[panelPtr[i].airfoil2][j-1][1] + (((((tempAA[0]) ) / panelPtr[i].c2) -camberPtr[panelPtr[i].airfoil2][j-1][0])*\
 		(camberPtr[panelPtr[i].airfoil2][j][1]-camberPtr[panelPtr[i].airfoil2][j-1][1])/\
 		(camberPtr[panelPtr[i].airfoil2][j][0]-camberPtr[panelPtr[i].airfoil2][j-1][0]));
 	//tempZTE2 = camberPtr[panelPtr[i].airfoil2][j - 1][1] + ((double(m + 1) / double(panelPtr[i].m) - camberPtr[panelPtr[i].airfoil2][j - 1][0]) * \

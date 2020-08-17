@@ -1198,7 +1198,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	//Repeat for TE left side
 	j = 0;
 	tempA[0] = tempx1[0] + *chord1 - tempx1LE[0];
-	if (tempA[0] > 1.0) tempA[0] = 1.0; //because of small errors, this can end up off the trailing edge and the interp will throw an error
+	if (tempA[0] > panelPtr[i].c1) tempA[0] = panelPtr[i].c1; //because of small errors, this can end up off the trailing edge and the interp will throw an error
 	do{j++;}
 	while(camberPtr[panelPtr[i].airfoil1][j][0]<((tempA[0]) / panelPtr[i].c1) );
 	//while (camberPtr[panelPtr[i].airfoil1][j][0] < double(m+1)/double(panelPtr[i].m));
@@ -1227,7 +1227,7 @@ void Apply_Camber(const PANEL* panelPtr, double x1[3], double x2[3], \
 	//Repeat for TE right side
 	j = 0;
 	tempAA[0] = tempx2[0] + *chord2 - tempx2LE[0];
-	if (tempAA[0] > 1.0) tempAA[0] = 1.0; //because of small errors, this can end up off the trailing edge and the interp will throw an error
+	if (tempAA[0] > panelPtr[i].c2) tempAA[0] = panelPtr[i].c2; //because of small errors, this can end up off the trailing edge and the interp will throw an error
 	do{j++;}
 	while(camberPtr[panelPtr[i].airfoil2][j][0]< ((tempAA[0]) / panelPtr[i].c2) );
 	//while (camberPtr[panelPtr[i].airfoil2][j][0] < (double(m + 1) / double(panelPtr[i].m)));

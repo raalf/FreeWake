@@ -443,7 +443,7 @@ printf("\n");
 		//compute pitching moment
 		//CM_resid = 0; 
 //===================================================================//
-
+	/* //replaced with calculation inside lift_force
  	Moment = 0;//initializing Moment
  	//loop over no. surface DVE's
 	for(i=0;i<info.noelement;i++)
@@ -470,6 +470,7 @@ printf("\n");
 	//printf("Moment: %f\t qc: %f\t\n",Moment,qc);
 	if(info.sym==1) CM_resid*=2;
 	//printf("CM resid %lf  \n",CM_resid);
+	*/
 //===================================================================//
 		//DONE compute pitching moment
 //===================================================================/*/

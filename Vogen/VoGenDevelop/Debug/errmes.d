@@ -1,0 +1,1 @@
+errmes.o: ../errmes.c

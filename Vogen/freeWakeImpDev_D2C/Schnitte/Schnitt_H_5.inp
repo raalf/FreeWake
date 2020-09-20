@@ -1,0 +1,8 @@
+|--x[mm]--|--y[mm]--|--z[m]--|--alphaplus--|
+4.4200 1.2750 1.1250 -2.9
+|--AnzahlPanelSpan--|--tiefe--|--rel.Dicke--|
+3 0.196 0.154
+|--name-section--|
+DU92-131_25
+|--section-file--|
+/Users/bramesfeld/Desktop/FreeWake20dev/Vogen/freeWakeImpDev_D2C/Profil-Polaren/camberDU92-131.dat

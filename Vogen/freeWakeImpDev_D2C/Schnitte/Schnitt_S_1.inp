@@ -1,0 +1,8 @@
+|--x[mm]--|--y[mm]--|--z[m]--|--alphaplus--|
+3.747 0 -0.100 0
+|--AnzahlPanelSpan--|--tiefe--|--rel.Dicke--|
+1 1.100 0.154
+|--name-section--|
+DU86-131_30
+|--section-file--|
+/home/fon/OSTIVKreisflug/D2C-LILI/Profil-Polaren/camberDU86-131.dat

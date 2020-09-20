@@ -137,14 +137,13 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				momarm[0] = XCG[0] - lemid[0]; //will be momarm 
 				momarm[1] = XCG[1] - lemid[1];
 				momarm[2] = XCG[2] - lemid[2];
-
-				cross(tempVEC, momarm, tempA);
-
+ 				cross(tempVEC, momarm, tempA);
+ 
 				//contribution of this spanwise strip to the total moment (in the global frame)
 				Moment[span][0] += tempA[0];
 				Moment[span][1] += tempA[1];
 				Moment[span][2] += tempA[2];
-
+ 
 				//add additional moment due to moment of each element about control point
 				if (m == 0)
 				{
@@ -224,6 +223,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			Moment[span][0] += tempVEC[0] * tempS;
 			Moment[span][1] += tempVEC[1] * tempS;
 			Moment[span][2] += tempVEC[2] * tempS;
+
 
 			/*/* ************************ Quiver output of vectors *************************
 			if (time == info.maxtime && panel == 0 && n == panelPtr[panel].LE1) {
@@ -396,6 +396,16 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	MZ = tempVEC[2];
 
 	//will need to double if sym on!
+    if (info.sym == 1 && info.beta == 0 && !info.flagCIRC)
+    {
+        CF[0] *= 2;
+        CF[0] = 0.0;
+        CF[2] *=2;
+        
+        MX = 0.0;
+        MY *= 2;
+        MZ = 0.0;
+    }
 
 
 	/*/* ************************ Quiver output of vectors *************************

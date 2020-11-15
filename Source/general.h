@@ -48,7 +48,11 @@ double CF[3];           //total forces in wind axis system (CFX,CFY,CFY)
 double **Cf;            //section forces in wind axis system (Cfx,Cfy,Cfz)
 double *CDi_DVE;		//total ind. drag (Eppler) with DVEs for each timestep
 double CDi_finit;		//total induced drag with DVEs after all timesteps
-double Cl, Cm, Cn;		//
+double Cl, Cm, Cn;		//roll, pitch and yaw moment coefficients
+int fltcfg;             //flight configuration number (CL, AOA, etc)
 //8-8-07 G.B.
 double alpha1,alpha2,alphastep;	//AOA loop, beginning, end, stepsie
+
+const double delCLtarget=0.000001; //convergence criterion of CL_target
+const long Linelength = 149;   //length of data line in configuration summary file *_cfg.txt
 

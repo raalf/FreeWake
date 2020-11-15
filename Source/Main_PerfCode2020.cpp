@@ -10,7 +10,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	double *cn,cd;			//section normal and drag force coefficients
 	double cm,CMo;			//section, total zero-lift moment coefficient
 	double cd1,cd2,cm1,cm2;	//section values of panel edge 1 and 2 for interpolation; GB 2-14-20
-	double CL,CY,CD,CDi=0;		//aircraft lift, total and induced drag coefficients
+	double CL,CY,CD,CDi=0;	//aircraft lift, total and induced drag coefficients
 	double CLi, CYi = 0;	//induced aircraft lift and side force
 	double CLinviscid=0;	//inviscid CL without stall correction
 	double CDprofile=0;		//wing profile drag coefficient
@@ -59,6 +59,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	//Input/output files
 	FILE *MomSol;			//output file of trim solutions
 	FILE *Performance;		//output file for performance results
+    FILE *FltConfg;         //output file for flight configuration results
 
 
 
@@ -145,18 +146,21 @@ int main(int argc, char *argv[])
 
 
 
-// Define input filename and output directory
+// Define   1. input filename, 2. output directory, 3. configuration file
     
 	if (argc < 2) //argc is the number of inputs
 	{//no input name: assume input.txt in the working dir
 		sprintf(info.inputfilename, "%s", "input.txt");
         sprintf(info.output, "%s", OUTPUT_PATH);
+        sprintf(info.config, "%sinput_cfg.txt", OUTPUT_PATH);
 	}
 	else if(argc ==2)//with an input filename: use it. 
 	{
 		 //argv[0] will be the .exe, argv[1] will be the filename
 		sprintf(info.inputfilename, "%s.txt", argv[1]);
         sprintf(info.output, "%s%s/", OUTPUT_PATH,argv[1]);
+        sprintf(info.config, "%s%s_cfg.txt", info.output,argv[1]);
+
 
 		int nError = 0; //check which OS we are compiling on
 #if defined(_WIN32)
@@ -169,9 +173,6 @@ int main(int argc, char *argv[])
 			scanf("%c", &answer); 
 			exit(1);
 		}*/
-
-
-        
 	}
 	else
 	{
@@ -182,6 +183,7 @@ int main(int argc, char *argv[])
 	}
     printf("\nInput Filename : %s\n", info.inputfilename);
     printf("Output directory : %s\n", info.output);
+    
     //saves input file to output directory
     Save_Input_File(info.inputfilename,info.output);//in write_output.cpp
     
@@ -210,7 +212,7 @@ int main(int argc, char *argv[])
 //===================================================================//
 		//END read general and panel info from file 'input.txt'
 //===================================================================//
-
+    
 //===================================================================//
 		//Start read V-tial and fuselage info from file 'input.txt'
 //===================================================================//
@@ -303,9 +305,6 @@ int main(int argc, char *argv[])
 	Wing_Generation(panelPtr,info.nopanel,info.wing1,info.wing2,\
 						info.panel1,info.panel2,info.dve1,info.dve2);
 									//Subroutine in wing_geometry.cpp
-
-
-
 //===================================================================//
 		//END wing generation
 //===================================================================//
@@ -380,9 +379,40 @@ int main(int argc, char *argv[])
 
 	fflush(Performance);
 
+
+//===================================================================//
+       //START setting up configuration file
+//===================================================================//
+    //four output files:
+    //  1. configuration: holds config und summary of each flight configuraiton
+    //  2.  ----fltcfg# : holds spanwise information of each wing and case
+    //  3.   -----fltcfg#: DVE summary of wings and wakes
+        
+    //===================================================================//
+    //1. configuration file
+    // file name was created up around line 148
+        
+    //need to check if exist - if no --> create and copy input file into it
+    //                          yes --> think
+    // possible options are CL trim --> append or overwrite
+    // alpha sweep --> append
+
+    printf("configuration file : %s\n",info.config);
+        
+    //saves input file and header to configuration file in output directory
+    Save_Config_Head_File(info.inputfilename,info.output,info.config);
+                                        //in write_output.cpp
+
+ //===================================================================//
+        //END setting up configuration file
 //===================================================================//
 //===================================================================//
-		//looping over AOA
+//               DONE Opening output files
+//===================================================================//
+
+    
+//===================================================================//
+//iterate CL or Alpha sweep
 //===================================================================//
 //===================================================================//
 	//if trimCL is 1, we will trim alpha here to achieve the correct CL.
@@ -393,7 +423,9 @@ int main(int argc, char *argv[])
 	//visc ON, but it will take more iterations to converge. 
 
 	//if trimCL is 0, we will step through the user defined alphas
-	if (info.trimCL == 1) {
+    //if trimCL is 1, we will trim alpha here to achieve the correct CL.
+	if (info.trimCL == 1)
+    {
 		q_inf = 0.5 * info.density * info.Uinf * info.Uinf;
 		CLtarget = info.W / (q_inf * info.S * cos(info.bank));
 		printf("\n-----TRIM FOR CL-----Target CL = %.4lf\n", CLtarget);
@@ -404,19 +436,21 @@ int main(int argc, char *argv[])
 		CLtemp[0] = 0;
 		CLtemp[1] = 0;
 	}
-	else {
-		CLtarget = 10; //if we aren't trimming for lift we need some logic here
-	}
-
-	while ((CF[2] - CLtarget) * (CF[2] - CLtarget) > 0.000001) //iterate until CL changes less
-		//than this much
-
+	else CLtarget = 10; //if we aren't trimming for lift we need some logic here
+	
+    //===================================================================//
+    //iterate until CL changes less than this much
+    //===================================================================//
+    while ((CF[2] - CLtarget) * (CF[2] - CLtarget) > delCLtarget)
+    {
 		//we could iterate until alpha changes by less than a certain amnt with this:
 		//while (sqrt((alpha1-alpha2old) * (alpha1-alpha2old)) > 0.001*DtR)
-	{
 
 		a2 = int((alpha2 - alpha1) / alphastep + .5);  //max. number of alpha increments
 
+        //===================================================================//
+                //looping over AOA
+        //===================================================================//
 		for (a = 0; a <= a2; a++)
 		{
 			//updating AOA info
@@ -476,14 +510,14 @@ int main(int argc, char *argv[])
 			LongitudinalTrim(info, panelPtr, surfacePtr, cn, \
 				CL, CY, CDi,  CLi, CYi, MomSol, camberPtr);
 			//Subroutine in longtrim.cpp
-//===============================================================//
-	//DONE compute induced drag and lift distribution
-//===============================================================//
 
+            //===============================================================//
+            //DONE compute induced drag and lift distribution
+            //===============================================================//
 
-//===============================================================//
-	//computing free stream values
-//===============================================================//
+            //===============================================================//
+            //computing free stream values
+            //===============================================================//
 			//q_inf = info.W / (CL * info.S);
 			//V_inf = sqrt(2 * q_inf / info.density);
 			V_inf = info.Uinf; //will need w added
@@ -492,7 +526,8 @@ int main(int argc, char *argv[])
 
 			//printf("CL %lf CY %lf CN %lf CDi %lf alpha %.2lf", \
 				CL, CY, sqrt(CL * CL + CY * CY), CDi, info.alpha * RtD);
-			printf("CL %lf CLi %lf CY %lf CYi %lf CN %lf CDi %lf", CL, CLi, CY, CYi, sqrt(CL * CL + CY * CY), CDi);
+			printf("CL %lf CLi %lf CY %lf CYi %lf CN %lf CDi %lf",\
+                   CL,CLi,CY,CYi,sqrt(CL * CL + CY * CY), CDi);
 			//printf(" CN %lf CDi %lf",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
 			printf("\nCFX %lf CFY %lf CFZ %lf\n", \
 				CF[0], CF[1], CF[2]);
@@ -696,12 +731,40 @@ int main(int argc, char *argv[])
 			//===============================================================//
 
 		//		printf(" Dvt %lf Dfus %lf Dint %lf D %lf\n",Dvt,Dfuselage,Dint,D);
+            
+            //===============================================================//
+            //START save to config file if no CL iteration, i.e. only alpha swee
+            //===============================================================//
+           if (info.trimCL == 0)  //simple alfa sweep -> safe results of flight
+            {
+                FltConfg = fopen(info.config,"a"); //append file
+                
+                if (FltConfg == NULL)
+                {
+                    fclose(FltConfg);
+                    printf(" couldn't save to FltConfg file\nPress any key to exit...\n");
+                    exit(EXIT_FAILURE);
+                }
+                fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
+                        a,CLtarget,info.alpha*RtD,info.beta*RtD);
+                fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
+                        CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
+                fprintf(FltConfg,"\n");
+                
+                fclose(FltConfg);
+            }
+            //===============================================================//
+            //END save to config file,  no CL iteration
+            //===============================================================//
 
+        }//end loop over 'a' angle of attack
+        //===================================================================//
+        //            END OF LOOP OVER AOA
+        //===================================================================//
 
-		}//end loop over 'a' angle of attack
-
-		if (info.trimCL == 1) {
-			//calculate new alpha to run
+		if (info.trimCL == 1)
+        {
+			//calculate new alpha to run for CL iteration
 			alpha2 = alpha1 + (CLtarget - CLtemp[0]) / ((CLtemp[1] - CLtemp[0]) / (alpha2old - alpha1));
 			alpha2old = alpha1;
 			CLtemp[1] = CLtemp[0];
@@ -709,15 +772,79 @@ int main(int argc, char *argv[])
 			alpha1 = alpha2;
 			//alphastep = alpha2 - alpha1;
 		}
-		else{
-			CLtarget = CF[2]; //set here so we dont iterate again if we aren't trimming
-		}
-		
-	} //end alpha iterations for lift trim
-//===================================================================//
-//			END OF LOOP OVER AOA
-//===================================================================//
+		else CLtarget = CF[2]; //set here so we dont iterate again if we aren't trimming
+	}
+    //===================================================================//
+    //END iterate CL
+    //===================================================================//
+    
+    //===============================================================//
+    //START save to config file if CL iteration
+    //===============================================================//
+    if (info.trimCL == 1)  //CL iteration -> safe results of flight config
+    {
+       int FCno; //Flight condition
+       double CLoldtarget,alphaold; //CL and alpha of last rund
 
+        FltConfg = fopen(info.config,"r+"); //append file
+        
+        if (FltConfg == NULL)  //check if flight config file can be appended
+        {
+            fclose(FltConfg);
+            printf(" couldn't save to FltConfg file\nPress any key to exit...\n");
+            exit(EXIT_FAILURE);
+        }
+        
+        fseek(FltConfg, -Linelength-1, SEEK_END);  //move pointer at the beginning of the last line
+        
+        fscanf(FltConfg,"%d %lf%lf",&FCno,&CLoldtarget,&alphaold);
+        
+ //       printf("aa %d %lf %lf\n",FCno,CLoldtarget,alphaold);
+ //       printf("old %lf  and new %lf  \n",CLoldtarget,CLtarget);
+        
+        //three cases:
+            //1. no entry yet -> append
+            //2. same CLtarget -> update last line
+            //3. new CLtarget -> append
+
+        if(FCno == 0) //no entry yet
+        {
+            printf("append empty\n");
+            fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
+                1,CLtarget,info.alpha*RtD,info.beta*RtD);
+            fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
+                CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
+            fprintf(FltConfg,"\n");
+        }
+        else if((CLtarget-CLoldtarget)*(CLtarget-CLoldtarget) <= delCLtarget*1.01) //update CLtarget if within 1%
+        {
+            fseek(FltConfg, -Linelength, SEEK_END);  //move pointer at the beginning of the last line
+            printf("CLtarget overwrite\n");
+            fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
+                FCno,CLtarget,info.alpha*RtD,info.beta*RtD);
+            fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
+                CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
+            fprintf(FltConfg,"\n");
+        }
+        else //add next target CL
+        {
+            fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
+                FCno+1,CLtarget,info.alpha*RtD,info.beta*RtD);
+            fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
+                CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
+            fprintf(FltConfg,"\n");
+         printf("New flight configuration added\n");
+        }
+        
+        fclose(FltConfg);
+    }
+    //===============================================================//
+    //END save to config file if CL iteration
+    //===============================================================//
+
+    
+    
+    
 	//free allocated memory
 	FREE1D(&panelPtr,info.nopanel);
 	FREE1D(&surfacePtr,info.noelement);

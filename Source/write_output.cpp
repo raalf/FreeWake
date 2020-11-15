@@ -27,7 +27,8 @@ void Time_Stepping_End_Results(const GENERAL,const int,const int,double **,\
 void Save_Surface_DVEs(const GENERAL info,const DVE *surfacePtr);
 //save input file to output directory
 void Save_Input_File(const char [126],const char [126]);
-//void Save_Input_File(const GENERAL);
+//save input file and header to config directory
+void Save_Config_Head_File(const char [126],const char [126],const char [126]);
 //saves results of current timestep to file
 void Save_Timestep(const GENERAL,const int,DVE **,const DVE *,double **);
 //saves forces and moments of surface DVEs
@@ -511,6 +512,89 @@ void Save_Input_File(const char sourcefile[126],const char targetdir[126])
 //===================================================================//
         //END of Save_Input_File
 //===================================================================//
+
+//===================================================================//
+        //START of Save_Config_Head_File
+//===================================================================//
+//saves input file and header to configuration file in output directory
+void Save_Config_Head_File(const char sourcefile[126],const char targetdir[126],\
+                      const char targetfile[126])
+{
+    //copies the input file from input directory to config file located in
+    //output directory
+    //adapted from https://www.programmingsimplified.com/c-program-copy-file
+    //sourcefile  - input file for FreeWake
+    //targetdrive - output directory
+    //targetfile - configuration file (with directory path)
+    
+    FILE *source,*target;
+    char ch,str[100];
+
+    source = fopen(sourcefile, "r");
+
+    if (source == NULL)
+    {
+       printf(" couldn't copy input file\nPress any key to exit...\n");
+       exit(EXIT_FAILURE);
+    }
+
+    //If configuration file does not exist yet, it is being created
+    if ((target = fopen(targetfile, "r"))== NULL)
+    {
+        printf("Configuration file %s is created\n",targetfile);
+  
+        target = fopen(targetfile, "w"); //create file to write to
+
+        if (target == NULL)
+        {
+            fclose(target);
+            printf(" couldn't copy target file\nPress any key to exit...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        while ((ch = fgetc(source)) != EOF)
+            fputc(ch, target);
+
+        fclose(source);
+        
+        //writing general information heading
+        fprintf(target,"\n\nRef. length for rolling mom.  = %lf\n",info.b);
+        fprintf(target,"Ref. lenght for pitching mom. = %lf\n",info.cmac);
+        fprintf(target,"Ref. length for yawing mom.   = %lf\n",info.b);
+        fprintf(target,"Reference area                = %lf\n",info.S);
+        fprintf(target,"Projected planform area       = %lf\n",info.projAREA);
+        fprintf(target,"Unraveled area                = %lf\n",info.AREA);
+        fprintf(target,"Referece span                 = %lf\n",info.b);
+        fprintf(target,"Projected span                = %lf\n",info.projSPAN);
+        fprintf(target,"Reference aspect ratio        = %lf\n",info.AR);
+        fprintf(target,"number of wings               = %d\n",info.nowing);
+        fprintf(target,"number of flight conditions   = %d\n\n",1);
+        
+        //header of tabulated case data
+        fprintf(target,"%-10s%-10s%-10s%-10s","Flight","CLtarget","Alpha","Beta");
+        fprintf(target,"%-12s%-12s%-12s","CL","CQ","CDI");
+        fprintf(target,"%-12s%-12s%-12s","CX","CY","CZ");
+        fprintf(target,"%-12s%-12s%-12s\n","CL","CM","CN");
+        fprintf(target,"%-10s%-10s%-10s%-10s","Condtn","deflt=10","[deg]","[deg]");
+        fprintf(target,"%-12s%-12s%-12s","(lift)","(side)"," ");
+        fprintf(target,"%-12s%-12s%-12s"," "," "," ");
+        fprintf(target,"%-12s%-12s%-12s\n","(roll)"," "," ");
+        fprintf(target,"-------------------------------------------------------------");
+        fprintf(target,"--------------------------");
+        fprintf(target,"------------------------------------------------------------#\n");
+
+        fclose(target);
+    }
+    else  //configuration file already exists, determine flight config. number
+    {
+        printf("Configuration file %s already exists\n",targetfile);
+    }
+
+}
+//===================================================================//
+        //END of Save_Config_Head_File
+//===================================================================//
+
 
 //===================================================================//
 		//START of Save_Timestep

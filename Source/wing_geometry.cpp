@@ -376,7 +376,7 @@ char answer;	//error handling
 //init area calculations
 info.AREA = 0;
 info.projAREA = 0;
-
+info.projSPAN = 0;
 info.surfAREA = 0;
 
 	//loop over number of panels
@@ -394,8 +394,10 @@ info.surfAREA = 0;
 		info.AREA += panelPtr[i].AREA;
 
 		//panel area projection to xy plane
-		panelPtr[i].projAREA = xquart[1] * (panelPtr[i].c1 * cos(panelPtr[i].eps1) + panelPtr[i].c2 * cos(panelPtr[i].eps2)) / 2;
+		panelPtr[i].projAREA = xquart[1] * \
+            (panelPtr[i].c1 * cos(panelPtr[i].eps1) + panelPtr[i].c2 * cos(panelPtr[i].eps2)) / 2;
 		info.projAREA += panelPtr[i].projAREA;
+        info.projSPAN += xquart[1]; //projected span
 
 		//1/4chord line dihedral
 		nu = asin(xquart[2]/ tempSpan);
@@ -602,26 +604,6 @@ info.surfAREA = 0;
 				//temporary incidence angle at half span of DVE
 				surfacePtr[l].epsilon = eps1 + tempS * (eps2 - eps1) / panelPtr[i].n;
 
-				/* removed BB 2020, rewritten above to work for all cases
-				if(info.flagCAMBER){
-					//half-chord length at midspan of DVE using camber info
-					surfacePtr[l].xsi=0.5*(chord1+tempS*(chord2-chord1)/panelPtr[i].n);
-					//temporary incidence angle at half span of DVE using camber info
-					surfacePtr[l].epsilon = eps1 + tempS*(eps2-eps1)/panelPtr[i].n;
-				}// /*else if(panelPtr[i].deflect1 != 0){
-					//If camber is off but trim is on
-					//half-chord length at midspan of DVE
-					surfacePtr[l].xsi = 0.5 * (chord1 + tempS * (chord2 - chord1) / panelPtr[i].n);
-					//temporary incidence angle at half span of DVE using camber info
-					surfacePtr[l].epsilon = eps1+  tempS*(eps2-eps1)/panelPtr[i].n;
-				}///
-				else{
-					//half-chord length at midspan of DVE
-					surfacePtr[l].xsi = 0.5 * (chord1 + tempS * (chord2 - chord1) / panelPtr[i].n);
-					//temporary incidence angle at half span of DVE
-					surfacePtr[l].epsilon = eps1 + tempS * (eps2 - eps1) / panelPtr[i].n;
-				}
-			*/
 				ceps  = cos(surfacePtr[l].epsilon); //needed for tempA below
 				seps  = sin(surfacePtr[l].epsilon);
 

@@ -3,30 +3,24 @@
 // definition of type general //
 struct GENERAL
 {
-	char inputfilename[126];
-    char output[126];
-	bool flagVISCOUS; // Turn on/off viscous corrections (O = OFF, 1 = ON)
-	bool flagCAMBER; // Turn on/off camber (O = OFF, 1 = ON)
+	char inputfilename[126];//input file name, default is input.text
+    char output[126];   //path of output directory, default /output other /output/somename
+    char config[126]; //configuration summary file
     
 	double Uinf;		//free stream velocity
-	double alpha, beta;	//angle of attack, sideslip angle
-	double S, b,AR;		//reference area, span, aspect ratio
+    double U[3];        //free stream velocity vector
+    double density;        //density of fluid
+    double nu;            //kinematic viscosity
+	double alpha, beta;	//angle of attack, sideslip angle [rad]
+
+    double S,b,AR;		//reference area, span, aspect ratio
 	double AREA, projAREA, surfAREA; //calculated total area,
-							//sum of panel area projected to xy-plane, sum of DVE area
-	double U[3];		//free stream velocity vector
-	double density;		//density of fluid
-	double nu;			//kinematic viscosity
+							//sum of panel area projected to xy-plane,
+                            //sum of DVE area
+    double projSPAN;    //projected span of all surfaces
     
 	double RefPt[3];	//global reference point for moments
 						//added 1-0-13-2006 G.B. also used for CG
-	bool flagHORZ;		// On/off flag for flight in horizontal plane GB 3.9.20
-						//if on, geometry is rotated by alpha and Uinf in xy-plane
-
-	// Circling flight info D.F.B 02-2020
-	bool flagCIRC;		// On/off flag for circling flight
-	double bank;		// Bank angle (rad)
-	double Ws; 			// Upwind velocity
-	double gradient;	// Velocity gradient
 	
 	double W;			//aircraft weight; added G.B. 8-8-07
 	double cmac;		//mean aeodynamic chord; added G.B. 8-8-07
@@ -37,14 +31,24 @@ struct GENERAL
 	double deltae;		//square of deltae that determins convergence criteria
 						//of do-while loop in main program.
 						//set 0 if only time stepping is desired
-
+//Flags
+    bool flagVISCOUS; // Turn on/off viscous corrections (O = OFF, 1 = ON)
+    bool flagCAMBER; // Turn on/off camber (O = OFF, 1 = ON)
 	int sym;			//symmetrical geometry flag (=1 sym. 0= assym.)
 	int linear;			//linear theory flag (=1 applied, 0= not applied)
 	int steady;			//steady (=1)/unsteady (default) aerodynamics flag
 	int relax;			//relaxed wake in time stepping scheme (=1 applied, 0=not)
 	int trimPITCH;			//longitudinal trim flag using hstab(=1 for trimming, =0 no trim)
 	int trimROLL;		//trim Cl to 0.0 using ailerons (=1 for trimming, =0 no trim)
-	int trimCL;			//Lift trim flag using alpha (=1 for trim, =0 no trim) 
+	int trimCL;			//Lift trim flag using alpha (=1 for trim, =0 no trim)
+    bool flagHORZ;        // On/off flag for flight in horizontal plane GB 3.9.20
+                        //if on, geometry is rotated by alpha and Uinf in xy-plane
+    // Circling flight info D.F.B 02-2020
+    bool flagCIRC;        // On/off flag for circling flight
+    double bank;        // Bank angle (rad)s
+    double Ws;             // Upwind velocity
+    double gradient;    // Velocity gradient
+
 	int nowing;			//number of separated wings
 	int wing1[5],wing2[5];//span index of edges 1 (left) and 2 (right) of wing
 	int panel1[5],panel2[5];//indices of panels at left and right edge of wing

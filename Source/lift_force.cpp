@@ -193,7 +193,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 
 			/*/* ************************ Quiver output of vectors *************************
 			CreateQuiverFile(surfacePtr[index].xTE, eD, 1, 1);
-			//*******************************************************************************/
+			// *******************************************************************************/
 
 			//adding drag to force 
 			tempVEC[0] = eD[0] * D_force[span];
@@ -233,7 +233,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 3);
 			}
 			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 3);
-			//*******************************************************************************/
+			// *******************************************************************************/
 
 //################################################
             //At this point, the Span_force vector is alligned with the Normal force (eN)
@@ -332,7 +332,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 4);
 			}
 			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 4);
-			//*******************************************************************************/
+			// *******************************************************************************/
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
@@ -411,7 +411,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	/*/* ************************ Quiver output of vectors *************************
 	CreateQuiverFile(XCG, tempVEC, 0, 5);
 	CreateQuiverFile(XCG, CF, 1,5 );
-	//*******************************************************************************/
+	// *******************************************************************************/
 
     scalar(CF,q,CF); //non dimensionalize
 	Cl = MX * qb;     // roll  moment

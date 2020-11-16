@@ -59,9 +59,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	double momarm[3];
 	double lemid[3];
 	double A, B, C; //temp circulation coeffs for moment calc
-
+	double* spanwise_area;
 	ALLOC2D(&Moment, info.nospanelement, 3);
-
+	ALLOC1D(&spanwise_area, info.nospanelement);
 //===================================================================//
                         //span forces
 //===================================================================//
@@ -105,11 +105,12 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			Moment[span][1] = 0;
 			Moment[span][2] = 0;
 
+			spanwise_area[span] = 0;
 			//loop over chord of panel
 			for (m = 0; m < panelPtr[panel].m; m++)
 			{
-
-
+				
+				spanwise_area[span] = spanwise_area[span] + surfacePtr[index].S;
 				//normal force direction
 				// This eN is in the global frame, which rotates during circling flight. 
 				eN[0] = N_force[index][6];
@@ -358,7 +359,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
        {
            //1/(0.5 U^2 S) of chordwise strip
            tempS = 2/(dot(surfacePtr[n].u,surfacePtr[n].u)*\
-                      surfacePtr[n].S*panelPtr[panel].m);
+                      spanwise_area[span]); //this area is found above as total strip area
            Cf[span][0] = Span_force[span][0]*tempS;
            Cf[span][1] = Span_force[span][1]*tempS;
            Cf[span][2] = Span_force[span][2]*tempS;
@@ -470,7 +471,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 
 
 	FREE2D(&Moment, info.nospanelement, 3);
-
+	FREE1D(&spanwise_area, info.nospanelement);
     //===================================================================//
     //===================================================================//
     

@@ -4,6 +4,7 @@
 //#include <iostream.h>
 #include <math.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #if defined(_WIN32)
 #include "direct.h" //required only on windows

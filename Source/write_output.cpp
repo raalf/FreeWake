@@ -556,9 +556,11 @@ void Save_Config_Head_File(const char sourcefile[126],const char targetdir[126],
             fputc(ch, target);
 
         fclose(source);
+
+        fprintf(target,"\n\nThe next line is a special marker\n#$&#$&\n\n"); //sets a marker
         
         //writing general information heading
-        fprintf(target,"\n\nRef. length for rolling mom.  = %lf\n",info.b);
+        fprintf(target,"Ref. length for rolling mom.  = %lf\n",info.b);
         fprintf(target,"Ref. lenght for pitching mom. = %lf\n",info.cmac);
         fprintf(target,"Ref. length for yawing mom.   = %lf\n",info.b);
         fprintf(target,"Reference area                = %lf\n",info.S);
@@ -568,7 +570,7 @@ void Save_Config_Head_File(const char sourcefile[126],const char targetdir[126],
         fprintf(target,"Projected span                = %lf\n",info.projSPAN);
         fprintf(target,"Reference aspect ratio        = %lf\n",info.AR);
         fprintf(target,"number of wings               = %d\n",info.nowing);
-        fprintf(target,"number of flight conditions   = %d\n\n",1);
+        fprintf(target,"number of flight conditions   = \n\n");
         
         //header of tabulated case data
         fprintf(target,"%-10s%-10s%-10s%-10s","Flight","CLtarget","Alpha","Beta");

@@ -63,7 +63,7 @@ Hinge is in percentage chord:
 
 Defines leading edge of wing, all measured in metres:
 
-Panel #:1 Number of elements across span n = 10 and chord m = 20
+Panel #:1 Number of elements across span n = 4 and chord m = 3
 Neighbouring panels (0 for none) left: 1 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
 0.000	0.000	0.000	0.3	5.000	10		1 	0	0

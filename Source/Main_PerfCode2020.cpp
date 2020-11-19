@@ -52,8 +52,10 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	double IFdrag;			//interfernce drag fraction
 
 
-	double tempS;
-	char answer ;
+	int n;					//loop counter
+	long pos; 				//file position counter
+	double tempS;			//temp scalar
+	char answer,string[6];	//string is used to update config file
 	char filename[137];		//file path and name
 
 	//Input/output files
@@ -746,7 +748,7 @@ int main(int argc, char *argv[])
                     exit(EXIT_FAILURE);
                 }
                 fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
-                        a,CLtarget,info.alpha*RtD,info.beta*RtD);
+                        a+1,CLtarget,info.alpha*RtD,info.beta*RtD);
                 fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
                         CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
                 fprintf(FltConfg,"\n");
@@ -783,7 +785,7 @@ int main(int argc, char *argv[])
     //===============================================================//
     if (info.trimCL == 1)  //CL iteration -> safe results of flight config
     {
-       int FCno; //Flight condition
+       int FCno=0; //Flight condition number
        double CLoldtarget,alphaold; //CL and alpha of last rund
 
         FltConfg = fopen(info.config,"r+"); //append file
@@ -795,30 +797,39 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
         
-        fseek(FltConfg, -Linelength-1, SEEK_END);  //move pointer at the beginning of the last line
-        
-        fscanf(FltConfg,"%d %lf%lf",&FCno,&CLoldtarget,&alphaold);
-        
- //       printf("aa %d %lf %lf\n",FCno,CLoldtarget,alphaold);
- //       printf("old %lf  and new %lf  \n",CLoldtarget,CLtarget);
-        
-        //three cases:
+        //check if there already exist an entry. if not string[5]='-' and FCno set to 0
+        fseek(FltConfg, -Linelength-1,SEEK_END);  //move pointer at the beginning of the last in file
+   		fscanf(FltConfg,"%6s",&*string);    
+ 		printf("answer %c  <---\n ",string[5]);
+ 		if(string[5]=='-')  FCno=0; 
+ 		else
+ 		{
+ 			fseek(FltConfg, -Linelength-1,SEEK_END);  //move pointer at the beginning of the last line
+     		fscanf(FltConfg,"%d %lf%lf",&FCno,&CLoldtarget,&alphaold);
+     	}
+
+    	printf("aa %d %lf %lf\n",FCno,CLoldtarget,alphaold);
+
+         //three cases:
             //1. no entry yet -> append
             //2. same CLtarget -> update last line
             //3. new CLtarget -> append
 
         if(FCno == 0) //no entry yet
         {
+            FCno=1; 
             printf("append empty\n");
-            fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
-                1,CLtarget,info.alpha*RtD,info.beta*RtD);
+            fseek(FltConfg,0,SEEK_END);  //move pointer at the beginning of the last line
+                       fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
+                FCno,CLtarget,info.alpha*RtD,info.beta*RtD);
             fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
                 CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
             fprintf(FltConfg,"\n");
         }
-        else if((CLtarget-CLoldtarget)*(CLtarget-CLoldtarget) <= delCLtarget*1.01) //update CLtarget if within 1%
-        {
-            fseek(FltConfg, -Linelength, SEEK_END);  //move pointer at the beginning of the last line
+        else if((CLtarget-CLoldtarget)*(CLtarget-CLoldtarget) <= delCLtarget*1.01) //update CLtarget 
+        {													//if within 1% of convergence criterion
+            fseek(FltConfg,0,SEEK_END);  //move pointer at the beginning of the last line
+            fseek(FltConfg, -Linelength,SEEK_END);  //move pointer at the beginning of the last line
             printf("CLtarget overwrite\n");
             fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
                 FCno,CLtarget,info.alpha*RtD,info.beta*RtD);
@@ -828,14 +839,37 @@ int main(int argc, char *argv[])
         }
         else //add next target CL
         {
+            FCno++; //updating flight condition counter
             fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
-                FCno+1,CLtarget,info.alpha*RtD,info.beta*RtD);
+                FCno,CLtarget,info.alpha*RtD,info.beta*RtD);
             fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
                 CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
             fprintf(FltConfg,"\n");
          printf("New flight configuration added\n");
         }
-        
+
+        //update number of flight condition number in header 
+        fseek(FltConfg,0,SEEK_SET);  //move pointer to the beginning of the file
+        //find mmarker
+        pos = 0; //initializing position counter
+        do fscanf(FltConfg,"%s",string);
+        while(strcmp(string,"#$&#$&")!=0);
+
+    	//find the '='-sign in input file before "projected ref area"
+		for(n=0;n<5;n++) do	answer=fgetc(FltConfg); while (answer!='=');
+//could update with projected area
+		//find '=' before Unraveled area
+		do	answer=fgetc(FltConfg); while (answer!='=');
+//could update with unraveled area
+	
+		//find the '='-sign in input file before "number of flight conditions"
+		for(n=0;n<5;n++) do	answer=fgetc(FltConfg); while (answer!='=');
+
+
+ 		pos = ftell(FltConfg);
+ 		fseek(FltConfg,pos,SEEK_SET);  //move pointer to the current position in file
+		fprintf(FltConfg," %d",FCno);
+
         fclose(FltConfg);
     }
     //===============================================================//

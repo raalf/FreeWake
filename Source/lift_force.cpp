@@ -1,8 +1,7 @@
 //computes total normal force acting on wing
 void DVE_Wing_Normal_Forces(const GENERAL,const PANEL *,\
                             DVE *,const int,double **,\
-                            double *, double **,\
-                            double [2],double [2],\
+                            STRIP *&,double [2],double [2],\
 							double &,double &,double &,double &,double[3]);
 //computes normal forces of surface DVE
 void Surface_DVE_Normal_Forces(const GENERAL,const PANEL *,const int,\
@@ -14,8 +13,7 @@ void Surface_DVE_Normal_Forces(const GENERAL,const PANEL *,const int,\
 //===================================================================//
 void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
                             DVE *surfacePtr,const int time,\
-                            double **N_force,double *D_force,\
-                            double **Span_force,
+                            double **N_force,STRIP *&spanPtr,
 							double Nt_free[2], double Nt_ind[2],\
 							double &CL,double &CLi,double &CY,double &CYi, double XCG[3])
 {
@@ -31,11 +29,11 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 //			[2]: free stream side, [3]: induced side force/density
 //          [4]: free stream normal, [5]: induced normal force/density
 //          [6,7,8]: eN_x, eN_y, eN_z in global ref. frame
-// D_force  drag force/density across span
+// spanPtr  holds strip information
 //
 //ouput:
 //
-// Span_force   force/density vector across span in wind axis system
+// spanPtr.Span_force   force/density vector across span in wind axis system
 // Nt_free	total lift, side and normal forces/density due to free stream flow
 // Nt_ind	total lift, side and normalforces/density due to induced velocities
 // CL		total lift coefficient
@@ -59,9 +57,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	double momarm[3];
 	double lemid[3];
 	double A, B, C; //temp circulation coeffs for moment calc
-	double* spanwise_area;
 	ALLOC2D(&Moment, info.nospanelement, 3);
-	ALLOC1D(&spanwise_area, info.nospanelement);
 //===================================================================//
                         //span forces
 //===================================================================//
@@ -100,17 +96,17 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			index = n; //setting index to first chordwise DVE of span location			
 
 			//initializing
-			Span_force[span][0] = 0; Span_force[span][1] = 0; Span_force[span][2] = 0;
+			spanPtr[span].Span_force[0] = 0; 
+			spanPtr[span].Span_force[1] = 0; 
+			spanPtr[span].Span_force[2] = 0;
 			Moment[span][0] = 0;
 			Moment[span][1] = 0;
 			Moment[span][2] = 0;
 
-			spanwise_area[span] = 0;
 			//loop over chord of panel
 			for (m = 0; m < panelPtr[panel].m; m++)
 			{
 				
-				spanwise_area[span] = spanwise_area[span] + surfacePtr[index].S;
 				//normal force direction
 				// This eN is in the global frame, which rotates during circling flight. 
 				eN[0] = N_force[index][6];
@@ -124,9 +120,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				tempVEC[1] = eN[1] * tempS;
 				tempVEC[2] = eN[2] * tempS;
 
-				Span_force[span][0] += tempVEC[0];
-				Span_force[span][1] += tempVEC[1];
-				Span_force[span][2] += tempVEC[2];
+				spanPtr[span].Span_force[0] += tempVEC[0];
+				spanPtr[span].Span_force[1] += tempVEC[1];
+				spanPtr[span].Span_force[2] += tempVEC[2];
 
 				//adding normal force to moment
 				//moment will be FxR
@@ -197,13 +193,13 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			// *******************************************************************************/
 
 			//adding drag to force 
-			tempVEC[0] = eD[0] * D_force[span];
-			tempVEC[1] = eD[1] * D_force[span];
-			tempVEC[2] = eD[2] * D_force[span];
+			tempVEC[0] = eD[0] * spanPtr[span].D_force;
+			tempVEC[1] = eD[1] * spanPtr[span].D_force;
+			tempVEC[2] = eD[2] * spanPtr[span].D_force;
 
-			Span_force[span][0] += tempVEC[0];
-			Span_force[span][1] += tempVEC[1];
-			Span_force[span][2] += tempVEC[2];
+			spanPtr[span].Span_force[0] += tempVEC[0];
+			spanPtr[span].Span_force[1] += tempVEC[1];
+			spanPtr[span].Span_force[2] += tempVEC[2];
 
 			//adding drag to moment
 			//drag is located at the TE
@@ -233,7 +229,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			else {
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 3);
 			}
-			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 3);
+			CreateQuiverFile(surfacePtr[index].xo, spanPtr[span].Span_force, 1, 3);
 			// *******************************************************************************/
 
 //################################################
@@ -242,33 +238,33 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			//section).  Now we rotate into wind axis system
             if(info.flagCIRC) //turning flight -> rotate vector to wind-axis frame
             {   
-				tempA[0] = Span_force[span][0];
-				tempA[1] = Span_force[span][1];
-				tempA[2] = Span_force[span][2];
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
 
 				//rotate by turn angle
-				Span_force[span][0] = tempA[0] * cosOm + tempA[1] * sinOm;
-				Span_force[span][1] = -tempA[0] * sinOm + tempA[1] * cosOm;
-				Span_force[span][2] = tempA[2];
+				spanPtr[span].Span_force[0] = tempA[0] * cosOm + tempA[1] * sinOm;
+				spanPtr[span].Span_force[1] = -tempA[0] * sinOm + tempA[1] * cosOm;
+				spanPtr[span].Span_force[2] = tempA[2];
 				
-				tempA[0] = Span_force[span][0];
-				tempA[1] = Span_force[span][1];
-				tempA[2] = Span_force[span][2];
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
 
 				//reassigning and rotation by bank angle
-				Span_force[span][0] = tempA[0];
-				Span_force[span][1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
-				Span_force[span][2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;
+				spanPtr[span].Span_force[0] = tempA[0];
+				spanPtr[span].Span_force[1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
+				spanPtr[span].Span_force[2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;
 
-				tempA[0] = Span_force[span][0];
-				tempA[1] = Span_force[span][1];
-				tempA[2] = Span_force[span][2];
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
 
 				//rotate by alpha. This also works with horizontal flight because we force alpha = 0
 				//in wing_geometry line 299. This may need a beta rot as well!
-				Span_force[span][0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
-				Span_force[span][1] = tempA[1];
-				Span_force[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
+				spanPtr[span].Span_force[0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
+				spanPtr[span].Span_force[1] = tempA[1];
+				spanPtr[span].Span_force[2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
 
 				//also need to rotate moment vector. ENSURE THIS IS THE SAME LOGIC AS ABOVE!
 				tempA[0] = Moment[span][0];
@@ -298,21 +294,18 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Moment[span][0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
 				Moment[span][1] = tempA[1];
 				Moment[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
-				
-
 
              }
-
 			else //still need to rotate by alpha even if not circling flight. Maybe also need Beta. Also this
 				//assumes that bank is 0 and decending flight! 
 			{
-				tempA[0] = Span_force[span][0];
-				tempA[1] = Span_force[span][1];
-				tempA[2] = Span_force[span][2];
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
 
-				Span_force[span][0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
-				Span_force[span][1] = tempA[1];
-				Span_force[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
+				spanPtr[span].Span_force[0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
+				spanPtr[span].Span_force[1] = tempA[1];
+				spanPtr[span].Span_force[2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
 				
 				//rotate moment vector 
 				tempA[0] = Moment[span][0];
@@ -332,7 +325,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			else {
 				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 4);
 			}
-			CreateQuiverFile(surfacePtr[index].xo, Span_force[span], 1, 4);
+			CreateQuiverFile(surfacePtr[index].xo, spanPtr[span].Span_force, 1, 4);
 			// *******************************************************************************/
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
@@ -350,24 +343,13 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 //===================================================================//
                       //section loads
 //===================================================================//
-    //compute section force coefficients
-    span=0;
-    for(panel=0;panel<info.nopanel;panel++)
-    {
-       //loop over panel span (along leading edge indices)
-       for(n=panelPtr[panel].LE1;n<=panelPtr[panel].LE2;n++)
-       {
-           //1/(0.5 U^2 S) of chordwise strip
-           tempS = 2/(dot(surfacePtr[n].u,surfacePtr[n].u)*\
-                      spanwise_area[span]); //this area is found above as total strip area
-           Cf[span][0] = Span_force[span][0]*tempS;
-           Cf[span][1] = Span_force[span][1]*tempS;
-           Cf[span][2] = Span_force[span][2]*tempS;
-           
-           span++; //next span section
-       }
-    }
-    
+   //assign moment to body coordinates
+   for(span=0;span<info.nospanelement;span++)
+   {
+   		spanPtr[span].Moment[0]= Moment[span][0];
+	 	spanPtr[span].Moment[1]= Moment[span][1];
+	  	spanPtr[span].Moment[2]= Moment[span][2];
+   }
 //===================================================================//
                     //total forces
 //===================================================================//
@@ -379,9 +361,9 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 	//computing CFX,CFY and CFZ, and 3 total moments
     for(span=0;span<info.nospanelement;span++)
     {
-      tempA[0] += Span_force[span][0];
-      tempA[1] += Span_force[span][1];
-      tempA[2] += Span_force[span][2];
+      tempA[0] += spanPtr[span].Span_force[0];
+      tempA[1] += spanPtr[span].Span_force[1];
+      tempA[2] += spanPtr[span].Span_force[2];
 
 	  tempVEC[0] += Moment[span][0];
 	  tempVEC[1] += Moment[span][1];
@@ -471,8 +453,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 
 
 	FREE2D(&Moment, info.nospanelement, 3);
-	FREE1D(&spanwise_area, info.nospanelement);
-    //===================================================================//
+   //===================================================================//
     //===================================================================//
     
     // N_force    normal forces/density of each surface DVE, second index is:

@@ -10,7 +10,7 @@ double SectionDrag(double ***, double,double &,int,double &,const int);
 	//computes induced drag at trailing edge
 double Induced_DVE_Drag(const GENERAL info,const PANEL* panelPtr,\
 						DVE* surfacePtr,DVE** wakePtr,\
-						const int rightnow,double* D_force)
+						const int rightnow,STRIP *&spanPtr)
 {
 //This function is the DVE expansion of the function Induced_Eppler_Drag
 //that computes the induced drag at the trailing edge, where
@@ -41,8 +41,8 @@ double Induced_DVE_Drag(const GENERAL info,const PANEL* panelPtr,\
 //	rightnow	- current time step
 //
 //output:
-//	CDi			- total drag coefficient
-//  D_force 	- local drag force/density along span
+//	CDi					- total drag coefficient
+//  spanPtr.D_force 	- local drag force/density along span
 
 int panel,p,span,s,time,k,wing;
 int	index;					//span index of surface DVEs along trailing edge
@@ -387,13 +387,13 @@ DVE tempDVE;				//temporary DVE
 	//#########################################################################
 		//the DRAG FORCE/density is the induce force in eD direction
 	//#########################################################################
-		D_force[i] = dot(R,eD);
+		spanPtr[i].D_force = dot(R,eD);
 
 		//add all partial drag/lift/side values [force/density]
-		CDi += D_force[i];
+		CDi += spanPtr[i].D_force;
 
 //  printf("\nspan %d  eD %2.8lf %2.8lf %2.8lf span %d D %lf cos %lf sin %lf Drag\n",\
-//         i,eD[0],eD[1],eD[2],i,D_force[i],cos(info.gradient*info.deltime*(rightnow-1)),sin(info.gradient*info.deltime*(rightnow-1)));  //###
+//         i,eD[0],eD[1],eD[2],i,spanPtr[i].D_force,cos(info.gradient*info.deltime*(rightnow-1)),sin(info.gradient*info.deltime*(rightnow-1)));  //###
         
 		i++;	//advanicing span index of wake DVEs
 	}//end loop over trailing edge surface DVEs and over panels

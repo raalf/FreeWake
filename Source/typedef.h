@@ -28,6 +28,7 @@ struct GENERAL
 
 	int maxtime;		//maximal number of time steps
 	double deltime;		//time step width
+	int timestep;		//last computed timestep 
 	double deltae;		//square of deltae that determins convergence criteria
 						//of do-while loop in main program.
 						//set 0 if only time stepping is desired
@@ -193,6 +194,30 @@ struct DVE
 	int airfoil[2];		//airfoil file number G.B. 8-9-07; two airfoiils of panel edges 1 and 2 GB 2-14-20
 	double ratio;		//interpolation ratio from left (=0) to right side (=1) GB 2-14-20
 };
+
+// definition of type strip elements, i.e. holds setion information of different strip //
+struct STRIP
+{		//GB 11-23-20
+
+	double xref[3],x1[3],x2[3]; //reference point of strip, left and right points
+	double area,chord,span; 	//reference area, chord and span of strip
+	double momarm[3];			//reference lengths for Cl, Cm and Cn
+
+	double chord1,chord2;		//strip chord length at left and right edge
+	double A,B,C;				//strip circulation coefficients
+	double Gamma1,Gamma0,Gamma2;//circulation at left, center and right of strip
+	double cn1,cn0,cn2;			//section force coefficients (VxGamma) left, center and right of strip
+
+	double Span_force[3]; 	//x,y,z aerodynamic force/density in wind-axis system (includes drag)
+	double Moment[3];		//x,y,z moment of strip (might be in wind system), moment about leading edge strip
+	double D_force;			//induced drag forces/density 
+	double Cf[3];       	//strip force coefficients in wind axis system (Cfx,Cfy,Cfz) (includes ind. drag)
+	double Cm[3];			//strip moments a
+	double Cn;				//strip normal force coefficients (w/o drag), used to determine cd_profie
+	double Cd;				//ind. drag coefficient of strip
+	double cd_profile;		//strip profile drag coefficient
+};
+
 
 // definition of type wing//
 struct Wing

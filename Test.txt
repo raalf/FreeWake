@@ -18,7 +18,7 @@ Using camber (1) or no camber (0)  camber 	= 	1
 Symmetrical geometry (yes 1, no 0):	sym =		1
 Pitch trim (yes 1, no 0):	trimPITCH =		0	
 Roll trim (yes 1, no 0):	trimROLL = 		0
-Lift trim (yes 1, no 0): 	trimCL = 		1
+Lift trim (yes 1, no 0): 	trimCL = 		0
 
 Max. number of time steps:	maxtime =	24
 Width of each time step (sec):	deltime =	.25
@@ -63,12 +63,12 @@ Hinge is in percentage chord:
 
 Defines leading edge of wing, all measured in metres:
 
-Panel #:1 Number of elements across span n = 4 and chord m = 3
+Panel #:1 Number of elements across span n = 5 and chord m = 4
 Neighbouring panels (0 for none) left: 1 right: 0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
-0.000	0.000	0.000	0.3	5.000	10		1 	0	0
+0.000	0.000	0.000	1		.000	10		1 	0	0
 xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
-0.0	0.35	0.000	0.3	5.000	100		1	0	0
+0.0		10	0.000		1		.000	100		1	0	0
 
 
 

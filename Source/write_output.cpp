@@ -35,6 +35,8 @@ void Save_Timestep(const GENERAL,const int,DVE **,const DVE *,double **);
 void Save_SurfaceDVE_Loads(const GENERAL,const int,const DVE *);
 
 void CreateQuiverFile(const double[3], const double[3],const int,const int);
+//saves flight condition files
+void SaveSpanDVEInfo(PANEL *,DVE *,DVE **,STRIP *,double **,const int,const int );
 
 //===================================================================//
 		//START OF File_Initializing
@@ -721,13 +723,11 @@ void Save_Timestep(const GENERAL info,const int timestep,DVE **wakePtr,\
 //					wakePtr[time][span].xleft[0],wakePtr[time][span].xleft[1],\
 //					wakePtr[time][span].xleft[2],wakePtr[time][span].singfct);
 
-
 			fprintf(fp,"\n");
 		}
 		fprintf(fp,"\n");
 	}
 fclose(fp);
-
 
 //	for (i=0; i<info.maxtime; i++)
 //	{
@@ -926,4 +926,509 @@ fclose(fp);
 }
 //===================================================================//
 		//CreateQuiverFile
+//===================================================================//
+
+
+//===================================================================//
+		//START of SaveSpanInfo
+//===================================================================//
+void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPtr,\
+					double **N_force,const int FCno,const int timestep)
+{
+	// This function saves for a particular flight condition:
+	//			A. Saving information of spanwise strips 
+	//			B. Saves wing and wake of last timestep (similar to timestep)
+	//			C. Save surface DVEs
+	// (i.e. anlge of attack or CL) to a file. 
+	// The file name is <input>span<FCno>.txt
+	// GB 11-24-20
+	//
+	// Function inputs:
+	//		panelPtr	panel information
+	//		surfacePtr 	surface DVE information
+	//		wakePtr		wake DVE information
+	//		spanPtr		strip information	
+	// 		N_force;	surface DVE's normal forces/density
+					//[0]: free stream lift, [1]: induced lift,
+					//[2]: free stream side, [3]: induced side force/density
+					//[4]: free str. normal, [5]: ind. normal frc/density
+               		//[6,7,8]: eN_x, eN_y, eN_z in global ref. frame
+	//		
+	//		FCno		flight condition number (identifies CLtarget or alpha)
+	//		timestep 	number of timesteps that were computed
+	//
+	// Before saving data to file, several values still have to be determined.
+	// These values are part of the STRIP structure [where value is computed]:
+	//						
+	// xref[3],x1[3],x2[3]; //reference point of strip, left and right points [here]
+	// Cf[3];       	//strip force coefficients Cfx,Cfy,Cfz (includes ind. drag) [here]
+	// Cn;				//strip normal force coef. (w/o drag), used for cd_profie [longtrim.cpp]
+	// Cm[3];			//strip moments coefficients Cl, Cm, Cn [lift_force.cpp]
+	// area,chord,span; //reference area, chord and span of strip [here]
+	// momarm[3];		//reference lengths for Cl, Cm and Cn [here]
+	// chord1,chord2;	//strip chord length at left and right edge [here]
+	// A,B,C;			//strip circulation coefficients [here]
+	// Gamma1,Gamma0,Gamma2;//circulation at left, center and right of strip [here]
+	// cn1,cn0,cn2;		//section force coeff. (VxGamma) left, center and right of strip [here]
+
+	// Span_force[3]; 	//x,y,z aerodynamic force/density (includes drag) [lift_force.cpp]
+	// Moment[3];		//x,y,z moment about strip ref. point [lift_force.cpp]
+	// D_force;			//induced drag forces/density [lift_force.cpp]
+	// Cd;				//ind. drag coefficient of strip, [longtrim.cpp]
+	// cd_profile;		//strip profile drag coefficient [MainPerfCode]
+
+	//
+	//===================================================================//
+
+    int span,index,panel,n,m,time;	//loop counter
+    unsigned long length=strlen(info.config); //lenght of configuration file name with path
+    double tempS;
+	char *FCfile,*Ftstep,*SDVE;	//file path and name for flight condition and last timestep 
+    FILE *fp;		//output file
+
+	//===================================================================//
+    //create file names 
+	ALLOC1D(&FCfile,length+11);  //allocate memory for file name, max. 999 flight conditions
+	ALLOC1D(&Ftstep,length+11);  //allocate memory for file name, max. 999 flight conditions
+	ALLOC1D(&SDVE,length+11);	 //allocate memory for file name, max. 999 flight conditions
+
+	strncpy(SDVE,info.config,length-7); //Prefix of name temporarily stored in SDVE
+
+	//filename is outputpath/input+"DVE#"+<FCno>+".txt"
+	sprintf(Ftstep,"%s%s%d%s",SDVE,"TDVE#",FCno,".txt");
+	//filename is outputpath/input+"FC#"+<FCno>+".txt"
+	sprintf(FCfile,"%s%s%d%s",SDVE,"FC#",FCno,".txt");
+	//filename is outputpath/input+"SDVE#"+<FCno>+".txt"
+	sprintf(SDVE,"%s%s%d%s",SDVE,"SDVE#",FCno,".txt");
+	
+    //===================================================================//
+		//START A. Saving information of spanwise strips 
+    //===================================================================//
+	//===================================================================//
+    //assemble missing data for each strip
+
+	//determining missing information of spanwise strips
+	span=0;
+	index=0;
+
+    //loop over panels
+    for(panel=0;panel<info.nopanel;panel++)
+    {
+		for (n = panelPtr[panel].LE1; n <= panelPtr[panel].LE2; n++)
+		{
+			index = n; //setting index to first chordwise DVE of span location			
+			spanPtr[span].area = 0;
+			spanPtr[span].chord = 0;
+
+			
+			//edge points of strips, x1 and x2, are saved in PitchmMoment.cpp
+
+			//reference point is at the leading edge of each stip
+			spanPtr[span].xref[0] = (spanPtr[span].x1[0] + spanPtr[span].x2[0]) / 2;
+			spanPtr[span].xref[1] = (spanPtr[span].x1[1] + spanPtr[span].x2[1]) / 2;
+			spanPtr[span].xref[2] = (spanPtr[span].x1[2] + spanPtr[span].x2[2]) / 2;
+
+			//Left and right edge chords are center chord -/+ eta tan(phiLE)
+			spanPtr[span].chord1 = spanPtr[span].chord \
+							 + surfacePtr[index].eta * tan(surfacePtr[index].phiLE);
+			spanPtr[span].chord2 = spanPtr[span].chord \
+							 - surfacePtr[index].eta * tan(surfacePtr[index].phiLE);
+
+			//loop over chord of panel
+			for (m = 0; m < panelPtr[panel].m; m++)
+			{				
+				spanPtr[span].area += surfacePtr[index].S;
+
+				index += panelPtr[panel].n; //surfaceDVE indexing down the strip
+			}//next chord element; 'index' should be value of surfaceDVE at trailing edge
+			
+			index = index - panelPtr[panel].n; //adjusting surfaceDVE to index of DVE at TE
+
+			spanPtr[span].span = surfacePtr[index].eta*2;	//span = 2eta
+			spanPtr[span].chord = spanPtr[span].area/spanPtr[span].span;  	//total chord is area/span		
+
+
+			//Left and right edge chords are center chord +/- eta tan(phiTE)
+			spanPtr[span].chord1 += spanPtr[span].chord \
+							 - surfacePtr[index].eta * tan(surfacePtr[index].phiTE);
+			spanPtr[span].chord2 = spanPtr[span].chord \
+							 + surfacePtr[index].eta * tan(surfacePtr[index].phiTE);
+			
+			//circulation values of strip are based on TE values
+			spanPtr[span].A = surfacePtr[index].A;
+			spanPtr[span].B = surfacePtr[index].B;
+			spanPtr[span].C = surfacePtr[index].C;
+
+			spanPtr[span].Gamma1 = surfacePtr[index].A - surfacePtr[index].xsi*surfacePtr[index].B \
+								 + surfacePtr[index].xsi*surfacePtr[index].xsi*surfacePtr[index].C;
+			spanPtr[span].Gamma0 = surfacePtr[index].A;
+			spanPtr[span].Gamma2 = surfacePtr[index].A + surfacePtr[index].xsi*surfacePtr[index].B \
+								 + surfacePtr[index].xsi*surfacePtr[index].xsi*surfacePtr[index].C;
+			
+			//moment arm for computing strip moment coefficients about ref. point.
+			spanPtr[span].momarm[0] = spanPtr[span].span;
+			spanPtr[span].momarm[1] = spanPtr[span].chord;
+			spanPtr[span].momarm[2] = spanPtr[span].span;
+
+			//compute section force coefficients by doing VXGamma at 1,0, and 2
+			//
+			//since the section normal force coefficients are mainly used for structural anlaysis
+			//a simplified approach is used, that is the section force is based on Kutta-Joukowski
+			//theorem.
+			tempS = 2/norm2(surfacePtr[index].u);
+
+			spanPtr[span].cn1 = spanPtr[span].Gamma1*tempS/spanPtr[span].chord1;
+			spanPtr[span].cn0 = spanPtr[span].Gamma0*tempS/spanPtr[span].chord;
+			spanPtr[span].cn2 = spanPtr[span].Gamma1*tempS/spanPtr[span].chord2;
+
+	    	span++; // increase to next span index
+  	    }//loop over span (n) of panel
+ 	} //next panel
+
+	//===================================================================//
+    //section load coefficients
+    span=0;
+    for(panel=0;panel<info.nopanel;panel++)
+    {
+       //loop over panel span (along leading edge indices)
+       for(n=panelPtr[panel].LE1;n<=panelPtr[panel].LE2;n++)
+       {
+       		//1/(0.5 U^2 S) of chordwise strip
+         	tempS = 2/(dot(surfacePtr[n].u,surfacePtr[n].u)*\
+                      spanPtr[span].area); //this area is found above as total strip area
+         	spanPtr[span].Cf[0] = spanPtr[span].Span_force[0]*tempS;
+         	spanPtr[span].Cf[1] = spanPtr[span].Span_force[1]*tempS;
+         	spanPtr[span].Cf[2] = spanPtr[span].Span_force[2]*tempS;
+ 
+         	spanPtr[span].Cd = spanPtr[span].D_force*tempS;
+           
+		 	spanPtr[span].Cm[0]= spanPtr[span].Moment[0]*tempS/spanPtr[span].momarm[0];
+		 	spanPtr[span].Cm[1]= spanPtr[span].Moment[1]*tempS/spanPtr[span].momarm[1];
+		 	spanPtr[span].Cm[2]= spanPtr[span].Moment[2]*tempS/spanPtr[span].momarm[2];
+
+		 	//strip drag coefficient
+		 	spanPtr[span].Cd = spanPtr[span].D_force*tempS;
+		 	//srip normal force coefficient is Cf-Cd Warning no sign information
+		 	spanPtr[span].Cn = sqrt(dot(spanPtr[span].Cf,spanPtr[span].Cf)\
+		 						-spanPtr[span].Cd*spanPtr[span].Cd);
+
+        	span++; //next span section
+       }
+    }
+   	//===================================================================//
+		//END determining missing information of spanwise strips
+	//===================================================================//
+
+	fp = fopen(FCfile, "w");
+
+    if (fp == NULL)
+    {
+       printf(" couldn't create flight condition file\nPress any key to exit...\n");
+       exit(EXIT_FAILURE);
+    }
+
+	//===================================================================//
+    //make header
+    fprintf(fp,"Flight configuration defined in input file = %s\n",info.inputfilename);
+    if (info.trimCL == 1) fprintf(fp,"CL trim final alpha = %.3lf\n",info.alpha*RtD);
+    else fprintf(fp,"Angle of attack sweep alpha = %.3lf\n",info.alpha*RtD);
+ 	fprintf(fp,"Flight Condition number = %d\n",FCno);
+ 	fprintf(fp,"number of timesteps = %d\n",timestep);
+ 	fprintf(fp,"number of spanwise strips = %d\n\n",info.nospanelement);
+
+    //header of tabulated data
+    // stip number || leading edge of strip 
+    fprintf(fp,"%-10s%-14s%-14s%-14s","strip","x_ref","y_ref","z_ref");
+    // circulation at ref. point || force coefficients || normal force coeff (w/o ind. drag)||ind. drag coeff
+    fprintf(fp,"%-14s%-14s%-14s%-14s%-14s%-14s","Gamma0","Cfx","Cfy","Cfz","Cfn","Cd");
+    // moment coefficints of strip
+    fprintf(fp,"%-14s%-14s%-14s","Cl","Cm","Cn");
+    //ref area || ref span || ref. length
+    fprintf(fp,"%-14s%-14s%-14s","Ref. area","Ref. span","Ref. lngth");
+    //reference length for moment coefficients
+    fprintf(fp,"%-14s%-14s%-14s","Ref-l cl","Ref-l cm","Ref-l cn");
+    // leading edge point at left side of strip || left edge chord 
+    fprintf(fp,"%-14s%-14s%-14s%-14s","x1","y1","z1","chord1");
+    // leading edge point at right side of strip || right edge chord 
+    fprintf(fp,"%-14s%-14s%-14s%-14s","x2","y2","z2","chord2");
+    // circulation on left edge || circulation on right edge
+    fprintf(fp,"%-14s%-14s","Gamma1","Gamma2");
+    // section force coefficeints at left, center and right (VxGamma)
+    fprintf(fp,"%-14s%-14s%-14s","cn1","cn0","cn2");
+	// circulation coefficients of strip (given by trailing edge)
+    fprintf(fp,"%-14s%-14s%-14s","A_te","B_te","C_te");
+    fprintf(fp,"\n");
+
+    fprintf(fp,"------------------------------------------------------------"); 
+	fprintf(fp,"------------------------------------------------------------");
+	fprintf(fp,"------------------------------------------------------------");
+	fprintf(fp,"------------------------------------------------------------");
+	fprintf(fp,"------------------------------------------------------------");
+	fprintf(fp,"------------------------------------------------------------");
+	fprintf(fp,"------------------------------------------------------------");
+ 	fprintf(fp,"---------------------");
+	fprintf(fp,"----------------------------------------------#\n");
+ 
+
+	//===================================================================//
+    //write data to file
+
+    for(index=0;index<info.nospanelement;index++)
+    {
+	     fprintf(fp,"%-10d%-14lf%-14lf%-14lf",index,\
+	     	spanPtr[index].xref[0],spanPtr[index].xref[1],spanPtr[index].xref[2]);
+	    // circulation at ref. point || force coefficients  
+	    fprintf(fp,"%-14lf%-14lf%-14lf%-14lf",spanPtr[index].Gamma0,\
+	    	spanPtr[index].Cf[0],spanPtr[index].Cf[1],spanPtr[index].Cf[2]);
+	    // normal force coeff (w/o ind. drag) 
+	    fprintf(fp,"%-14lf%-14lf",spanPtr[index].Cn,spanPtr[index].Cd);
+	    // moment coefficints of strip
+	    fprintf(fp,"%-14lf%-14lf%-14lf",\
+	    	spanPtr[index].Cm[0],spanPtr[index].Cm[1],spanPtr[index].Cm[2]);
+	    //ref area || ref span || ref. length
+	    fprintf(fp,"%-14lf%-14lf%-14lf",\
+	    	spanPtr[index].area,spanPtr[index].span,spanPtr[index].chord);
+	    //reference length for moment coefficients
+	    fprintf(fp,"%-14lf%-14lf%-14lf",\
+	    	spanPtr[index].momarm[0],spanPtr[index].momarm[1],spanPtr[index].momarm[1]);
+	    // leading edge point at left side of strip || left edge chord 
+	    fprintf(fp,"%-14lf%-14lf%-14lf%-14lf",\
+	    	spanPtr[index].x1[0],spanPtr[index].x1[1],spanPtr[index].x1[2],spanPtr[index].chord1);
+	    // leading edge point at right side of strip || right edge chord 
+	    fprintf(fp,"%-14lf%-14lf%-14lf%-14lf",\
+	    	spanPtr[index].x2[0],spanPtr[index].x2[1],spanPtr[index].x2[2],spanPtr[index].chord2);
+	    // circulation on left edge || circulation on right edge
+	    fprintf(fp,"%-14lf%-14lf",spanPtr[index].Gamma1,spanPtr[index].Gamma2);
+	    // section force coefficeints at left, center and right (VxGamma)
+	    fprintf(fp,"%-14lf%-14lf%-14lf",spanPtr[index].cn1,spanPtr[index].cn0,spanPtr[index].cn2);
+		// circulation coefficients of strip (given by trailing edge)
+	    fprintf(fp,"%-14lf%-14lf%-14lf",spanPtr[index].A,spanPtr[index].B,spanPtr[index].C);
+ 
+		fprintf(fp,"\n");
+	}
+	fclose(fp);
+	
+ 	//===================================================================//
+		//END A. Saving information of spanwise strips 
+ 	//===================================================================//
+
+	//===================================================================//
+		//START B. Saves wing and wake of last timestep
+	//===================================================================//
+	
+	
+    //open output file for DVE information
+    fp = fopen(Ftstep, "w");
+
+    if (fp == NULL)
+    {
+       printf(" couldn't create flight condition file\nPress any key to exit...\n");
+       exit(EXIT_FAILURE);
+    }
+
+
+	//===================================================================//
+	//writes header
+	fprintf(fp,"\n\n\nProgram Version: %s\n",PROGRAM_VERSION);
+	fprintf(fp,"Flight configuration defined in input file = %s\n",info.inputfilename);
+	fprintf(fp,"Flight Condition number = %d\n",FCno);
+ 	fprintf(fp,"This file holds surface and wake DVE informtion of last timestep (old timestep##.txt\n");
+    if (info.trimCL == 1) fprintf(fp,"CL trim final alpha = %.3lf\n",info.alpha*RtD);
+    else fprintf(fp,"Angle of attack sweep alpha = %.3lf\n",info.alpha*RtD);
+
+	fprintf(fp,"Ref. Area   : %lf\nAspect Ratio: %lf\n",info.S,info.AR);
+
+	fprintf(fp,"surface and wake DVE after number of timesteps: %d\n",timestep);
+	fprintf(fp,"elements in span direction: %d\n",info.nospanelement);
+	fprintf(fp,"number of surface elements: %d\n",info.noelement);  //updated GB 2-25-20
+
+	fprintf(fp,"no. of wings: %d  first and last span indices of each wing:",info.nowing);
+	for(span=0;span<info.nowing;span++)
+		fprintf(fp,"  %d  %d",info.wing1[span],info.wing2[span]);
+	fprintf(fp,"\n");
+	fprintf(fp,"\n");
+
+	//writes header for information on surface elements
+	fprintf(fp,"%6s %16s %16s %16s %16s %16s %16s %16s",\
+	"index","xo","yo","zo","Nlift_tot","NLift_ind","NY_tot","NYi");
+	fprintf(fp," %16s %16s %16s %16s %16s %16s %16s %16s %16s %16s %16s\t#\n",\
+	"A","B","C","eta","xsi","nu","epsilon","psi","phiLE","phi0","phiTE");
+
+	for(span=0;span<info.noelement;span++)
+	{
+		//surface element index
+		fprintf(fp,"%6d",span);
+		//coord. of ref point
+		fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+				surfacePtr[span].xo[0],surfacePtr[span].xo[1],\
+				surfacePtr[span].xo[2]);
+		//normal forces per density
+		fprintf(fp," %16.12lf %16.12lf %16.12lf %16.12lf",\
+				N_force[span][0]+N_force[span][1],N_force[span][1],\
+				N_force[span][2]+N_force[span][3],N_force[span][3]);
+		//more info on element
+		fprintf(fp," %16.12lf %16.12lf %16.12lf %16.12lf %16.12lf",\
+				surfacePtr[span].A,surfacePtr[span].B,surfacePtr[span].C,\
+				surfacePtr[span].eta,surfacePtr[span].xsi);
+		fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+				surfacePtr[span].nu*RtD,surfacePtr[span].epsilon*RtD,\
+				surfacePtr[span].psi*RtD);
+		fprintf(fp," %16.12lf %16.12lf %16.12lf",surfacePtr[span].phiLE*RtD,\
+				(surfacePtr[span].phiLE+surfacePtr[span].phiTE)*0.5*RtD,\
+				surfacePtr[span].phiTE*RtD);
+		fprintf(fp,"\n");
+	}
+
+	//writes header for wake information
+	fprintf(fp,"\n\nwake shape after timestep: %d\n",timestep);
+	fprintf(fp,"%5s%5s%16s %16s %16s %16s %16s %16s",\
+				"span","time","xo","yo","zo","nu","epsilon","psi");
+	fprintf(fp," %16s %16s %16s %16s %16s %16s %16s %16s %16s",\
+				"U","V","W","A","B","C","eta","xsi","singfct");
+	fprintf(fp," %16s %16s %16s\t#\n","phiLE","phi0","phiTE");
+
+
+	for (time=0;time<=timestep;time++)
+	{
+		//loop across wake elements of one time/downstream location
+		for(span=0;span<info.nospanelement;span++)
+		{
+			//trailing edge element index
+			fprintf(fp,"%5d%5d",span,time);
+			//coord. of ref point
+			fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+						wakePtr[time][span].xo[0],wakePtr[time][span].xo[1],\
+						wakePtr[time][span].xo[2]);
+			//nu,epsilon, sweep, dihedral of elemenatry wing
+			fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+						wakePtr[time][span].nu*RtD,\
+						wakePtr[time][span].epsilon*RtD,\
+						wakePtr[time][span].psi*RtD);
+			//local free stream velocity at center
+			fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+						wakePtr[time][span].u[0],wakePtr[time][span].u[1],\
+						wakePtr[time][span].u[2]);
+			fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+						wakePtr[time][span].A,wakePtr[time][span].B,\
+						wakePtr[time][span].C);
+			//element half span and half chord
+			fprintf(fp," %16.12lf %16.12lf",\
+						wakePtr[time][span].eta,wakePtr[time][span].xsi);
+			//element half span and half chord
+            fprintf(fp," %16.12lf",wakePtr[time][span].singfct);//    999.999);
+			//leading-edge, mid-chord, and trailing edge sweep2
+			fprintf(fp," %16.12lf %16.12lf %16.12lf",\
+				wakePtr[time][span].phiLE*RtD,\
+				wakePtr[time][span].phi0*RtD,wakePtr[time][span].phiTE*RtD);
+
+			fprintf(fp,"\n");
+		}
+		fprintf(fp,"\n");
+	}
+	fclose(fp);
+
+	//===================================================================//
+		//END B. Saves wing and wake of last timestep
+	//===================================================================//
+
+	//===================================================================//
+		//START C. Saves Surface DVE of last timestep
+	//===================================================================//
+	
+    //open output file for DVE information
+    fp = fopen(SDVE,"w");
+
+    if (fp == NULL)
+    {
+       printf(" couldn't create flight condition file\nPress any key to exit...\n");
+       exit(EXIT_FAILURE);
+    }
+
+	//===================================================================//
+	//writes header
+	fprintf(fp,"Program Version: %s\n",PROGRAM_VERSION);
+	fprintf(fp,"Flight configuration defined in input file = %s\n",info.inputfilename);
+	fprintf(fp,"Flight Condition number = %d\n",FCno);
+ 	fprintf(fp,"This file holds surface DVE informtion of last timestep\n");
+    if (info.trimCL == 1) fprintf(fp,"CL trim final alpha = %.3lf\n",info.alpha*RtD);
+    else fprintf(fp,"Angle of attack sweep alpha = %.3lf\n",info.alpha*RtD);
+
+	fprintf(fp,"surface and wake DVE after number of timesteps = %d\n",timestep);
+	fprintf(fp,"elements in span direction = %d\n",info.nospanelement);
+	fprintf(fp,"number of surface elements = %d\n",info.noelement);
+
+	fprintf(fp,"Coefficients are based on DVE area and DVE freestreaem velocity\n");
+		// 		N_force;	surface DVE's normal forces/density
+					//[0]: free stream lift, [1]: induced lift,
+					//[2]: free stream side, [3]: induced side force/density
+					//[4]: free str. normal, [5]: ind. normal frc/density
+               		//[6,7,8]: eN_x, eN_y, eN_z in global ref. frame
+
+
+	//writes header for information on surface elements
+	fprintf(fp,"%6s %16s %16s %16s %16s ",\
+	"index","xo","yo","zo","cfn");
+	fprintf(fp,"%16s %16s %16s ",\
+	"normal-x","normal-y","normal-z");
+	fprintf(fp,"%16s %16s %16s %16s %16s %16s ",\
+	"u","v","w","area","eta","xsi");
+	fprintf(fp,"%16s %16s %16s %16s %16s %16s ",\
+	"nu","epsilon","psi","phiLE","Phi0","phiTE");
+	fprintf(fp,"%16s %16s %16s %16s %16s %16s ",\
+	"x1","y1","z1","x2","y2","z2");
+	fprintf(fp,"%16s %16s %16s \t#\n","A","B","C");
+	
+	for(index=0;index<info.noelement;index++)
+	{
+		//surface element index
+		fprintf(fp,"%6d ",index);
+		//coord. of ref point
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].xo[0],surfacePtr[index].xo[1],\
+				surfacePtr[index].xo[2]);
+		//normal forces coefficient
+		fprintf(fp,"%16lf ",(N_force[index][4]+N_force[index][5])*0.5/\
+				(dot(surfacePtr[index].u,surfacePtr[index].u)*surfacePtr[index].S));
+		//DVE normal vector
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].normal[0],surfacePtr[index].normal[1],\
+				surfacePtr[index].normal[2]);
+		//free stream velocity in control point
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].u[0],surfacePtr[index].u[1],surfacePtr[index].u[2]);
+		// area, eta, xsi
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].S,surfacePtr[index].eta,surfacePtr[index].xsi);
+		//nu, epsilon, psi
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].nu*RtD,surfacePtr[index].epsilon*RtD,\
+				surfacePtr[index].psi*RtD);
+		//phi leading and trailing edge
+		fprintf(fp,"%16lf %16lf %16lf ",surfacePtr[index].phiLE*RtD,\
+				(surfacePtr[index].phiLE+surfacePtr[span].phiTE)*0.5*RtD,\
+				surfacePtr[index].phiTE*RtD);
+		//x1 left leading edge point
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].x1[0],surfacePtr[index].x1[1],surfacePtr[index].x1[2]);
+		//x2 right leading edge point
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].x2[0],surfacePtr[index].x2[1],surfacePtr[index].x2[2]);
+		//circulation coefficients
+		fprintf(fp,"%16lf %16lf %16lf ",\
+				surfacePtr[index].A,surfacePtr[index].B,surfacePtr[index].C);
+		fprintf(fp,"\n");
+	}
+
+	fclose(fp);
+
+	//===================================================================//
+		//END C. Saves Surface DVE of last timestep
+	//===================================================================//
+	FREE1D(&FCfile,length+10);
+	FREE1D(&Ftstep,length+10);
+	FREE1D(&SDVE,length+10);
+
+}
+//===================================================================//
+		//END SaveSpanInfo
 //===================================================================//

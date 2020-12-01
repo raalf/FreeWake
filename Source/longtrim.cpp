@@ -1,9 +1,9 @@
-void LongitudinalTrim(GENERAL,PANEL *,DVE *,double *&,double &,\
-						double &,double &, double&, double&, FILE *,double ***);
+void LongitudinalTrim(GENERAL &,PANEL *,DVE *,DVE **,STRIP *&,double &,\
+						double &,double &, double&, double&, FILE *,double ***,double **&);
 
-void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
-						double *&cn,double &CL,double &CY,double &CDi, double &CLi, double &CYi,\
-						FILE *MomSol,double ***camberPtr)
+void LongitudinalTrim(GENERAL &info,PANEL *panelPtr,DVE *surfaceDVEPtr,DVE **wakePtr,STRIP *&spanPtr\
+						,double &CL,double &CY,double &CDi, double &CLi, double &CYi,\
+						FILE *MomSol,double ***camberPtr,double **&N_force)
 {
 // This program finds longitudinal trim solutions for twin wing configurations
 //
@@ -18,11 +18,17 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 //
 //output
 //	surfaceDVEPtr	geometry of surface elements
-//	cn			normal force coefficient of each span element
-//	cd			drag force coefficient of each span element
+// 	spanPtr		strip (section) information
+//	Cn			normal force coefficient of each span element
+//	Cd			drag force coefficient of each span element
 // 	CL			total lift
 //  CY          total side force
 //	CDi			total induced drag
+// 	N_force;	surface DVE's normal forces/density
+				//[0]: free stream lift, [1]: induced lift,
+				//[2]: free stream side, [3]: induced side force/density
+				//[4]: free str. normal, [5]: ind. normal frc/density
+                //[6,7,8]: eN_x, eN_y, eN_z in global ref. frame
 //
 //the routine also saves the trim information to TrimSol.txt
 //furthermore saved is the spanwise lift distribution and spanwise
@@ -41,17 +47,8 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 	double Cl_old;		//saving roll moment of previous iteration step
 	double CLht,CLhti;	//total and induced lift of HT
 	double *cl,*cy;		//section lift and side force coefficients
-	double *S;			//area of a spanwise strip (sum of areas of DVEs of one span location)
 	double tempS, tempsum, tempR;
     int tempI;
-	double **N_force;		//surface DVE's normal forces/density
-					//[0]: free stream lift, [1]: induced lift,
-					//[2]: free stream side, [3]: induced side force/density
-					//[4]: free str. normal, [5]: ind. normal frc/density
-                    //[6,7,8]: eN_x, eN_y, eN_z in global ref. frame
-	double *D_force;		//drag forces/density along span
-    double **Span_force;  //x,y,z aerodynamic force/density in wind-axis system
-	double *cd;	//section ind. drag coefficient
 
 	FILE *spaninfo;			//output file for spanwise information
 	char filename[133];	//file path and name for spanwise information
@@ -60,12 +57,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 	//allocating memory	
 	ALLOC1D(&cl,info.nospanelement);	//section lift coefficient
    	ALLOC1D(&cy,info.nospanelement);	//section side force coefficient
-   	ALLOC1D(&S,info.nospanelement);	//section area
-   	ALLOC1D(&cd,info.nospanelement);	//section ind. drag coefficient
-	ALLOC2D(&N_force,info.noelement,9);	//surface DVE normal forces
-	ALLOC1D(&D_force,info.nospanelement);//Drag force per span element
-    ALLOC2D(&Span_force,info.nospanelement,3);//Span force vector per span element
-	ALLOC1D(&mult, 2);	//will store diff aileron info
+ 	ALLOC1D(&mult, 2);	//will store diff aileron info
 
 	//initial HT incident correction
 	epsilonHT = 0;//panelPtr[i].eps1;  	//[rad]
@@ -79,9 +71,9 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 	//===========================================//
 
     //computed the residual moment coefficient of wing and tail
-	PitchingMoment(info,panelPtr,surfacePtr,info.cmac,\
+	PitchingMoment(info,panelPtr,surfacePtr,wakePtr,info.cmac,\
 				info.RefPt,CLht,CLhti,\
-				N_force,D_force,Span_force,CL,CY,CDi,camberPtr,CLi,CYi);
+				N_force,spanPtr,CL,CY,CDi,camberPtr,CLi,CYi);
                                     //Subroutine in PitchMoment.cpp
 
 
@@ -204,11 +196,11 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 		Cl_old = Cl_resid; 
 
 		//computed the residual moment coefficient of wing and tail
-		PitchingMoment(info,panelPtr,surfacePtr,info.cmac,\
+		PitchingMoment(info,panelPtr,surfacePtr,wakePtr,info.cmac,\
 					info.RefPt,CLht,CLhti,\
-					N_force,D_force,Span_force,CL,CY,CDi,camberPtr,CLi,CYi);
+					N_force,spanPtr,CL,CY,CDi,camberPtr,CLi,CYi);
                                     //Subroutine in PitchMoment.cpp
-				
+
 		//adding zero lift of wing only if camber is turned off
 		if (~info.flagCAMBER) { Cm += info.CMoWing; } //changed to account for camber, BBB Apr 2020
 
@@ -278,8 +270,9 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 	}   //end of longitudinal trim routine
 
 //===================================================================//
-//		Compute cn and cd (spanwise values)
+//		Compute cn and Cd (spanwise values)
 //===================================================================//
+/* Removed because different output strucuture
 
 	i=0;		//intitaliing span index counter
 	m=0;		//index of leading edge DVE
@@ -289,49 +282,34 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 		{
 			//working each spanwise strip
 			//initializing
-			cn[i]=0;
+			spanPtr[i].Cn=0;
 			cl[i]=0;
 			cy[i]=0;
-			S[i] = 0;  //area of current spanwise strip
+//			S[i] = 0;  //area of current spanwise strip
 			
 			//adding up chordal values of one spanwise location (indexed i)
 			for(m=0;m<panelPtr[k].m;m++)
 			{
 				j=n+m*panelPtr[k].n;  //counting index along chord
 //
-                cn[i] += (N_force[j][4]+N_force[j][5]); //adding forces/density along chord
+                spanPtr[i].Cn += (N_force[j][4]+N_force[j][5]); //adding forces/density along chord
                 cl[i] += (N_force[j][0]+N_force[j][1]);
                 cy[i] += (N_force[j][2]+N_force[j][3]);
-                S[i] += surfaceDVEPtr[j].S;             //adding DVE areas along chord
+  //              S[i] += surfaceDVEPtr[j].S;             //adding DVE areas along chord
 			}
 			//Nondimensionalizing values using summed areas and velocity at LE of chordal row of DVEs
             tempI = j-panelPtr[k].n*(panelPtr[k].m-1); // index of DVE at leading edge
-			tempS = 2/(S[i]*dot(surfaceDVEPtr[tempI].u,surfaceDVEPtr[tempI].u));
-            cd[i] = D_force[i]*tempS;
-			cn[i] *= tempS;
+			tempS = 2/(spanPtr[i].area*dot(surfaceDVEPtr[tempI].u,surfaceDVEPtr[tempI].u));
+            spanPtr[i].Cd = spanPtr[i].D_force*tempS;
+			spanPtr[i].Cn *= tempS;
 			cl[i] *= tempS;
 			cy[i] *= tempS;
-            
+  printf("span %d  cn  %lf cl %lf cy %lf\n",i,spanPtr[i].Cn, cl[i],cy[i]);          
 			i++;  //next span index 
 			n++;	//index of next leading edge DVE 
 		}
 		n += panelPtr[k].n*(panelPtr[k].m-1);  //index of next LE DVE of next panel
 	}
-/*
-//debugging output
-    for(i=0;i<info.nospanelement;i++)
-    {
-        printf("%d cl %lf cy %lf cn %lf  cd %lf  in longtrim\n",i,\
-               cl[i],cy[i],cn[i],cd[i]);
-    }
-    for(i=0;i<info.nospanelement;i++)
-    {
-        printf("%d cfz %lf cfy %lf cfx %lf  cl %lf  cd %lf in longtrim\n",i,\
-               Cf[i][2],Cf[i][1],Cf[i][0],\
-               Cf[i][2]*cos(info.alpha)-Cf[i][0]*sin(info.alpha),\
-               Cf[i][2]*sin(info.alpha)+Cf[i][0]*cos(info.alpha));
-    }
-// */
 //===================================================================//
 //			save spanwise information, lift and drag distribution
 //===================================================================//
@@ -373,11 +351,11 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 				surfacePtr[m].xo[2]);
 		//normal, lift, side, drag force coefficients
 		fprintf(spaninfo," %16.12lf %16.12lf %16.12lf %16.12lf",\
-				cn[i],cl[i],cy[i],cd[i]);
+				spanPtr[i].Cn,cl[i],cy[i],spanPtr[i].Cd);
 
 		//more info on element
 		fprintf(spaninfo," %16.12lf %16.12lf %16.12lf %16.12lf %16.12lf %16.12lf",\
-				surfacePtr[j].A,surfacePtr[j].B,surfacePtr[j].C,S[i],\
+				surfacePtr[j].A,surfacePtr[j].B,surfacePtr[j].C,spanPtr[i].area,\
 				surfacePtr[m].eta*2,surfacePtr[m].xsi*2*panelPtr[k].m);
 		fprintf(spaninfo," %16.12lf %16.12lf %16.12lf",\
 				surfacePtr[m].nu*RtD,surfacePtr[m].epsilon*RtD,\
@@ -394,6 +372,7 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 
 
 	fclose(spaninfo);
+	*/
 //===================================================================//
 //		DONE saving spanwise information, lift and drag distribution
 //===================================================================//
@@ -406,15 +385,9 @@ void LongitudinalTrim(GENERAL info,PANEL *panelPtr,DVE *surfaceDVEPtr,\
 	fprintf(MomSol,"%10.6lf  %8.4lf\n",CLht,info.CMoWing);
 	fflush(MomSol);
 
-
-
-FREE2D(&N_force,info.noelement,6);
-FREE1D(&D_force,info.nospanelement);
-FREE2D(&Span_force,info.nospanelement,3);
 FREE1D(&cl,info.nospanelement);	//section lift coefficient
 FREE1D(&cy,info.nospanelement);	//section side force coefficient
-FREE1D(&S,info.nospanelement);	//section area
-FREE1D(&cd,info.nospanelement);	//section side force coefficient
+FREE1D(&mult, 2);	//will store diff aileron info
 
 printf("\n");
 }

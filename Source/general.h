@@ -41,12 +41,19 @@ BOUND_VORTEX *elementPtr;//pointer holds information on elementary wings
 DVE *surfacePtr;		//pointer to surface Distributed-Vorticity elements
 DVE **wakePtr;			//pointer to wake DVE
 
+STRIP *spanPtr;			//pointer to spanwise strips
+
+double **N_force;		// N_force    normal forces/density of each surface DVE, second index is:
+					    //            [0]: free stream lift, [1]: induced lift,
+					    //            [2]: free stream side, [3]: induced side force/density
+					    //          [4]: free stream normal, [5]: induced normal force/density
+					    //          [6,7,8]: eN_x, eN_y, eN_z in global ref. frame
+
 double Nt_free[3], Nt_ind[3];
 						//magnitude of induced and free stream normal
 						//forces/density of total wing
 
 double CF[3];           //total forces in wind axis system (CFX,CFY,CFY)
-double **Cf;            //section forces in wind axis system (Cfx,Cfy,Cfz)
 double *CDi_DVE;		//total ind. drag (Eppler) with DVEs for each timestep
 double CDi_finit;		//total induced drag with DVEs after all timesteps
 double Cl, Cm, Cn;		//roll, pitch and yaw moment coefficients

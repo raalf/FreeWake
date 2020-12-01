@@ -1,15 +1,14 @@
 //computes pitching moment
- void PitchingMoment(GENERAL &,PANEL *, DVE*&, const double,\
+ void PitchingMoment(GENERAL &,PANEL *, DVE*&, DVE **&,const double,\
 						double [3],\
-						double &,double &,double **&,double *&,double **&,\
+						double &,double &,double **&,STRIP *&,\
 						double &,double &,double &,double ***,\
 						double&, double&);
 
- void PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,\
-						const double cmac, \
-						double xCG[3],\
+ void PitchingMoment(GENERAL &info,PANEL *panelPtr,DVE *&surfacePtr,DVE **&wakePtr,\
+						const double cmac,double xCG[3],\
 						double &CLht,double &CLhti,\
-						double **&N_force,double *&D_force,double **&Span_force,\
+						double **&N_force,STRIP *&spanPtr,\
 						double &CL,double &CY,double &CDi_finit, double ***camberPtr,\
 						double &CLi, double &CYi)
 {
@@ -27,8 +26,7 @@
 //output
 //	surfacePtr	geometry of lifting surface
 //  N_force     normal forces of each DVE (9 dimensions)
-//  D_force     drag force/density along span
-//  Span_force  force/density vector along span in wind axis system (inviscid)
+//	spanPtr		strip inforamtion
 //	CM_resid	residutal pitching moment coefficient w/o CMo of wing
 //	CLht		CL of HT, S is reference area
 // 	CLhti		induced lift of HT
@@ -42,21 +40,22 @@
 //		Wing1 index = info.wing1[0]..info.wing2[0]
 //  	Wing2 index = info.wing1[1]..info.wing2[1]
 //
-	int i,j,l,timestep=0;	// loop counter
-	int saveStep=20;	//number of steps when relaxed wake is saved
-	int timestart=0;	//first timestep of relaxed wake scheme
- //GB 2-9-20 	int HTindex=0;		//the first DVE index of the HT
-	//double CLi,CYi;	    //induced lift and side force coefficients
-	double e_old;		//span efficiency of previous time step
-	double deltae;		//square of delta_e of curent and previous time step
-	double tempS,tempA[3];//a temporary variable for a scalar and vector
-	double qc=1/(0.5*info.Uinf*info.Uinf*info.S*cmac);	//1/(dynamic pressure *cmac)
-	double delX[3];		//vector from surface DVE ref. pt. to 1/4location
-	double MomArm,deltaM;//moment arm of lift forces, moment of single DVE
-	double Moment,CM_resid;//residual pitch moment and moment coefficient
-	double XCG[3];		//CG location in this routine is moved with wing
-				
-	double circCenter[3];  	//Center of circling flight added D.F.B. 03-20
+int i,j,l,timestep=0;	// loop counter
+int index,m,n,panel,span; 	//more loop counter
+int saveStep=20;	//number of steps when relaxed wake is saved
+int timestart=0;	//first timestep of relaxed wake scheme
+//GB 2-9-20 	int HTindex=0;		//the first DVE index of the HT
+//double CLi,CYi;	    //induced lift and side force coefficients
+double e_old;		//span efficiency of previous time step
+double deltae;		//square of delta_e of curent and previous time step
+double tempS,tempA[3];//a temporary variable for a scalar and vector
+double qc=1/(0.5*info.Uinf*info.Uinf*info.S*cmac);	//1/(dynamic pressure *cmac)
+double delX[3];		//vector from surface DVE ref. pt. to 1/4location
+double MomArm,deltaM;//moment arm of lift forces, moment of single DVE
+double Moment,CM_resid;//residual pitch moment and moment coefficient
+double XCG[3];		//CG location in this routine is moved with wing
+			
+double circCenter[3];  	//Center of circling flight added D.F.B. 03-20
 
 double *R,**D;			//resultant vector and matrix
 int *pivot;				//holds information for pivoting D
@@ -98,13 +97,41 @@ int *pivot;				//holds information for pivoting D
 		//END generating surface Distributed-Vorticity elements
 //===================================================================//
 
+//===================================================================//
+		//START saving leading edge corner points of strips
+//===================================================================//
+	//information is used in write_output.cpp
+	span=0;
+	index=0;
+    //loop over panels
+    for(panel=0;panel<info.nopanel;panel++)
+    {
+		for (n = panelPtr[panel].LE1; n <= panelPtr[panel].LE2; n++)
+		{
+			index = n; //setting index to first chordwise DVE of span location			
+			//assining edge points and reference points of strips
+			//points do not move with wing
+			spanPtr[span].x1[0]=surfacePtr[index].x1[0];
+			spanPtr[span].x1[1]=surfacePtr[index].x1[1];
+			spanPtr[span].x1[2]=surfacePtr[index].x1[2];
+
+			spanPtr[span].x2[0]=surfacePtr[index].x2[0];
+			spanPtr[span].x2[1]=surfacePtr[index].x2[1];
+			spanPtr[span].x2[2]=surfacePtr[index].x2[2];
+	    	span++; // increase to next span index
+  	    }//loop over span (n) of panel
+ 	} //next panel
+//===================================================================//
+		//END saving leading edge corner points of strips
+//===================================================================//
+
 	//allocate memory for relaxed wake part
 	ALLOC1D(&pivot,info.Dsize);							//pivoting array
-	ALLOC2D(&wakePtr,info.maxtime+1,info.nospanelement);	//wake DVE
+//	ALLOC2D(&wakePtr,info.maxtime+1,info.nospanelement);	//wake DVE
 
     //initalizing
     for(i=0; i<=info.maxtime; i++)          CDi_DVE[i] = 0;
-    for(j=0; j<info.nospanelement; j++)     D_force[j] = 0;
+    for(j=0; j<info.nospanelement; j++)     spanPtr[j].D_force = 0;
 
 //===================================================================//
 		//START generating D matrix
@@ -199,9 +226,11 @@ printf("\n");
 	do
 	{
 		timestep ++; //advance timestep
+		info.timestep=timestep; //
 
 		printf("%d ",timestep);
 		fflush(stdout);
+		info.timestep = timestep;
 //===================================================================//
 		//START Move_Wing
 //===================================================================//
@@ -383,7 +412,8 @@ printf("\n");
 			//	CDi			- total drag coefficient
 			//  D_force 	- local drag force/density along span
 			CDi_DVE[timestep] = \
-			Induced_DVE_Drag(info,panelPtr,surfacePtr,wakePtr,timestep,D_force);
+			Induced_DVE_Drag(info,panelPtr,surfacePtr,wakePtr,\
+							timestep,spanPtr);
 							 			//Subroutine in drag_force.cpp
 //===================================================================//
 			//END Induce_DVE_Drag
@@ -395,7 +425,7 @@ printf("\n");
  
             //computes total lift and side force/density, and ascoefficients
             DVE_Wing_Normal_Forces(info,panelPtr,surfacePtr,timestep,\
-                N_force,D_force,Span_force,Nt_free,Nt_ind,CL,CLi,CY,CYi,XCG);
+                N_force,spanPtr,Nt_free,Nt_ind,CL,CLi,CY,CYi,XCG);
                                             //Subroutine in lift_force.cpp
 
             //printf("\nCL %lf CLi %lf CY %lf CYi %lf",CL,CLi,CY,CYi);
@@ -498,7 +528,7 @@ printf("\n");
 //===================================================================//
 
 		//saves surface and wake information of last timestep to file
-		Save_Timestep(info,timestep,wakePtr,surfacePtr,N_force);
+//		Save_Timestep(info,timestep,wakePtr,surfacePtr,N_force);
 											//Subroutine in write_output.cpp
 //===================================================================//
 						//DONE save results//
@@ -510,7 +540,7 @@ printf("\n");
 	FREE2D(&D,info.Dsize,info.Dsize);
 	FREE1D(&pivot,info.Dsize);
 
-	FREE2D(&wakePtr,info.maxtime+1,info.nospanelement);
+	//FREE2D(&wakePtr,info.maxtime+1,info.nospanelement);
 	
 	//returning the residual moment coefficient
 	//return(CM_resid); //now CM is global, don't need to pass it out. 

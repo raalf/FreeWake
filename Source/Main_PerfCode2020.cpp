@@ -7,7 +7,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	int k,l,m;			//loop counters
 	
 	//drag variables
-	double *cn,cd;			//section normal and drag force coefficients
+	double cd;				//section profile drag force coefficients
 	double cm,CMo;			//section, total zero-lift moment coefficient
 	double cd1,cd2,cm1,cm2;	//section values of panel edge 1 and 2 for interpolation; GB 2-14-20
 	double CL,CY,CD,CDi=0;	//aircraft lift, total and induced drag coefficients
@@ -20,7 +20,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	double CLtemp[3];  //for storing temp lift for trim
 	double alpha2old; //for lift trim
 	double alphatemp1, alphatemp2, alphasteptemp;
-	//coefficients with cap C are wrt to wing area
+	//coefficients with capital letter, e.g. CL, are wrt to wing area
 	
 	double D=0, Di=0;		//total and induced drag
 	double Dprofile=0;		//wing profile 
@@ -113,10 +113,6 @@ int main(int argc, char *argv[])
 
 	//info.flagVISCOUS = 1; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 
-//printf("Do you want to start %s? y for YES ",PROGRAM_VERSION);
-//scanf("%c",&answer);
-//if(answer != 'y' && answer != 'Y')		exit(0);
-//Delete_timestep();
 
 //===================================================================//
 		//START read general and panel info from file 'input.txt'
@@ -295,10 +291,16 @@ int main(int argc, char *argv[])
 
 	//allocating memory
 	ALLOC1D(&surfacePtr,info.noelement);	//surface DVE
-    ALLOC1D(&CDi_DVE,info.maxtime+1);   //total induced drag (Eppler)
-	ALLOC1D(&cn,info.nospanelement);	//normal force coeff. of wing section
-    ALLOC2D(&Cf,info.nospanelement,3);  //section forces in wind axis
+	ALLOC2D(&N_force,info.noelement,9);	//surface DVE normal forces
+					//[0]: free stream lift, [1]: induced lift,
+					//[2]: free stream side, [3]: induced side force/density
+					//[4]: free str. normal, [5]: ind. normal frc/density
+                    //[6,7,8]: eN_x, eN_y, eN_z in global ref. frame
 
+    ALLOC1D(&spanPtr,info.nospanelement);//of struct STRIP
+    ALLOC2D(&wakePtr,info.maxtime+1,info.nospanelement);	//wake DVE
+    ALLOC1D(&CDi_DVE,info.maxtime+1);   //total induced drag (Eppler)
+    
 //===================================================================//
 		//START wing generation
 //===================================================================//
@@ -311,15 +313,6 @@ int main(int argc, char *argv[])
 		//END wing generation
 //===================================================================//
 
-//===================================================================//
-		//START determining panel index which belong to HT
-//===================================================================//
-
-//Removed HTpanel since info.panel1[1] holds this value GB 2-10-20
-    
-//===================================================================//
-		//DONE determining panel index which belong to HT
-//===================================================================//
 
 //===================================================================//
 		//Read in airfoil and camber data files
@@ -386,7 +379,7 @@ int main(int argc, char *argv[])
        //START setting up configuration file
 //===================================================================//
     //four output files:
-    //  1. configuration: holds config und summary of each flight configuraiton
+    //  1. configuration: holds config und summary of each flight condition
     //  2.  ----fltcfg# : holds spanwise information of each wing and case
     //  3.   -----fltcfg#: DVE summary of wings and wakes
         
@@ -399,8 +392,6 @@ int main(int argc, char *argv[])
     // possible options are CL trim --> append or overwrite
     // alpha sweep --> append
 
-    printf("configuration file : %s\n",info.config);
-        
     //saves input file and header to configuration file in output directory
     Save_Config_Head_File(info.inputfilename,info.output,info.config);
                                         //in write_output.cpp
@@ -509,10 +500,9 @@ int main(int argc, char *argv[])
 			//===============================================================//
 				//compute induced drag and lift distribution
 			//===============================================================//
-			LongitudinalTrim(info, panelPtr, surfacePtr, cn, \
-				CL, CY, CDi,  CLi, CYi, MomSol, camberPtr);
-			//Subroutine in longtrim.cpp
-
+			LongitudinalTrim(info,panelPtr,surfacePtr,wakePtr,spanPtr, \
+								CL,CY,CDi,CLi,CYi,MomSol,camberPtr,N_force);
+												//Subroutine in longtrim.cpp
             //===============================================================//
             //DONE compute induced drag and lift distribution
             //===============================================================//
@@ -562,15 +552,21 @@ int main(int argc, char *argv[])
 
 						//interpolation of airfoil drag between airfoil of panel edge 1 and 2
 						//GB 2-14-20
+						//computing the normal force coefficient
+		 				spanPtr[i].Cd = spanPtr[i].D_force*2\
+		 								/(dot(surfacePtr[m].u,surfacePtr[m].u)*spanPtr[i].area);
+						spanPtr[i].Cn = sqrt(dot(spanPtr[i].Cf,spanPtr[i].Cf)\
+										-spanPtr[i].Cd*spanPtr[i].Cd);
+						
 						airfoil = surfacePtr[m].airfoil[0];		//airfoil number, panel edge 1
 						//computing section drag and moment coefficient based on panel edge 1
-						cd1 = SectionDrag(airfoilPtr[airfoil], Re, cn[i], airfoilCol, cm, m);
+						cd1 = SectionDrag(airfoilPtr[airfoil], Re, spanPtr[i].Cn, airfoilCol, cm, m);
 						cm1 = cm; //zero-lift moment of panel edge 1 airfoil
 
 										//in drag_force.cpp
 						airfoil = surfacePtr[m].airfoil[1];		//airfoil number, panel edge 2
 						//computing section drag and moment coefficient based on panel edge 2
-						cd2 = SectionDrag(airfoilPtr[airfoil], Re, cn[i], airfoilCol, cm, m);
+						cd2 = SectionDrag(airfoilPtr[airfoil], Re,spanPtr[i].Cn, airfoilCol, cm, m);
 						cm2 = cm; //zero-lift moment of panel edge 2 airfoil
 
 						cd = cd1 + surfacePtr[m].ratio * (cd2 - cd1); //weighted cd based on span location 
@@ -682,7 +678,7 @@ int main(int argc, char *argv[])
 					for (l = 0; l < panelPtr[k].n; l++)  //loop over span of panel k
 					{
 						//adding local normal force: lift/roh = cn*area*cos(dihedral)
-						tempS += cn[i] * (surfacePtr[m].S * panelPtr[k].m)\
+						tempS += spanPtr[i].Cn * (surfacePtr[m].S * panelPtr[k].m)\
 							* cos(surfacePtr[m].nu);
 
 						i++;  //next span index 
@@ -699,7 +695,8 @@ int main(int argc, char *argv[])
 				CL = tempS;        //reassigning CL
 
 			}
-			else {
+			else 
+			{
 				CLinviscid = CL;	// Creating CLinviscid
 				//When viscous corrections are off dont need to re-assign CL
 			}
@@ -754,6 +751,10 @@ int main(int argc, char *argv[])
                 fprintf(FltConfg,"\n");
                 
                 fclose(FltConfg);
+
+    	        //save information of spanwise strips
+	        	SaveSpanDVEInfo(panelPtr,surfacePtr,wakePtr,spanPtr,N_force,a+1,info.timestep);
+        											//in write_output.cpp
             }
             //===============================================================//
             //END save to config file,  no CL iteration
@@ -799,16 +800,12 @@ int main(int argc, char *argv[])
         
         //check if there already exist an entry. if not string[5]='-' and FCno set to 0
         fseek(FltConfg, -Linelength-1,SEEK_END);  //move pointer at the beginning of the last in file
-   		fscanf(FltConfg,"%6s",&*string);    
- 		printf("answer %c  <---\n ",string[5]);
- 		if(string[5]=='-')  FCno=0; 
+  		if(string[5]=='-')  FCno=0; 
  		else
  		{
  			fseek(FltConfg, -Linelength-1,SEEK_END);  //move pointer at the beginning of the last line
      		fscanf(FltConfg,"%d %lf%lf",&FCno,&CLoldtarget,&alphaold);
      	}
-
-    	printf("aa %d %lf %lf\n",FCno,CLoldtarget,alphaold);
 
          //three cases:
             //1. no entry yet -> append
@@ -871,6 +868,10 @@ int main(int argc, char *argv[])
 		fprintf(FltConfg," %d",FCno);
 
         fclose(FltConfg);
+
+        //save information of spanwise strips
+        SaveSpanDVEInfo(panelPtr,surfacePtr,wakePtr,spanPtr,N_force,FCno,info.timestep);
+        											//in write_output.cpp
     }
     //===============================================================//
     //END save to config file if CL iteration
@@ -882,12 +883,14 @@ int main(int argc, char *argv[])
 	//free allocated memory
 	FREE1D(&panelPtr,info.nopanel);
 	FREE1D(&surfacePtr,info.noelement);
-	FREE1D(&cn,info.noelement);
+	FREE2D(&N_force,info.noelement,9);	
+    FREE1D(&spanPtr,info.nospanelement);
+    FREE2D(&wakePtr,info.maxtime+1,info.nospanelement);
     FREE1D(&CDi_DVE,info.maxtime+1);
-    FREE2D(&Cf,info.nospanelement,3);
+
 	FREE3D(&camberPtr,cambRow,cambCol,2);
 	FREE3D(&airfoilPtr,airfoilRow,airfoilCol,5);
-	
+
 	fclose(MomSol);//close output file of trim iteration results
 	fclose(Performance);//close output file of performance calc's
 //printf("done\n");

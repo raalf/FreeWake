@@ -1,0 +1,5 @@
+Output file of performance calculations
+Weight    = 3000.000000  Wing area = 20.000000  cmac      = 1.000000  
+xcg = 0.250000  ycg = 0.000000  zcg = 0.000000
+   alpha     Vinf       CL       CD   Dtotal      L/D   wglide     Preq     Dind    Dprof      Dht      Dvt     Dfus   Dinter    Dmisc  CMoWing
+    15.0    10.00     1.47      nan    0.000      nan      nan     0.00    0.000    0.000    0.000    0.000    0.000    0.000    0.000    0.000 

@@ -13,7 +13,7 @@ Using camber (1) or no camber (0)  camber 	= 	1
 Symmetrical geometry (yes 1, no 0):	sym =		0
 Pitch trim (yes 1, no 0):	trimPITCH =		0	
 Roll trim (yes 1, no 0):	trimROLL = 		0
-Lift trim (yes 1, no 0): 	trimCL = 	0
+Lift trim (yes 1, no 0): 	trimCL = 	1
 
 Max. number of time steps:	maxtime =	20
 Width of each time step (sec):	deltime =	.5
@@ -41,8 +41,8 @@ Aircraft weight (N):		W =	3000.0
 CG location (x y z):		cg =    0.25 0 0
 CMo of wing:				CMo =	0.00000000
 
-No. of wings (max. 5):		wings =		1
-No. of panels:			panels =	1
+No. of wings (max. 5):		wings =		2
+No. of panels:			panels =	5
 No. of airfoils (max. 15):	airfoils =	2
 
 
@@ -57,15 +57,6 @@ Hinge is in percentage chord:
 	NO HINGE - 		1
 
 Defines leading edge of wing, all measured in metres:
-
-
-Panel #:1. Number of elements across span n = 5 and chord m = 20
-Neighbouring panels (0 for none) left: 0 right: 0
-xleft	yleft	zleft	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
-0.0		-10		0.00	1.00	0.00	100		6		0.90	20
-xright	yright	zright	chord	epsilon	Bound.Cond. Airfoil Hinge Deflection
-0.0		0		0.000   1.      0.000	100		6 	 	0.01	20
-
 
 
 Panel #:1. Number of elements across span n = 5 and chord m = 6
@@ -124,3 +115,20 @@ Interference drag = 0.0%
 ##############
 
 
+
+
+The next line is a special marker
+#$&#$&
+
+Ref. length for rolling mom.  = 20.000000
+Ref. lenght for pitching mom. = 1.000000
+Ref. length for yawing mom.   = 20.000000
+Reference area                = 20.000000
+Referece span                 = 20.000000
+Reference aspect ratio        = 20.000000
+number of wings               = 2
+saved no. of flight conditns  = 1
+Flight    CLtarget  Alpha     Beta      CL          CQ          CDI         CX          CY          CZ          CL          CM          CN          
+Condtn    deflt=10  [deg]     [deg]     (lift)      (side)                                                      (roll)                              
+---------------------------------------------------------------------------------------------------------------------------------------------------#
+1         2.44898   21.408    0.000     2.448901    -0.012154   0.117652    0.117652    -0.010052   2.448950    -0.001363   -1.931189   -0.004989   

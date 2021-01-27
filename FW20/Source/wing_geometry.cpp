@@ -461,11 +461,13 @@ info.surfAREA = 0;
 		adjust2next = 0;
 		check1 = (panelPtr[i].m * panelPtr[i].hinge1 - round(panelPtr[i].m * panelPtr[i].hinge1));
 		check2 = (panelPtr[i].m * panelPtr[i].hinge2 - round(panelPtr[i].m * panelPtr[i].hinge1));
-		if (fabs(check1) > DBL_EPS || fabs(check2) > DBL_EPS) {
+		if (fabs(check1) > DBL_EPS || fabs(check2) > DBL_EPS) 
+		{
 			//hinge on either side of panel not at lifting line
 			//this will be the lifting line which is the closest to the hinge
-			//on the left side of the hinge
-			closeLL = round(panelPtr[i].m * panelPtr[i].hinge1);
+			//at the midspan of the panel  ##changed from left edge GB 1-23-2
+	//		closeLL = round(panelPtr[i].m * panelPtr[i].hinge1);
+			closeLL = round(panelPtr[i].m * (panelPtr[i].hinge1+panelPtr[i].hinge2)*0.5);
 			if (closeLL == 0) closeLL = 1; //cannot move LE
 			else if (closeLL == panelPtr[i].m) closeLL = panelPtr[i].m - 1; //cannot move TE
 			//how far to move the LL to have it be at the hinge:

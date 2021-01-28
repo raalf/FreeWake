@@ -1,3 +1,0 @@
-CLtarget  Alpha     Beta      CL          CQ          CDI         CX          CY          CZ          CL          CM          CN          
-deflt=10  [deg]     [deg]     (lift)      (side)                                                      (roll)                              
-2.44898   8.559     0.000     2.448972    0.000000    0.004484    0.004484    0.000000    2.448972    -0.200378   -5.957769   0.151978    

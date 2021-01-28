@@ -77,7 +77,7 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 		//START generating surface Distributed-Vorticity Elements
 //===================================================================//
-
+printf("Generating surface DVEs \n ");
 	Surface_DVE_Generation(info,panelPtr,surfacePtr,camberPtr);
 								//Subroutine in wing_geometry.cpp
 	
@@ -92,6 +92,7 @@ int *pivot;				//holds information for pivoting D
 	}
 	//save information on elementary wings to file
 //	Save_Surface_DVEs(info,surfacePtr);	//Subroutine in write_output.cpp
+printf("Done generating surface DVEs\n");
 
 //===================================================================//
 		//END generating surface Distributed-Vorticity elements
@@ -136,7 +137,7 @@ int *pivot;				//holds information for pivoting D
 //===================================================================//
 		//START generating D matrix
 //===================================================================//
- 
+printf("Assemblying D-matrix and resultant vector --- ");
 	//1. Assembyly of upper 2/3 of D-matrix using the boundary conditions
     //between the panels/elements
     //The new kinematic conditions due to the DVE is being recomputed.
@@ -180,6 +181,7 @@ printf("\n");
 	//initalizing of R
 	for (i=0; i<info.Dsize; i++)
 		R[i]=0;
+	printf("  Done assembly D-matrix and resultant vector\n");
 //===================================================================//
 		//END generating new kinematic conditions for D matrix
 //===================================================================//
@@ -200,6 +202,7 @@ printf("\n");
 //vortices is given by:	    	gamma(i) = A + B*etai + C*etai^2
 //The vortex sheet inbetween has the strength B+2*etai*C.
 //the function returns the coefficients A, B, C for each DVE
+	printf("Solving equation system\n");
 
 	DVE_Vorticity_Distribution\
 					(info,panelPtr,surfacePtr,wakePtr,-1,D,R,pivot);

@@ -188,8 +188,10 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				eD[2] = surfacePtr[index].uTE[0][2] * tempS;
 			}
 
-			/*/* ************************ Quiver output of vectors *************************
-			CreateQuiverFile(surfacePtr[index].xTE, eD, 1, 1);
+			/************************* Quiver output of vectors *************************
+			//save spanwise drag distribution for quiver plot, forces are added in writeoutput.cpp
+			if (span==0)   CreateQuiverFile(surfacePtr[index].xTE, eD,0,1);
+			else 			CreateQuiverFile(surfacePtr[index].xTE, eD,1,1);
 			// *******************************************************************************/
 
 			//adding drag to force 
@@ -327,8 +329,11 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 			}
 			CreateQuiverFile(surfacePtr[index].xo, spanPtr[span].Span_force, 1, 4);
 			// *******************************************************************************/
+
+
     //NOTE! if body-reference frame required, rotation by alpha needed
 //################################################
+
 //printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
        span,info.bank*RtD, tempA[0],tempA[1],tempA[2]);
 //printf("\n u   %lf  %lf  %lf ",\
@@ -820,17 +825,19 @@ for (i=0;i<info.nopanel;i++)
          tempS=1/norm2(tempA);
          scalar(tempA,tempS,eS);
 		 
-		 /*/* ************************ Quiver output of vectors *************************
-		 if (timestep == info.maxtime && i==0 && j==0 && k==0) {
+		 /* ************************ Quiver output of vectors *************************
+		 if (timestep == info.maxtime && i==0 && j==0 && k==0) 
+		 {
 			 CreateQuiverFile(surfacePtr[l].xo, eN, 0, 1);
 			 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 0, 2);
 		 }
-		 else {
+		 else 
+		 {
 			 CreateQuiverFile(surfacePtr[l].xo, eN, 1, 1);
 			 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 1, 2);
 		 }
-		 CreateQuiverFile(surfacePtr[l].xo, eL, 1, 1);
-		 CreateQuiverFile(surfacePtr[l].xo, eS, 1, 1);
+		 //CreateQuiverFile(surfacePtr[l].xo, eL, 1, 1);
+		 //CreateQuiverFile(surfacePtr[l].xo, eS, 1, 1);
 		 // ************************* Quiver output of vectors *************************/
 
 
@@ -869,13 +876,14 @@ for (i=0;i<info.nopanel;i++)
 
 		N_force[l][1] = dot(R,eL);			//induced lift
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
-		scalar(eN, N_free / info.Uinf, tempA);
+	
 
-//************************ Quiver output of normal vector ************************
-/*
+/************************ Quiver output of normal vector ************************
+	//	scalar(eN, N_free / (info.Uinf*info.Uinf), tempA);
+
 		if(i==0 && j==0 && k ==0)
-                CreateQuiverFile(surfacePtr[l].xo, tempA,0);
-		else    CreateQuiverFile(surfacePtr[l].xo, tempA,1);
+                CreateQuiverFile(surfacePtr[l].xo, tempA,0,0);
+		else    CreateQuiverFile(surfacePtr[l].xo, tempA,1,0);
 //  ************************* Quiver output of normal vector *************************/
 
 //*****************************************************************************

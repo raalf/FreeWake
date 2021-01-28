@@ -461,11 +461,13 @@ info.surfAREA = 0;
 		adjust2next = 0;
 		check1 = (panelPtr[i].m * panelPtr[i].hinge1 - round(panelPtr[i].m * panelPtr[i].hinge1));
 		check2 = (panelPtr[i].m * panelPtr[i].hinge2 - round(panelPtr[i].m * panelPtr[i].hinge1));
-		if (fabs(check1) > DBL_EPS || fabs(check2) > DBL_EPS) {
+		if (fabs(check1) > DBL_EPS || fabs(check2) > DBL_EPS) 
+		{
 			//hinge on either side of panel not at lifting line
 			//this will be the lifting line which is the closest to the hinge
-			//on the left side of the hinge
-			closeLL = round(panelPtr[i].m * panelPtr[i].hinge1);
+			//at the midspan of the panel  ##changed from left edge GB 1-23-2
+	//		closeLL = round(panelPtr[i].m * panelPtr[i].hinge1);
+			closeLL = round(panelPtr[i].m * (panelPtr[i].hinge1+panelPtr[i].hinge2)*0.5);
 			if (closeLL == 0) closeLL = 1; //cannot move LE
 			else if (closeLL == panelPtr[i].m) closeLL = panelPtr[i].m - 1; //cannot move TE
 			//how far to move the LL to have it be at the hinge:
@@ -561,7 +563,8 @@ info.surfAREA = 0;
 
 				if ((panelPtr[i].deflect1 != panelPtr[i].deflect2)) {
 					
-					printf("Hinge deflection must be equal for each side of a panel\n");
+					printf("Hinge deflection must be equal for each side of a panel");
+					printf("  Error panel %d	\n", i+1);
 					printf("---Exiting program---\n");
 					scanf("%c", &answer);
 					exit(0);
@@ -798,6 +801,145 @@ info.surfAREA = 0;
 		surfacePtr[i].TEvc[1] = tempA[1]-surfacePtr[i].xTE[1];
 		surfacePtr[i].TEvc[2] = tempA[2]-surfacePtr[i].xTE[2];
 	}
+
+	//#################################################################
+	//plots geometry for checking
+	//uses parts of code from Main_PlotQuiver20PY.cpp
+
+	//General algorithm
+	//	DEFAULTS - 1. user input of timestep and width intervals that are to be plotted
+	//	DONE - 2. reading in data of timestep  - DONE
+	//	3. writing to plotting file (with extension .py)
+	//  4. running the python script in system command 
+
+	double x3[3],x4[3];	//corner points
+	char iofile[125];				//input-output-file
+	FILE *fp;						//output file
+
+//	3. writing to plotting file (with extension .py)
+	sprintf(iofile,"%s","geometryCheck.py");
+	//opens input file
+	fp = fopen(iofile, "w");
+
+// writing Header
+	fprintf(fp,"#Plotting wake results that were generated with ");
+	fprintf(fp,"#%s\n",PROGRAM_VERSION);
+	//comment
+	fprintf(fp,"#Plotting wake of timestep %d\n\n",0);
+	
+// importing required librarys
+	fprintf(fp,"import matplotlib as mpl\n");
+	fprintf(fp,"from mpl_toolkits.mplot3d import Axes3D\n");
+	fprintf(fp,"import numpy as np\n");
+	fprintf(fp,"import matplotlib.pyplot as plt\n");
+
+// setup an "set_axes_equal" function
+	fprintf(fp,"\ndef set_axes_equal(ax):\n");
+	fprintf(fp,"\tx_limits = ax.get_xlim3d()\n");
+	fprintf(fp,"\ty_limits = ax.get_ylim3d()\n");
+	fprintf(fp,"\tz_limits = ax.get_zlim3d()\n");	
+	fprintf(fp,"\tx_range = abs(x_limits[1] - x_limits[0])\n");
+	fprintf(fp,"\tx_middle = np.mean(x_limits)\n");	
+	fprintf(fp,"\ty_range = abs(y_limits[1] - y_limits[0])\n");
+	fprintf(fp,"\ty_middle = np.mean(y_limits)\n");
+	fprintf(fp,"\tz_range = abs(z_limits[1] - z_limits[0])\n");
+	fprintf(fp,"\tz_middle = np.mean(z_limits)\n");
+	fprintf(fp,"\tplot_radius = 0.5*max([x_range, y_range, z_range])\n");
+	fprintf(fp,"\tax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])\n");
+	fprintf(fp,"\tax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])\n");
+	fprintf(fp,"\tax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])\n\n");
+
+// setup plots
+
+	fprintf(fp,"mpl.rcParams['legend.fontsize'] = 10\n");
+	fprintf(fp,"fig = plt.figure()\n");
+	fprintf(fp,"ax = fig.gca(projection='3d')\n");
+	fprintf(fp,"ax.set_aspect('equal')\n\n");
+
+	// Plot labels 
+	fprintf(fp,"ax.set_xlabel('Global X')\n");
+	fprintf(fp,"ax.set_ylabel('Global Y')\n");
+	fprintf(fp,"ax.set_zlabel('Global Z')\n\n");
+
+//Plotting wing
+	for(n=0;n<info.noelement;n++)
+	{
+//		//computing left-leading edge point in local ref. frame
+//		tempA[0] = -surfacePtr[n].xsi\
+//				 - surfacePtr[n].eta*tan(surfacePtr[n].phiLE);
+//		tempA[1] = -surfacePtr[n].eta;
+//		tempA[2] = 0;
+
+//		Star_Glob(tempA,surfacePtr[n].nu,\
+			surfacePtr[n].epsilon,surfacePtr[n].psi,tempAA);
+//		vsum(tempAA,surfacePtr[n].xo,x1);
+
+		x1[0] = surfacePtr[n].x1[0];
+		x1[1] = surfacePtr[n].x1[1];
+		x1[2] = surfacePtr[n].x1[2];
+
+
+		//computing left-trailing edge point in local ref. frame
+		tempA[0] = surfacePtr[n].xsi\
+				 - surfacePtr[n].eta*tan(surfacePtr[n].phiTE);
+		tempA[1] = -surfacePtr[n].eta;
+		tempA[2] = 0;
+
+		Star_Glob(tempA,surfacePtr[n].nu,\
+			surfacePtr[n].epsilon,surfacePtr[n].psi,tempAA);
+		vsum(tempAA,surfacePtr[n].xo,x2);
+
+
+		//computing right-trailing edge point in local ref. frame
+		tempA[0] = surfacePtr[n].xsi\
+				 + surfacePtr[n].eta*tan(surfacePtr[n].phiTE);
+		tempA[1] = surfacePtr[n].eta;
+		tempA[2] = 0;
+
+		Star_Glob(tempA,surfacePtr[n].nu,\
+			surfacePtr[n].epsilon,surfacePtr[n].psi,tempAA);
+		vsum(tempAA,surfacePtr[n].xo,x3);
+
+
+		//computing right-leading edge point in local ref. frame
+//		tempA[0] = -surfacePtr[n].xsi\
+//				 + surfacePtr[n].eta*tan(surfacePtr[n].phiLE);
+//		tempA[1] = surfacePtr[n].eta;
+//		tempA[2] = 0;
+
+//		Star_Glob(tempA,surfacePtr[n].nu,\
+//			surfacePtr[n].epsilon,surfacePtr[n].psi,tempAA);
+//		vsum(tempAA,surfacePtr[n].xo,x4);
+		x4[0] = surfacePtr[n].x2[0];
+		x4[1] = surfacePtr[n].x2[1];
+		x4[2] = surfacePtr[n].x2[2];
+
+
+
+		//print plot coordinates
+		fprintf(fp,"ax.plot("); //first plot command
+//#		fprintf(fp,"plot("); //first plot command
+		fprintf(fp,"[%lf,%lf,%lf,%lf,%lf],",x1[0],x2[0],x3[0],x4[0],x1[0]); //x
+		fprintf(fp,"[%lf,%lf,%lf,%lf,%lf],",x1[1],x2[1],x3[1],x4[1],x1[1]); //y
+		fprintf(fp,"[%lf,%lf,%lf,%lf,%lf],",x1[2],x2[2],x3[2],x4[2],x1[2]); //z
+		fprintf(fp,"'k')\n");//next line
+	}
+
+	// Python lines to show plot and run axis equal
+	fprintf(fp,"\nset_axes_equal(ax)\n");
+	fprintf(fp,"plt.show()\n");
+
+	fclose(fp);
+
+	// run python script 
+	//system("python geometryCheck.py");
+
+	printf("\nTo check geometry type: \"python geometryCheck.py\"\n\n");
+
+
+	//DONE with geometry check 
+
+	//#################################################################
 
 }
 //===================================================================//

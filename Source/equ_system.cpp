@@ -628,7 +628,7 @@ for(panel=0;panel<info.nopanel;panel++)			//loop over panels
 					D[element][col+2] = -elementPtr[element].eta*\
 										elementPtr[element].eta;
 					printf("WARNING!! \nEdge 1  boundary condition of");
-					printf(" of panel %d undefined!!\n",panel+1);
+					printf(" panel %d undefined!!\n",panel+1);
 //#printf("default element %d  nu %lf\n",element,elementPtr[element].eta);//#
 				break;
 			}		// end switch statement for edge 1 bound. cond.
@@ -965,7 +965,7 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
                 D[row][col+2] = -elementPtr[element].eta*\
                                     elementPtr[element].eta;
                 printf("WARNING!! \nEdge 1  boundary condition of");
-                printf(" of panel %d undefined!!\n",panel+1);
+                printf(" panel %d undefined!!\n",panel+1);
              	row++;  //increase row index
         	} //end loop over left side of panels
         break;
@@ -1044,13 +1044,13 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
                D[row][col+2] = elementPtr[element].eta*\
                                   elementPtr[element].eta;
                printf("WARNING!! \nEdge 2  boundary condition of");
-               printf(" of panel %d undefined!! BC = 100\n",panel+1);
+               printf(" panel %d undefined!! BC = 100\n",panel+1);
                row++;  //increase row index
 
 //printf("Right side element %d  col %d  row %d\n",element,col,row);
             }
             
-            switch (panelPtr[panel].BC2)    //edge 1 bound. cond.
+            switch (panelPtr[panel].BC2)    //edge 2 bound. cond.
             {
        // 3.2. wingtip --> Gamma = 0  (BC = 100)
                 case 100:     //Gamma = 0
@@ -1085,7 +1085,7 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
                         row++;  //increase row index
 
                          printf("WARNING!! \nEdge 2  boundary condition of");
-                         printf(" of panel %d undefined BC 220!!\n",panel+1);
+                         printf(" panel %d undefined BC 220!!\n",panel+1);
                     }
                     else //panel to left exists
                     {
@@ -1118,10 +1118,10 @@ void DVE_BoundaryCond(const DVE *elementPtr, const PANEL *panelPtr, \
                     D[row][col+2] = elementPtr[element].eta*\
                                         elementPtr[element].eta;
                     printf("WARNING!! \nEdge 2  boundary condition of");
-                    printf(" of panel %d undefined!! DEFAULT\n",panel+1);
+                    printf(" panel %d undefined!! DEFAULT\n",panel+1);
                     
                     row++;  //increase row index
-                    break;
+                break;
             }        // end switch statement for edge 1 bound. cond.
  
             m++;    //next chordwise row counter

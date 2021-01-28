@@ -28,7 +28,7 @@ void Save_Surface_DVEs(const GENERAL info,const DVE *surfacePtr);
 //save input file to output directory
 void Save_Input_File(const char [126],const char [126]);
 //save input file and header to config directory
-void Save_Config_Head_File(const char [126],const char [126],const char [126]);
+void Save_Config_Head_File(GENERAL);
 //saves results of current timestep to file
 void Save_Timestep(const GENERAL,const int,DVE **,const DVE *,double **);
 //saves forces and moments of surface DVEs
@@ -519,20 +519,18 @@ void Save_Input_File(const char sourcefile[126],const char targetdir[126])
         //START of Save_Config_Head_File
 //===================================================================//
 //saves input file and header to configuration file in output directory
-void Save_Config_Head_File(const char sourcefile[126],const char targetdir[126],\
-                      const char targetfile[126])
+void Save_Config_Head_File(GENERAL info)
 {
     //copies the input file from input directory to config file located in
     //output directory
     //adapted from https://www.programmingsimplified.com/c-program-copy-file
     //sourcefile  - input file for FreeWake
-    //targetdrive - output directory
     //targetfile - configuration file (with directory path)
     
     FILE *source,*target;
     char ch,str[100];
 
-    source = fopen(sourcefile, "r");
+    source = fopen(info.inputfilename, "r");
 
     if (source == NULL)
     {
@@ -541,11 +539,11 @@ void Save_Config_Head_File(const char sourcefile[126],const char targetdir[126],
     }
 
     //If configuration file does not exist yet, it is being created
-    if ((target = fopen(targetfile, "r"))== NULL)
+    if ((target = fopen(info.config, "r"))== NULL)
     {
-        printf("Configuration file %s is created\n",targetfile);
+        printf("Configuration file %s is created\n",info.output);
   
-        target = fopen(targetfile, "w"); //create file to write to
+        target = fopen(info.config, "w"); //create file to write to
 
         if (target == NULL)
         {
@@ -566,13 +564,15 @@ void Save_Config_Head_File(const char sourcefile[126],const char targetdir[126],
         fprintf(target,"Ref. lenght for pitching mom. = %lf\n",info.cmac);
         fprintf(target,"Ref. length for yawing mom.   = %lf\n",info.b);
         fprintf(target,"Reference area                = %lf\n",info.S);
-        fprintf(target,"Projected planform area       = %lf\n",info.projAREA);
-        fprintf(target,"Unraveled area                = %lf\n",info.AREA);
+     //   fprintf(target,"Projected planform area       = %lf\n",info.projAREA);
+     //   fprintf(target,"Unraveled area                = %lf\n",info.AREA);
         fprintf(target,"Referece span                 = %lf\n",info.b);
-        fprintf(target,"Projected span                = %lf\n",info.projSPAN);
+     //   fprintf(target,"Projected span                = %lf\n",info.projSPAN);
         fprintf(target,"Reference aspect ratio        = %lf\n",info.AR);
         fprintf(target,"number of wings               = %d\n",info.nowing);
-        fprintf(target,"number of flight conditions   = \n\n");
+        fprintf(target,"saved no. of flight conditns  = ");
+        if (info.trimCL == 0)	fprintf(target,"\t\t<-- alpha sweep performed, value without meaning\n\n");
+        else 					fprintf(target,"\n\n");
         
         //header of tabulated case data
         fprintf(target,"%-10s%-10s%-10s%-10s","Flight","CLtarget","Alpha","Beta");
@@ -591,7 +591,7 @@ void Save_Config_Head_File(const char sourcefile[126],const char targetdir[126],
     }
     else  //configuration file already exists, determine flight config. number
     {
-        printf("Configuration file %s already exists\n",targetfile);
+        printf("Configuration file %s already exists\n",info.config);
     }
 
 }
@@ -905,12 +905,14 @@ void CreateQuiverFile(const double pos[3], const double vec[3], const int idx, c
 	FILE *fp;		//output file
 	char filename[126];	//file path and name 
 
-	if (filenum == 0) {
+	if (filenum == 0) 
+	{
 		// Either open file or add to file
 		if (idx == 0) { fp = fopen("output/quiver.txt", "w"); }
 		else { fp = fopen("output/quiver.txt", "a"); }
 	}
-	else {
+	else 
+	{
 		sprintf(filename, "%s%d%s","output/quiver", filenum, ".txt");
 		if (idx == 0) { fp = fopen(filename, "w"); }
 		else { fp = fopen(filename, "a"); }
@@ -992,7 +994,15 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 	ALLOC1D(&Ftstep,length+11);  //allocate memory for file name, max. 999 flight conditions
 	ALLOC1D(&SDVE,length+11);	 //allocate memory for file name, max. 999 flight conditions
 
-	strncpy(SDVE,info.config,length-7); //Prefix of name temporarily stored in SDVE
+	//extracting core of filenames, i.e. path + input filename without .txt
+	n=0;
+	m=int(length)-7;
+	while(n<m)
+	{
+		SDVE[n]=info.config[n];
+		n++;
+	}
+	SDVE[n]='\0';
 
 	//filename is outputpath/input+"DVE#"+<FCno>+".txt"
 	sprintf(Ftstep,"%s%s%d%s",SDVE,"TDVE#",FCno,".txt");
@@ -1059,11 +1069,11 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 			spanPtr[span].B = surfacePtr[index].B;
 			spanPtr[span].C = surfacePtr[index].C;
 
-			spanPtr[span].Gamma1 = surfacePtr[index].A - surfacePtr[index].xsi*surfacePtr[index].B \
-								 + surfacePtr[index].xsi*surfacePtr[index].xsi*surfacePtr[index].C;
+			spanPtr[span].Gamma1 = surfacePtr[index].A - surfacePtr[index].eta*surfacePtr[index].B \
+								 + surfacePtr[index].eta*surfacePtr[index].eta*surfacePtr[index].C;
 			spanPtr[span].Gamma0 = surfacePtr[index].A;
-			spanPtr[span].Gamma2 = surfacePtr[index].A + surfacePtr[index].xsi*surfacePtr[index].B \
-								 + surfacePtr[index].xsi*surfacePtr[index].xsi*surfacePtr[index].C;
+			spanPtr[span].Gamma2 = surfacePtr[index].A + surfacePtr[index].eta*surfacePtr[index].B \
+								 + surfacePtr[index].eta*surfacePtr[index].eta*surfacePtr[index].C;
 			
 			//moment arm for computing strip moment coefficients about ref. point.
 			spanPtr[span].momarm[0] = spanPtr[span].span;
@@ -1116,8 +1126,21 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
        }
     }
    	//===================================================================//
+	//START quiver plot file of spanwise distribution of force coeff.
+	//===================================================================//
+	//for(span=0;span<info.nospanelement;span++)
+	//	CreateQuiverFile(spanPtr[span].xref,spanPtr[span].Cf,1,0);
+	//Cf includes ind. drag coeff., which is also added to file 
+   	//===================================================================//
+	//END quiver plot file of spanwise distribution of force coeff.
+	//===================================================================//
+
+
+   	//===================================================================//
 		//END determining missing information of spanwise strips
 	//===================================================================//
+
+
 
 	fp = fopen(FCfile, "w");
 
@@ -1230,11 +1253,11 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 	//===================================================================//
 	//writes header
 	fprintf(fp,"\n\n\nProgram Version: %s\n",PROGRAM_VERSION);
-	fprintf(fp,"Flight configuration defined in input file = %s\n",info.inputfilename);
-	fprintf(fp,"Flight Condition number = %d\n",FCno);
- 	fprintf(fp,"This file holds surface and wake DVE informtion of last timestep (old timestep##.txt\n");
-    if (info.trimCL == 1) fprintf(fp,"CL trim final alpha = %.3lf\n",info.alpha*RtD);
-    else fprintf(fp,"Angle of attack sweep alpha = %.3lf\n",info.alpha*RtD);
+	fprintf(fp,"Flight configuration defined in input file : %s\n",info.inputfilename);
+	fprintf(fp,"Flight Condition number : %d\n",FCno);
+ 	fprintf(fp,"This file holds surface and wake DVE informtion of last timestep (old timestep##.txt)\n");
+    if (info.trimCL == 1) fprintf(fp,"CL trim final alpha : %.3lf\n",info.alpha*RtD);
+    else fprintf(fp,"Angle of attack sweep alpha : %.3lf\n",info.alpha*RtD);
 
 	fprintf(fp,"Ref. Area   : %lf\nAspect Ratio: %lf\n",info.S,info.AR);
 
@@ -1346,7 +1369,7 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 
 	//===================================================================//
 	//writes header
-	fprintf(fp,"Program Version: %s\n",PROGRAM_VERSION);
+	fprintf(fp,"Program Version = %s\n",PROGRAM_VERSION);
 	fprintf(fp,"Flight configuration defined in input file = %s\n",info.inputfilename);
 	fprintf(fp,"Flight Condition number = %d\n",FCno);
  	fprintf(fp,"This file holds surface DVE informtion of last timestep\n");

@@ -6,6 +6,10 @@
 %creates: a figure
 %all files must be located in the output folder
 %axis, view, size, position and framerate are set at the end of the file
+
+
+%this may have a problem with alpha because the program changes alpha
+%internally when running, and this grabs alpha from the input file.
 %%========================================================================%
 function [] = wakeplot_2020(step,sym,outpath)
 if nargin == 0
@@ -16,7 +20,7 @@ if nargin == 0
     step = input('Which timestep to plot?\n');
     
     sym = input('Do you want symmetry?(y/n)\n','s');
-    outpath = 'input';
+    outpath = 'FW_Input';
     h = figure(33);
     clf(33);
     %run wakeplot and get axis settings (to get full axis)
@@ -41,13 +45,13 @@ if exist(check,'file') ==0
 end
 
 %create input file for DVE generator
-fid = fopen( 'temp.txt', 'wt' );
+fid = fopen( 'FW_Input.txt', 'wt' );
 fprintf (fid,'%d',step);
 fprintf (fid,'\n%s',outpath);
 fclose(fid);
 
 %run Main_FindDVEs2020 to get coordinates of all DVEs for this timestep
-[out,cmdout] =system('Main_FindDVEs2020.exe < temp.txt');
+[out,cmdout] =system('Main_FindDVEs2020.exe < FW_Input.txt');
 
 %open DVEs.dat
 fp = fopen('DVEs.dat','r');
@@ -214,6 +218,7 @@ quiver3(uvel.x1,uvel.y1,uvel.z1,uvel.u1,uvel.v1,uvel.w1);
 forcemom = readtable('quiver3.txt', opts);
 quiver3(forcemom.x1,forcemom.y1,forcemom.z1,forcemom.u1,forcemom.v1,forcemom.w1,0.1);
 
+%read span force and moment after rotate
 rotforcemom = readtable('quiver4.txt', opts);
 
 
@@ -278,9 +283,11 @@ end
 uinf = fscanf(fid,'%s',1);
 uinf = str2num(uinf);
 
-while strcmp(ls,'alpha=')==0
+while strcmp(ls,'alpha')==0
+
     ls = fscanf(fid,'%s',1);
 end
+    ls = fscanf(fid,'%s',1);
 alphad = fscanf(fid,'%d',1);
 
 ls=0;
@@ -464,16 +471,16 @@ hold on
 patch(wingx(:,:)',wingy(:,:)',wingz(:,:)',[0.4 0.4 0.4],'FaceAlpha',0.8,'EdgeColor','k');
 
 
-quiver3(forcecent(:,1),forcecent(:,2),forcecent(:,3),rotforcemom.u1(:),rotforcemom.v1(:),rotforcemom.w1(:));
+spanfm= quiver3(forcecent(:,1),forcecent(:,2),forcecent(:,3),rotforcemom.u1(:),rotforcemom.v1(:),rotforcemom.w1(:));
 
 
 temp= ([repelem(newwingcg,3,1);unique(forcecent, 'rows', 'stable')]);
 
 try
-    quiver3(temp(:,1),temp(:,2),temp(:,3),forcex,forcey,forcez);
+    forcep= quiver3(temp(:,1),temp(:,2),temp(:,3),forcex,forcey,forcez);
 catch
 end
-quiver3(newwingcg(:,1),newwingcg(:,2),newwingcg(:,3),uvelrot(:,1),uvelrot(:,2),uvelrot(:,3));
+vel2p=quiver3(newwingcg(:,1),newwingcg(:,2),newwingcg(:,3),uvelrot(:,1),uvelrot(:,2),uvelrot(:,3));
 xlabel('X');
 ylabel('Y');
 span = max(max(newwingcg(:,:))) - min(min(newwingcg(:,:)));
@@ -481,8 +488,10 @@ span = max(max(newwingcg(:,:))) - min(min(newwingcg(:,:)));
 
 V = [totalforcemom.u1,totalforcemom.v1,totalforcemom.w1];
 V = V/norm(V) * span;
-quiver3(0,0,0,V(1,1),V(1,2),V(1,3));
-quiver3(0,0,0,V(2,1),V(2,2),V(2,3));
+        
+totf=quiver3(0,0,0,V(1,1),V(1,2),V(1,3));
+totm=quiver3(0,0,0,V(2,1),V(2,2),V(2,3));
+legend([spanfm,vel2p,totf,totm],{'Span Force/Mom','Local Vel','Total Moment','Total Force'});
 % zlim([-1 1]);
 grid on
 box on

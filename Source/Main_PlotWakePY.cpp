@@ -24,6 +24,7 @@ int main()
 	double x1[3],x2[3],x3[3],x4[3];	//corner points
 	double tempA[3],tempAA[3];
 	char iofile[125];	//input-output-file
+	char tempiofile[125];	//input-output-file
 	char ch;			//generic character
 	FILE *fp;			//output file
 
@@ -32,9 +33,16 @@ int main()
 	printf("The timestep file needs to be located in the ");
 	printf("current directory.\n");
 	printf("The user must have python installed as this used matplotlib.\n\n");
-	printf("Please enter number of timestep ");
-	printf("whose wake needs to be plotted: ");
-	scanf("%d",&timestep);
+
+//	printf("Please enter number of timestep "); % Removed reading timestep number because output filenames are different
+//	printf("whose wake needs to be plotted: ");
+//	scanf("%d",&timestep);
+
+	// Read in filename from used
+	printf("Please enter output TDVE filename ");
+	printf("(excluding .txt): ");
+	scanf("%s",tempiofile);
+
 
 	//printf("\nWhat time intervalls are desired? ");
 //	scanf("%d",&intervall);
@@ -47,18 +55,20 @@ int main()
 //	printf("\nHow close to the trailing edge? ");
 //	printf("(%d is up to trailing edge) ",timestep);
 //	scanf("%d",&tmin);
-	tmin = timestep;
+
+	//tmin = timestep; Moved this to later in the code when timestep is read from output file
 
 //	2. reading in data of timestep
-
+	printf("Name read = %s",tempiofile);
 	//creates file name timestep##.txt ## is number of timestep
 //	sprintf(iofile,"%s%s%d%s",OUTPUT_PATH,"timestep",timestep,".txt");
-	sprintf(iofile,"%s%d%s","timestep",timestep,".txt");
-
+	sprintf(iofile,"%s%s",tempiofile,".txt"); // Attach a .txt to the input filename 
+	printf("\niofile = %s",iofile);
 	// checks if input file exists
 	if ((fp = fopen(iofile, "r"))== NULL)
 	{
 		printf("File could not be opened, stupid:\n");
+		printf("CHECK\n");
 		exit(1);
 	}
 
@@ -94,6 +104,7 @@ int main()
 	while (ch!=':');
 	//reads timestep
 	fscanf(fp,"%d", &timestep);
+	tmin = timestep;
 
 	//find the ':'-sign in input file before number of span-elements
 	do	ch = fgetc(fp);

@@ -1428,7 +1428,7 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 				surfacePtr[index].psi*RtD);
 		//phi leading and trailing edge
 		fprintf(fp,"%16lf %16lf %16lf ",surfacePtr[index].phiLE*RtD,\
-				(surfacePtr[index].phiLE+surfacePtr[span].phiTE)*0.5*RtD,\
+				(surfacePtr[index].phiLE+surfacePtr[index].phiTE)*0.5*RtD,\
 				surfacePtr[index].phiTE*RtD);
 		//x1 left leading edge point
 		fprintf(fp,"%16lf %16lf %16lf ",\
@@ -1447,9 +1447,9 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 	//===================================================================//
 		//END C. Saves Surface DVE of last timestep
 	//===================================================================//
-	FREE1D(&FCfile,length+10);
-	FREE1D(&Ftstep,length+10);
-	FREE1D(&SDVE,length+10);
+	FREE1D(&FCfile,length+11);
+	FREE1D(&Ftstep,length+11);
+	FREE1D(&SDVE,length+11);
 
 }
 //===================================================================//

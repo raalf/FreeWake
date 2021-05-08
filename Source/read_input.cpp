@@ -411,6 +411,12 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 		//read in hinge as %chord on edge 1 DFB 2-25-20
 		fscanf(fp," %lf",&(panelPtr[i].hinge1));
 		fscanf(fp, "%lf", &(panelPtr[i].deflect1));
+//printf("line 414  defelction %lf\n", panelPtr[i].deflect1);
+	if (fabs(panelPtr[i].deflect1) > 90)
+	{//GB 5/8/21
+		printf("line 414  defelction %lf\n", panelPtr[i].deflect1);
+		exit(0);
+	}
 		panelPtr[i].deflect1 *= DtR;	//changes deg. to radians
 
 		panelPtr[i].u1[0]=0; panelPtr[i].u1[1]=0; panelPtr[i].u1[2]=0;
@@ -439,6 +445,12 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 		//read in hinge as %chord on edge 2 DFB 2-25-20
 		fscanf(fp," %lf",&(panelPtr[i].hinge2));
 		fscanf(fp, "%lf", &(panelPtr[i].deflect2));
+//printf("line 414  defelction %lf\n", panelPtr[i].deflect2);
+	if (fabs(panelPtr[i].deflect2) > 90)
+	{//GB 5/8/21
+		printf("line 414  defelction %lf\n", panelPtr[i].deflect2);
+		exit(0);
+	}
 		panelPtr[i].deflect2 *= DtR;	//changes deg. to radians
 
 		panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;

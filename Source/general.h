@@ -61,6 +61,6 @@ int fltcfg;             //flight configuration number (CL, AOA, etc)
 //8-8-07 G.B.
 double alpha1,alpha2,alphastep;	//AOA loop, beginning, end, stepsie
 
-const double delCLtarget=0.000001; //convergence criterion of CL_target
+const double delCLtarget=0.0001; //convergence criterion of CL_target
 const long Linelength = 149;   //length of data line in configuration summary file *_cfg.txt
 

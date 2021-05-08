@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 //   - added trim flag for input file.
 //	 - fixed pitching moment routine
 //
-
+	printf("Starting FreeWake\n");
 	printf("===========================================================================\n ");
 	printf("\n\tPerformance Code based on FreeWake 2015 (includes stall model)\n\n");
 	printf("\t\tRunning Version %s \n ",PROGRAM_VERSION);
@@ -424,10 +424,14 @@ printf("Done reading in aerodynamic characteristics\n");
 		q_inf = 0.5 * info.density * info.Uinf * info.Uinf;
 		CLtarget = info.W / (q_inf * info.S * cos(info.bank));
 		printf("\n-----TRIM FOR CL-----Target CL = %.4lf\n", CLtarget);
-		alpha2 = 5* DtR; //starting alphas to run
+	//	alpha2 = 5* DtR; //starting alphas to run
+	//	alpha2old = alpha2; 
+	//	alpha1 = 1* DtR;
+		//starting alpha based on trage CL and elliptically loaded wing - 3deg
+		alpha1 = CLtarget*(info.AR+2)/info.AR*0.15923-0.0523;
+		alpha2 = alpha1 + 0.07; //second alpha2 = alpha1+3
 		alpha2old = alpha2; 
-		alpha1 = 1* DtR;
-		alphastep = alpha2 - alpha1;
+			alphastep = alpha2 - alpha1;
 		CLtemp[0] = 0;
 		CLtemp[1] = 0;
 	}
@@ -662,7 +666,6 @@ printf("Done reading in aerodynamic characteristics\n");
 			//===============================================================//
 				//END computing total drag
 			//===============================================================//
-
 		// *
 		// *
 		// *  Created by Goetz  Bramesfeld on 1/22/11.
@@ -782,7 +785,7 @@ printf("Done reading in aerodynamic characteristics\n");
     //===================================================================//
     //END iterate CL
     //===================================================================//
-    
+ 
     //===============================================================//
     //START save to config file if CL iteration
     //===============================================================//
@@ -874,51 +877,50 @@ printf("Done reading in aerodynamic characteristics\n");
         //save information of spanwise strips
         SaveSpanDVEInfo(panelPtr,surfacePtr,wakePtr,spanPtr,N_force,FCno,info.timestep);
         										//in write_output.cpp
-
-        //===============================================================//
-   		// Saving info for VoGen
-    	//===============================================================//
-    	if (info.trimCL == 1)  //CL iteration -> safe results of flight config
-    	{
-     
-	     	sprintf(filename, "%sVoGen.txt", info.output);
-	        FltConfg = fopen(filename,"w"); //create file
-	        
-	        if (FltConfg == NULL)  //check if flight config file can be appended
-	        {
-	            fclose(FltConfg);
-	            printf(" couldn't open VoGen summary file\nPress any key to exit...\n");
-	            exit(EXIT_FAILURE);
-	        }
-	 
-	        //header of tabulated case data
-	        fprintf(FltConfg,"%-10s%-10s%-10s","CLtarget","Alpha","Beta");
-	        fprintf(FltConfg,"%-12s%-12s%-12s","CL","CQ","CDI");
-	        fprintf(FltConfg,"%-12s%-12s%-12s","CX","CY","CZ");
-	        fprintf(FltConfg,"%-12s%-12s%-12s\n","CL","CM","CN");
-	        fprintf(FltConfg,"%-10s%-10s%-10s","deflt=10","[deg]","[deg]");
-	        fprintf(FltConfg,"%-12s%-12s%-12s","(lift)","(side)"," ");
-	        fprintf(FltConfg,"%-12s%-12s%-12s"," "," "," ");
-	        fprintf(FltConfg,"%-12s%-12s%-12s\n","(roll)"," "," ");
-	    
-
-	        fprintf(FltConfg,"%-10.5lf%-10.3lf%-10.3lf",\
-	            CLtarget,info.alpha*RtD,info.beta*RtD);
-	        fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
-	            CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
-	        fprintf(FltConfg,"\n");
-	        fclose(FltConfg);
-	    }
-    	//===============================================================//
-   		// DONESaving info for VoGen
-    	//===============================================================//
-    }
+   }
     //===============================================================//
     //END save to config file if CL iteration
     //===============================================================//
 
     
-    
+    //===============================================================//
+		// Saving info for VoGen
+	//===============================================================//
+ 	sprintf(filename, "%sVoGen.txt", info.output);
+    FltConfg = fopen(filename,"w"); //create file
+
+// 	sprintf(filename, "VoGen.txt" );
+//  FltConfg = fopen(filename,"a"); //create file
+
+    if (FltConfg == NULL)  //check if flight config file can be appended
+    {
+        fclose(FltConfg);
+        printf(" couldn't open VoGen summary file\nPress any key to exit...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    //header of tabulated case data
+    fprintf(FltConfg,"%-10s%-10s%-10s","CL","Alpha","Beta");
+    fprintf(FltConfg,"%-12s%-12s%-12s","CL","CQ","CDI");
+    fprintf(FltConfg,"%-12s%-12s%-12s","CX","CY","CZ");
+    fprintf(FltConfg,"%-12s%-12s%-12s\n","CL","CM","CN");
+    fprintf(FltConfg,"%-10s%-10s%-10s","target","[deg]","[deg]");
+    fprintf(FltConfg,"%-12s%-12s%-12s","(lift)","(side)"," ");
+    fprintf(FltConfg,"%-12s%-12s%-12s"," "," "," ");
+    fprintf(FltConfg,"%-12s%-12s%-12s\n","(roll)"," "," ");
+
+
+    fprintf(FltConfg,"%-10.5lf%-10.3lf%-10.3lf",\
+        CLtarget,info.alpha*RtD,info.beta*RtD);
+    fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
+        CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
+    fprintf(FltConfg,"\n");
+    fclose(FltConfg);
+	//===============================================================//
+		// DONESaving info for VoGen
+	//===============================================================//
+
+
     
 	//free allocated memory
 	FREE1D(&panelPtr,info.nopanel);
@@ -936,7 +938,11 @@ printf("Done reading in aerodynamic characteristics\n");
 //printf("done\n");
 //printf("push any key and return ",PROGRAM_VERSION);
 //scanf("%c",&answer);
-	//return(0);
+
+	printf("Done FreeWake\n");
+	printf("===========================================================================\n");
+	printf("===========================================================================\n\n");
+	return(0);
 }
 //===================================================================//
 		//END of program

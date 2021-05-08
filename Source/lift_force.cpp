@@ -182,7 +182,7 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				// If there is circling flight, set the DVE drag
 				// direction to the velocitiy direction at the TE.
 				// This eD is in the global frame, which rotates during circling flight. 
-				tempS = 1 / norm2(surfacePtr[span].uTE[0]);
+				tempS = 1 / norm2(surfacePtr[index].uTE[0]);
 				eD[0] = surfacePtr[index].uTE[0][0] * tempS;
 				eD[1] = surfacePtr[index].uTE[0][1] * tempS;
 				eD[2] = surfacePtr[index].uTE[0][2] * tempS;
@@ -317,7 +317,6 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 				Moment[span][0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
 				Moment[span][1] = tempA[1];
 				Moment[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
-
 			}
 
 			/*/* ************************ Quiver output of vectors *************************
@@ -387,14 +386,13 @@ void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
     if (info.sym == 1 && info.beta == 0 && !info.flagCIRC)
     {
         CF[0] *= 2;
-        CF[0] = 0.0;
-        CF[2] *=2;
+        CF[1] = 0.0;
+        CF[2] *= 2;
         
         MX = 0.0;
         MY *= 2;
         MZ = 0.0;
     }
-
 
 	/*/* ************************ Quiver output of vectors *************************
 	CreateQuiverFile(XCG, tempVEC, 0, 5);

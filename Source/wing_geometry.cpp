@@ -501,27 +501,27 @@ info.surfAREA = 0;
 			if (fabs(check1) > DBL_EPS || fabs(check2) > DBL_EPS) {
 				if (m < closeLL) {
 					//how far to move the LL:
-					adjust1 = (((panelPtr[i].hinge1 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
-					adjust2 = (((panelPtr[i].hinge2 / double(closeLL)) * double(m)) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
+					adjust1 = (((panelPtr[i].hinge1 / double(closeLL)) * double(m)) - (double(m) / double(panelPtr[i].m))) * panelPtr[i].c1;
+					adjust2 = (((panelPtr[i].hinge2 / double(closeLL)) * double(m)) - (double(m) / double(panelPtr[i].m))) * panelPtr[i].c2;
 
-					adjust1next = (((panelPtr[i].hinge1 / double(closeLL)) * (double(m) + 1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
-					adjust2next = (((panelPtr[i].hinge2 / double(closeLL)) * (double(m) + 1)) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
+					adjust1next = (((panelPtr[i].hinge1 / double(closeLL)) * (double(m) + 1.)) - ((double(m) + 1.) / double(panelPtr[i].m))) * panelPtr[i].c1;
+					adjust2next = (((panelPtr[i].hinge2 / double(closeLL)) * (double(m) + 1.)) - ((double(m) + 1.) / double(panelPtr[i].m))) * panelPtr[i].c2;
 
 					//new chord:
-					chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
-					chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
+					chord1 = (delchord1 * (double(m) + 1.) + adjust1next) - ((delchord1 * double(m)) + adjust1);
+					chord2 = (delchord2 * (double(m) + 1.) + adjust2next) - ((delchord2 * double(m)) + adjust2);
 
 				}
 
 				else { //m>closeLL
-					adjust1 = ((1 - (((1 - panelPtr[i].hinge1) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c1;
-					adjust2 = ((1 - (((1 - panelPtr[i].hinge2) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - double(m)))) - (double(m) / panelPtr[i].m)) * panelPtr[i].c2;
+					adjust1 = ((1.0 - (((1.0 - panelPtr[i].hinge1) / (double(panelPtr[i].m) - double(closeLL))) * (double(panelPtr[i].m) - double(m)))) - (double(m) / double(panelPtr[i].m))) * panelPtr[i].c1;
+					adjust2 = ((1.0 - (((1.0 - panelPtr[i].hinge2) / (double(panelPtr[i].m) - double(closeLL))) * (double(panelPtr[i].m) - double(m)))) - (double(m) / double(panelPtr[i].m))) * panelPtr[i].c2;
 
-					adjust1next = ((1 - (((1 - panelPtr[i].hinge1) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c1;
-					adjust2next = ((1 - (((1 - panelPtr[i].hinge2) / (panelPtr[i].m - double(closeLL))) * (panelPtr[i].m - (double(m) + 1)))) - ((double(m) + 1) / panelPtr[i].m)) * panelPtr[i].c2;
+					adjust1next = ((1. - (((1. - panelPtr[i].hinge1) / (double(panelPtr[i].m) - double(closeLL))) * (double(panelPtr[i].m) - (double(m) + 1.)))) - ((double(m) + 1.) / double(panelPtr[i].m))) * panelPtr[i].c1;
+					adjust2next = ((1. - (((1. - panelPtr[i].hinge2) / (double(panelPtr[i].m) - double(closeLL))) * (double(panelPtr[i].m) - (double(m) + 1.)))) - ((double(m) + 1.) / double(panelPtr[i].m))) * panelPtr[i].c2;
 
-					chord1 = (delchord1 * (double(m) + 1) + adjust1next) - ((delchord1 * double(m)) + adjust1);
-					chord2 = (delchord2 * (double(m) + 1) + adjust2next) - ((delchord2 * double(m)) + adjust2);
+					chord1 = (delchord1 * (double(m) + 1.) + adjust1next) - ((delchord1 * double(m)) + adjust1);
+					chord2 = (delchord2 * (double(m) + 1.) + adjust2next) - ((delchord2 * double(m)) + adjust2);
 				}
 			}
 			else { //we do not need to move LL
@@ -1452,22 +1452,19 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 	//	exit(0);
 	//}
 
-
-
 	// ================== Deflecting about hinge begins here ==================
 	// First deflect left side of panel
 	Glob_Star(x1, nu, panelPtr[i].eps1, 0, tempx1);
 	Glob_Star(x1LE, nu, panelPtr[i].eps1, 0, tempx1LE);
 
-
 	tempA[0] = tempx1[0] - tempx1LE[0];
 	tempA[2] = tempx1[2] - tempx1LE[2];
 
-	if(tempA[0] /panelPtr[i].c1 < panelPtr[i].hinge1 && (panelPtr[i].hinge1 - (tempA[0] / panelPtr[i].c1)) > DBL_EPS) {
+	if(tempA[0] /panelPtr[i].c1 < panelPtr[i].hinge1 && (panelPtr[i].hinge1 - (tempA[0] / panelPtr[i].c1)) > (1000*DBL_EPS)) {
 		// left point is in front of hinge. If it is, set epsH1 to 0
 		*epsH1 = 0;
 		
-	}else if(((tempA[0] / panelPtr[i].c1) -panelPtr[i].hinge1) <DBL_EPS){
+	}else if(((tempA[0] / panelPtr[i].c1) -panelPtr[i].hinge1) < (1000.*DBL_EPS)){
 		// left point at hinge
 		*epsH1 = deflection;
 		
@@ -1496,10 +1493,7 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 
 		// Put new LE point into global reference frame
 		Star_Glob(tempx1,nu,panelPtr[i].eps1,0,x1);
-		
 	}
-
-
 
 	// Repeat everything for right edge (see above for detailed comments)
 	Glob_Star(x2, nu, panelPtr[i].eps2, 0, tempx2);
@@ -1508,9 +1502,9 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 	tempAA[0] = tempx2[0] - tempx2LE[0];
 	tempAA[2] = tempx2[2] - tempx2LE[2];
 
-	if(tempAA[0] / panelPtr[i].c2 < panelPtr[i].hinge2 && (panelPtr[i].hinge2-(tempAA[0] / panelPtr[i].c2)) > DBL_EPS){
+	if(tempAA[0] / panelPtr[i].c2 < panelPtr[i].hinge2 && (panelPtr[i].hinge2-(tempAA[0] / panelPtr[i].c2)) > (1000.*DBL_EPS)){
 		*epsH2 = 0;	
-	}else if(((tempAA[0] / panelPtr[i].c2 )-panelPtr[i].hinge2)<DBL_EPS){
+	}else if(((tempAA[0] / panelPtr[i].c2 )-panelPtr[i].hinge2)<(1000.*DBL_EPS)){
 		*epsH2 = deflection;
 		for(j=0;j<3;j++){xH2[j]=x2[j];}
 	}else{
@@ -1526,9 +1520,7 @@ void DeflectAboutHinge(const PANEL* panelPtr, const double deflection, \
 		tempx2[2] = vecX*sin(-deflection)+vecZ*cos(-deflection)+tempxH2[2];
 		
 		Star_Glob(tempx2,nu,panelPtr[i].eps2,0,x2);
-		
 	}
-
 }
 //===================================================================//
 		//END FUNCTION DeflectAboutHinge

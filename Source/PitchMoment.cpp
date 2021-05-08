@@ -437,9 +437,9 @@ printf("\n");
 
 			//printf("\nCL %lf CLi %lf CY %lf CYi %lf CN %lf CDi %lf", CL, CLi, CY, CYi, sqrt(CL * CL + CY * CY), CDi);
 			//printf(" CN %lf CDi %lf",sqrt(CL*CL+CY*CY),CDi_DVE[timestep]);  //###
-			printf("\nCFX %lf CFY %lf CFZ %lf ", \
-				CF[0], CF[1], CF[2]);
-			printf("Cl %lf Cm %lf Cn %lf\n", Cl, Cm, Cn);//#
+			//printf("\nCFX %lf CFY %lf CFZ %lf ", \
+			//	CF[0], CF[1], CF[2]);
+			//printf("Cl %lf Cm %lf Cn %lf\n", Cl, Cm, Cn);//#
 
 //===================================================================//
             //END wing-force computation

@@ -55,6 +55,14 @@ Temporary Items
 
 # fw executable to remove issues with merging
 fw
+fw.exe
+
+# fw executable to remove issues with merging
+PlotWakePY
+PlotWakePY.exe
 
 # Visual Studio directories
 FreeWake2020
+
+# geometry check python script doesn't need to be source controlled
+geometryCheck.py

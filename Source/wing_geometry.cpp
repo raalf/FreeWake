@@ -401,6 +401,7 @@ info.surfAREA = 0;
 
 		//1/4chord line dihedral
 		nu = asin(xquart[2]/ tempSpan);
+		if(xquart[1]<0) nu = Pi-nu; //Added to allows for panel to be defined from right to left
 
 		//note: delchord is only temporary and may be changed as elements are redistributed
 		//below
@@ -596,6 +597,7 @@ info.surfAREA = 0;
 			//computing dihedral of LE of current spanwise row of DVEs
 			tempS	= sqrt(xLE[1]*xLE[1]+xLE[2]*xLE[2]);
 			nu2 	= asin(xLE[2]/tempS);
+			if(xLE[1]<0) nu2 = Pi-nu2;  //Added to allows for panel to be defined from right to left and dihedral over 90deg 
 
 			//loop over number of spanwise elements 'n'
 			for (n=0;n<panelPtr[i].n;n++)

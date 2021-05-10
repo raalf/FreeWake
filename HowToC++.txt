@@ -10,6 +10,10 @@ compiles Main_PerfCode2020.cpp to fw
 ./fw
 executes fw
 
+How to run python wake plotting. Run from main folder
+g++ Source/Main_PlotWakePY.cpp -o PlotWakePY
+./PlotWakePY on linux or PlotWakePY if on windows
+
 
 How to run Qiver
 

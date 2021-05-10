@@ -5,6 +5,11 @@ int main()
 //This program creates and runs a python script to plots the surface and wake DVEs.
 //This is used to have access to matplotlib but required python to be installed
 
+//This program should be compiled to the main directory and run from the main directory.
+//When run, itll prompt the user for the input filename and run number of interest
+//then search output/"filename"/"filename"_TDVE#"run number".txt D.F.B. 5-2021
+	//example compile g++ Source/Main_PlotWakePY.cpp -o PlotWakePY
+
 //This program is entirely based on the Main_PlotWakeML.cpp but intended to be used 
 //by those who do not have a MatLab licence.
 
@@ -20,10 +25,12 @@ int main()
 	int nospan;			//number of elements in span direction
 	int nochord;		//number of elements in chord direction of surface
 	int nosurface;		//number of elements of surface
+	int runnum;			//run number for output
 	int n,span,time;		// loop counter
 	double x1[3],x2[3],x3[3],x4[3];	//corner points
 	double tempA[3],tempAA[3];
 	char iofile[125];	//input-output-file
+	char tempiofile[125];	//input-output-file
 	char ch;			//generic character
 	FILE *fp;			//output file
 
@@ -32,9 +39,17 @@ int main()
 	printf("The timestep file needs to be located in the ");
 	printf("current directory.\n");
 	printf("The user must have python installed as this used matplotlib.\n\n");
-	printf("Please enter number of timestep ");
-	printf("whose wake needs to be plotted: ");
-	scanf("%d",&timestep);
+//	printf("Please enter number of timestep ");
+//	printf("whose wake needs to be plotted: ");
+//	scanf("%d",&timestep);
+
+	// Read in filename from user
+	printf("Please enter input filename ");
+	printf("(excluding .txt): ");
+	scanf("%s",tempiofile);
+
+	printf("Please enter run number of interest:");
+	scanf("%d",&runnum);
 
 	//printf("\nWhat time intervalls are desired? ");
 //	scanf("%d",&intervall);
@@ -47,13 +62,16 @@ int main()
 //	printf("\nHow close to the trailing edge? ");
 //	printf("(%d is up to trailing edge) ",timestep);
 //	scanf("%d",&tmin);
-	tmin = timestep;
+//	tmin = timestep; Moved this to later in the code when timestep is read from output file
 
 //	2. reading in data of timestep
 
 	//creates file name timestep##.txt ## is number of timestep
 //	sprintf(iofile,"%s%s%d%s",OUTPUT_PATH,"timestep",timestep,".txt");
-	sprintf(iofile,"%s%d%s","timestep",timestep,".txt");
+//	sprintf(iofile,"%s%d%s","timestep",timestep,".txt");
+	sprintf(iofile,"%s%s%s%s%s%d%s","output/",tempiofile,"/",tempiofile,"_TDVE#",runnum,".txt"); //D.F.B. 5-2021
+//	printf("Test\n");
+	printf("Output filename: %s\n",iofile);
 
 	// checks if input file exists
 	if ((fp = fopen(iofile, "r"))== NULL)
@@ -94,6 +112,7 @@ int main()
 	while (ch!=':');
 	//reads timestep
 	fscanf(fp,"%d", &timestep);
+	tmin = timestep;
 
 	//find the ':'-sign in input file before number of span-elements
 	do	ch = fgetc(fp);
@@ -365,6 +384,9 @@ sprintf(iofile,"%s","wakeplot.py");
 
 	// run python script
 	system("python wakeplot.py");
+	
+	//Delete wakeplot.py after done with it D.F.B. 5-2021
+	remove("wakeplot.py");
 
 	printf("\nIt's all done here folks.\n");
 

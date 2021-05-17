@@ -148,9 +148,10 @@ int main(int argc, char *argv[])
     
 	if (argc < 2) //argc is the number of inputs
 	{//no input name: assume input.txt in the working dir
-		sprintf(info.inputfilename, "%s", "input.txt");
-        sprintf(info.output, "%s", OUTPUT_PATH);
-        sprintf(info.config, "%sinput_cfg.txt", OUTPUT_PATH);
+		//changed to save default input.txt results to output/inputs/... D.F.B. 5-2021
+        sprintf(info.inputfilename, "%s.txt", "input");
+        sprintf(info.output, "%s%s/", OUTPUT_PATH,"input");
+        sprintf(info.config, "%s%s_cfg.txt", info.output,"input");
 	}
 	else if(argc ==2)//with an input filename: use it. 
 	{
@@ -160,6 +161,17 @@ int main(int argc, char *argv[])
         sprintf(info.config, "%s%s_cfg.txt", info.output,argv[1]);
 
 
+
+	}
+	else
+	{
+		printf("Incorrect inputs passed to exe. Format should be:\n");
+		printf("FreeWake2020.exe input_filename\n");
+		scanf("%c", &answer);
+		exit(1);
+	}
+
+	// mkdir is moved out of if (argc == 2) statement D.F.B. 5-2021 
 		int nError = 0; //check which OS we are compiling on
 #if defined(_WIN32)
 		nError=_mkdir(info.output);//create output directory in output/
@@ -171,14 +183,7 @@ int main(int argc, char *argv[])
 			scanf("%c", &answer); 
 			exit(1);
 		}*/
-	}
-	else
-	{
-		printf("Incorrect inputs passed to exe. Format should be:\n");
-		printf("FreeWake2020.exe input_filename\n");
-		scanf("%c", &answer);
-		exit(1);
-	}
+
     printf("\nInput Filename : %s\n", info.inputfilename);
     printf("Output directory : %s\n", info.output);
     

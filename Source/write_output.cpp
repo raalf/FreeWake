@@ -63,7 +63,7 @@ void Save_Elementary_Wings(const GENERAL info,const BOUND_VORTEX* elementPtr)
 
 	int l;			//loop counter
 	FILE *fp;		//output file
-	char filename[137];	//file path and name
+	char filename[160];	//file path and name
 
 	//creates file "Elementary_Wings.txt in directory "output"
 	sprintf(filename,"%s%s",info.output,"Elementary_Wings.txt");
@@ -113,7 +113,7 @@ void Save_Trailing_Edge(const GENERAL info,const BOUND_VORTEX* trailedgePtr)
 
 	int l;			//loop counter
 	FILE *fp;		//output file
-	char filename[137];	//file path and name
+	char filename[160];//file path and name
 
 	//opens file for appending
 	sprintf(filename,"%s%s",info.output,"Elementary_Wings.txt");
@@ -159,7 +159,7 @@ void Horstmann_Results(const GENERAL info,const BOUND_VORTEX* elementPtr,\
 	double tempS;
 	double cl,cy,cn;  //temporary stores for cl, cy, and cn
 	FILE *fp;			//output file
-	char filename[126];	//file path and name
+	char filename[160];//file path and name
 
 	//creates file "output\results.txt"
 	sprintf(filename,"%s%s",info.output,"results.txt");
@@ -279,7 +279,7 @@ void Header(const GENERAL info,const BOUND_VORTEX* elementPtr,\
 	int i;				//loop counter
 //	double tempS;
 	FILE *fp;			//output file
-	char filename[126];	//file path and name
+	char filename[160];//file path and name
 
 	//creates file "output\results.txt"
 	sprintf(filename,"%s%s",info.output,"results.txt");
@@ -345,7 +345,7 @@ void Time_Stepping_Results(const GENERAL info,int const first, int const last,\
 	int i;				//loop counter
 	double time,CDi_ellipt,e;
 	FILE *fp;			//output file
-	char filename[126];	//file path and name
+	char filename[160];//filepath and name
 
 	//creates file "output\results.txt"
 	sprintf(filename,"%s%s",info.output,"results.txt");
@@ -397,7 +397,7 @@ void Time_Stepping_End_Results(const GENERAL info,const int steps,\
 	int i,first;				//loop counter
 	double time,CDi_ellipt,e;
 	FILE *fp;			//output file
-	char filename[126];	//file path and name
+	char filename[160];//file path and name
 
 	//creates file "output\results.txt"
 	sprintf(filename,"%s%s",info.output,"results.txt");
@@ -434,7 +434,7 @@ void Save_Surface_DVEs(const GENERAL info,const DVE *surfacePtr)
 
 	int l;			//loop counter
 	FILE *fp;		//output file
-	char filename[132];	//file path and name
+	char filename[160];//file path and name
 
 	//creates file "output\Surface_DVE.txt"
 	sprintf(filename,"%s%s",info.output,"Surface_DVE.txt");
@@ -610,7 +610,7 @@ void Save_Timestep(const GENERAL info,const int timestep,DVE **wakePtr,\
 
 	int time,span;		//loop counter
 	FILE *fp;			//output file
-	char filename[133];	//file path and name
+	char filename[160];//file path and name
 
 	//creates file name timestep##.txt ## is number of timestep
 	sprintf(filename,"%s%s%d%s",info.output,"timestep",timestep,".txt");
@@ -753,7 +753,7 @@ void Save_SurfaceDVE_Loads(const GENERAL info,const int timestep,\
 
 	int time,span;		//loop counter
 	FILE *fp;			//output file
-	char filename[133];	//file path and name
+	char filename[160];//file path and name
 
 	//creates file name timestep##.txt ## is number of timestep
 	sprintf(filename,"%s%s%d%s",info.output,"SDVE_loads",timestep,".txt");
@@ -844,7 +844,7 @@ void Test(const GENERAL info,double **D,const double *R)
  //  ###########################################################
  //save D matrix and resultant vector R in file D_matrix.txt
  int m,n;
-char filename[133];	//file path and name
+char filename[160];//file path and name
  FILE *fp;
 
 	//creates file name timestep##.txt ## is number of timestep
@@ -903,7 +903,7 @@ void CreateQuiverFile(const double pos[3], const double vec[3], const int idx, c
 
 
 	FILE *fp;		//output file
-	char filename[126];	//file path and name 
+	char filename[160];//file path and name 
 
 	if (filenum == 0) 
 	{

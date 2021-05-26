@@ -73,6 +73,9 @@ double tempS, tempA[3],tempA1[3];	//temporary scalar, array
 	vsum(panel.x2,tempA,tempA1); //x_1/4. = x1/4_2-x1/4_1
 	tempS= sqrt(tempA1[1]*tempA1[1]+tempA1[2]*tempA1[2]); //panel span at 1/4c
 	nu = asin(tempA1[2]/tempS);				//panel dihedral at 1/4c
+ 	if(tempA1[1]<0) nu = Pi-nu; 
+	//Added to allows for panel to be defined from right to left and dihedral over 90deg 
+	//##GB 5/20/21 
 
 	//computing the left trailing edge point of panel
 	xte1[0] = panel.x1[0]+0.75*panel.c1*cos(panel.eps1);
@@ -94,6 +97,10 @@ double tempS, tempA[3],tempA1[3];	//temporary scalar, array
 	phi = asin(xte[0]/norm2(xte));		//sweep of panel's trailing edge
 	tempS= sqrt(xte[1]*xte[1]+xte[2]*xte[2]);	//panel span at TE
 	nu = asin(xte[2]/tempS);					//trailing edge dihedral
+	if(xte[1]<0) nu = Pi-nu;  
+	//Added to allows for panel to be defined from right to left and dihedral over 90deg 
+    //##GB 5/20/21 
+
 	eta = tempS/panel.n*0.5;  //halfspan of trailing edge of elementary wings
 
 	//loop over number of spanwise elements 'n'
@@ -271,10 +278,13 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 
                 //leading edge dihedral
                 wingNu = asin(tempAA[2]/tempS);
+                if(tempAA[1]<0) wingNu = Pi-wingNu; 
+                //Added to allows for panel to be defined from right to left and dihedral over 90deg 
+                //##GB 5/20/21 
             }
-            //correcting epsilons for alpha considering dihedral (wingNu)
-            panelPtr[panel].eps1 += eps*cos(wingNu);
-            panelPtr[panel].eps2 += eps*cos(wingNu);
+            //correcting epsilons for alpha and beta considering dihedral (wingNu)
+            panelPtr[panel].eps1 += eps*cos(wingNu) + psi*sin(wingNu);
+            panelPtr[panel].eps2 += eps*cos(wingNu) + psi*sin(wingNu);
         } //END if(info.flagHORZ)
         
         //rotate X1

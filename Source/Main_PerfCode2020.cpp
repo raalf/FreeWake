@@ -56,7 +56,7 @@ int i,ii,a,a2;		//loop counters, max AOA increment
 	long pos; 				//file position counter
 	double tempS;			//temp scalar
 	char answer,string[6];	//string is used to update config file
-	char filename[137];		//file path and name
+	char filename[160];		//file path and name
 
 	//Input/output files
 	FILE *MomSol;			//output file of trim solutions

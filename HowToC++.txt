@@ -30,6 +30,8 @@ in directory freeWakeImpDev_D2C
 compile in VoGenDevelop
 gcc -c *.c
 gcc -o vogen -lm *.o
+or
+gcc *.c -lm -o vogen
 with "vogen" name of executable, needs to be copied into freeWakeImpDev_D2C
 
 ./vogen predesignD2C.inp

@@ -12,6 +12,7 @@ struct GENERAL
     double density;        //density of fluid
     double nu;            //kinematic viscosity
 	double alpha, beta;	//angle of attack, sideslip angle [rad]
+	double alphaset,betaset;//aoa and beta [rad] of flow, needed for geometry rotation
 
     double S,b,AR;		//reference area, span, aspect ratio
 	double AREA, projAREA, surfAREA; //calculated total area,

@@ -985,6 +985,8 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
     int span,index,panel,n,m,time;	//loop counter
     unsigned long length=strlen(info.config); //lenght of configuration file name with path
     double tempS;
+    double eps, psi, nu,tempA[3],tempAA[3]; //required to rotate geometry back into level
+    double delC,delSpan;	//change in chord across a panel
 	char *FCfile,*Ftstep,*SDVE;	//file path and name for flight condition and last timestep 
     FILE *fp;		//output file
 
@@ -1021,24 +1023,55 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 	span=0;
 	index=0;
 
+	if(info.flagHORZ)   eps = -info.alphaset;
+    else eps = 0;
+    psi = -info.betaset;
+    nu = -info.bank;
+
     //loop over panels
     for(panel=0;panel<info.nopanel;panel++)
     {
+    	//computing chords of strips, change in chord across panel span
+    	delC = (panelPtr[panel].c2-panelPtr[panel].c1)/panelPtr[panel].n;
+
+    	//computing the span of the strips, which is the panel span/n
+    		tempA [0]=panelPtr[panel].x1[0]-panelPtr[panel].x2[0];
+    		tempA [1]=panelPtr[panel].x1[1]-panelPtr[panel].x2[1];
+    		tempA [2]=panelPtr[panel].x1[2]-panelPtr[panel].x2[2];
+    	delSpan = norm2(tempA)/panelPtr[panel].n;
+
 		for (n = panelPtr[panel].LE1; n <= panelPtr[panel].LE2; n++)
 		{
 			index = n; //setting index to first chordwise DVE of span location			
-			spanPtr[span].area = 0;
-			spanPtr[span].chord = 0;
-
 			
-			//edge points of strips, x1 and x2, are saved in PitchmMoment.cpp
+			//chords left, center and right of strip
+    		spanPtr[span].chord1 = panelPtr[panel].c1+delC*(n-panelPtr[panel].LE1);
+    		spanPtr[span].chord = spanPtr[span].chord1+delC*0.5;
+			spanPtr[span].chord2 = spanPtr[span].chord1+delC;
 
-			//reference point is at the leading edge of each stip
+			//computing the span and area of each strip, 
+			spanPtr[span].span = delSpan;
+			spanPtr[span].area = delSpan * spanPtr[span].chord;
+
+			//edge points of strips, x1 and x2, were saved in PitchmMoment.cpp
+
+			//rotation x1 and x2 back to wings-level reference frame, 
+			//reversed process of Panel_Rotation in wing_geometry.cpp
+			//rotate X1
+			rotateX(spanPtr[span].x1,-nu,tempA);
+			rotateY(tempA, -eps,tempAA);
+			rotateZ(tempAA,psi,spanPtr[span].x1); //%note! this is beta, NOT yaw for circ. flight. 
+			//rotate X2
+			rotateX(spanPtr[span].x2,-nu,tempA);
+			rotateY(tempA,-eps, tempAA);
+			rotateZ(tempAA,psi,spanPtr[span].x2); //%note! this is beta, NOT yaw for circ. flight. 
+
+			//reference point is at the center of the leading edge of each strip
 			spanPtr[span].xref[0] = (spanPtr[span].x1[0] + spanPtr[span].x2[0]) / 2;
 			spanPtr[span].xref[1] = (spanPtr[span].x1[1] + spanPtr[span].x2[1]) / 2;
 			spanPtr[span].xref[2] = (spanPtr[span].x1[2] + spanPtr[span].x2[2]) / 2;
 
-			//Left and right edge chords are center chord -/+ eta tan(phiLE)
+/*#			//Left and right edge chords are center chord -/+ eta tan(phiLE)
 			spanPtr[span].chord1 = spanPtr[span].chord \
 							 + surfacePtr[index].eta * tan(surfacePtr[index].phiLE);
 			spanPtr[span].chord2 = spanPtr[span].chord \
@@ -1061,9 +1094,9 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 			//Left and right edge chords are center chord +/- eta tan(phiTE)
 			spanPtr[span].chord1 += spanPtr[span].chord \
 							 - surfacePtr[index].eta * tan(surfacePtr[index].phiTE);
-			spanPtr[span].chord2 = spanPtr[span].chord \
+			spanPtr[span].chord2 += spanPtr[span].chord \
 							 + surfacePtr[index].eta * tan(surfacePtr[index].phiTE);
-			
+#*/			
 			//circulation values of strip are based on TE values
 			spanPtr[span].A = surfacePtr[index].A;
 			spanPtr[span].B = surfacePtr[index].B;
@@ -1089,7 +1122,7 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 
 			spanPtr[span].cn1 = spanPtr[span].Gamma1*tempS/spanPtr[span].chord1;
 			spanPtr[span].cn0 = spanPtr[span].Gamma0*tempS/spanPtr[span].chord;
-			spanPtr[span].cn2 = spanPtr[span].Gamma1*tempS/spanPtr[span].chord2;
+			spanPtr[span].cn2 = spanPtr[span].Gamma2*tempS/spanPtr[span].chord2;
 
 	    	span++; // increase to next span index
   	    }//loop over span (n) of panel
@@ -1163,9 +1196,9 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
     // stip number || leading edge of strip 
     fprintf(fp,"%-10s%-14s%-14s%-14s","strip","x_ref","y_ref","z_ref");
     // circulation at ref. point || force coefficients || normal force coeff (w/o ind. drag)||ind. drag coeff
-    fprintf(fp,"%-14s%-14s%-14s%-14s%-14s%-14s","Gamma0","Cfx","Cfy","Cfz","Cfn","Cd");
+    fprintf(fp,"%-14s%-14s%-14s%-14s%-14s%-14s","Gamma0","Cfx","Cfy","Cfz","Cfn (no drag)","Cd (inviscid)");
     // moment coefficints of strip
-    fprintf(fp,"%-14s%-14s%-14s","Cl","Cm","Cn");
+    fprintf(fp,"%-14s%-14s%-14s","Cl (roll)","Cm (pitch)","Cn (yaw)");
     //ref area || ref span || ref. length
     fprintf(fp,"%-14s%-14s%-14s","Ref. area","Ref. span","Ref. lngth");
     //reference length for moment coefficients

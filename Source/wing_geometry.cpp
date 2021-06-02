@@ -257,7 +257,10 @@ void Panel_Rotation(GENERAL &info,PANEL* panelPtr)
 
 //    I.      updated panel geometry (move x1 & x2);
 
-    if(info.flagHORZ)   eps = info.alpha;
+  	info.alphaset = info.alpha; //value kept for outptut
+	info.betaset = info.beta; //value kept for outptut
+
+	if(info.flagHORZ)   eps = info.alpha;
     else eps = 0;
     psi = info.beta;
     nu = info.bank;
@@ -400,12 +403,12 @@ info.surfAREA = 0;
 		tempSpan = sqrt(xquart[1]*xquart[1]+xquart[2]*xquart[2]); 
 
 		//panel area
-		panelPtr[i].AREA = tempSpan * (panelPtr[i].c1 + panelPtr[i].c2) / 2;
+		panelPtr[i].AREA = tempSpan * (panelPtr[i].c1 + panelPtr[i].c2)*0.5;
 		info.AREA += panelPtr[i].AREA;
 
 		//panel area projection to xy plane
 		panelPtr[i].projAREA = xquart[1] * \
-            (panelPtr[i].c1 * cos(panelPtr[i].eps1) + panelPtr[i].c2 * cos(panelPtr[i].eps2)) / 2;
+            (panelPtr[i].c1 * cos(panelPtr[i].eps1) + panelPtr[i].c2 * cos(panelPtr[i].eps2))*0.5;
 		info.projAREA += panelPtr[i].projAREA;
         info.projSPAN += xquart[1]; //projected span
 

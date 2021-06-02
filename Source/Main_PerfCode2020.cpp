@@ -755,7 +755,7 @@ printf("Done reading in aerodynamic characteristics\n");
                     exit(EXIT_FAILURE);
                 }
                 fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
-                        a+1,CLtarget,info.alpha*RtD,info.beta*RtD);
+                        a+1,CLtarget,info.alphaset*RtD,info.betaset*RtD);
                 fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
                         CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
                 fprintf(FltConfg,"\n");
@@ -828,7 +828,7 @@ printf("Done reading in aerodynamic characteristics\n");
             printf("append empty\n");
             fseek(FltConfg,0,SEEK_END);  //move pointer at the beginning of the last line
                        fprintf(FltConfg,"%-10d%-10.5lf%-10.3lf%-10.3lf",\
-                FCno,CLtarget,info.alpha*RtD,info.beta*RtD);
+                FCno,CLtarget,info.alphaset*RtD,info.betaset*RtD);
             fprintf(FltConfg,"%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf%-12lf",\
                 CL,CY,CDi,CF[0],CF[1],CF[2],Cl,Cm,Cn);
             fprintf(FltConfg,"\n");

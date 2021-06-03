@@ -1071,32 +1071,6 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 			spanPtr[span].xref[1] = (spanPtr[span].x1[1] + spanPtr[span].x2[1]) / 2;
 			spanPtr[span].xref[2] = (spanPtr[span].x1[2] + spanPtr[span].x2[2]) / 2;
 
-/*#			//Left and right edge chords are center chord -/+ eta tan(phiLE)
-			spanPtr[span].chord1 = spanPtr[span].chord \
-							 + surfacePtr[index].eta * tan(surfacePtr[index].phiLE);
-			spanPtr[span].chord2 = spanPtr[span].chord \
-							 - surfacePtr[index].eta * tan(surfacePtr[index].phiLE);
-
-			//loop over chord of panel
-			for (m = 0; m < panelPtr[panel].m; m++)
-			{				
-				spanPtr[span].area += surfacePtr[index].S;
-
-				index += panelPtr[panel].n; //surfaceDVE indexing down the strip
-			}//next chord element; 'index' should be value of surfaceDVE at trailing edge
-			
-			index = index - panelPtr[panel].n; //adjusting surfaceDVE to index of DVE at TE
-
-			spanPtr[span].span = surfacePtr[index].eta*2;	//span = 2eta
-			spanPtr[span].chord = spanPtr[span].area/spanPtr[span].span;  	//total chord is area/span		
-
-
-			//Left and right edge chords are center chord +/- eta tan(phiTE)
-			spanPtr[span].chord1 += spanPtr[span].chord \
-							 - surfacePtr[index].eta * tan(surfacePtr[index].phiTE);
-			spanPtr[span].chord2 += spanPtr[span].chord \
-							 + surfacePtr[index].eta * tan(surfacePtr[index].phiTE);
-#*/			
 			//circulation values of strip are based on TE values
 			spanPtr[span].A = surfacePtr[index].A;
 			spanPtr[span].B = surfacePtr[index].B;
@@ -1246,7 +1220,7 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 	    	spanPtr[index].area,spanPtr[index].span,spanPtr[index].chord);
 	    //reference length for moment coefficients
 	    fprintf(fp,"%-14lf%-14lf%-14lf",\
-	    	spanPtr[index].momarm[0],spanPtr[index].momarm[1],spanPtr[index].momarm[1]);
+	    	spanPtr[index].momarm[0],spanPtr[index].momarm[1],spanPtr[index].momarm[2]);
 	    // leading edge point at left side of strip || left edge chord 
 	    fprintf(fp,"%-14lf%-14lf%-14lf%-14lf",\
 	    	spanPtr[index].x1[0],spanPtr[index].x1[1],spanPtr[index].x1[2],spanPtr[index].chord1);

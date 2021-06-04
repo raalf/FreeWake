@@ -6,19 +6,19 @@ Using camber (1) or no camber (0)  camber                   =     1
 Symmetrical geometry (yes 1, no 0):                     sym =    0
 Pitch trim (yes 1, no 0):                         trimPITCH =     0
 Roll trim (yes 1, no 0):                           trimROLL =     0
-Lift trim (yes 1, no 0):                             trimCL =     1
+Lift trim (yes 1, no 0):                             trimCL =     0
 Max. number of time steps:                          maxtime =    25
 Width of each time step (sec):                      deltime =    0.025000
 Convergence delta-span effic.:                       deltae =    0.000000     (0 if only timestepping)
 
 Freestream velocity (leave value 1):                   Uinf =    28.922600   target CL is 0.750000 
 AOA beginning, end, step size [deg]:                  alpha =    5.0 5 1
-Sideslip angle [deg]:                                  beta =    30.000000
+Sideslip angle [deg]:                                  beta =    0.000000
 
 Circling flight information
 
 
-Circling flight on (1) off (0):                    circling =    1
+Circling flight on (1) off (0):                    circling =    0
 Turning in horizontal plane (1)                  horizontal =    1    if (0), a/c descends
 Bank angle (deg)                                        phi =    60.000000
 Upwind velocity (m/s)                                    Ws =    0.000000
@@ -62,17 +62,17 @@ xright   yright  zright  chord   epsilon   Bound.Cond.   Airfoil   Hinge   Defle
 Panel #: 2. Number of elements across span n = 2 and chord m = 4
 Neighbouring panels (0 for none) left: 1 right: 3
 xleft    yleft   zleft   chord   epsilon   Bound.Cond.   Airfoil   Hinge   Deflection
-0.000   -3.000   0.000   0.500   0.000     220         1    1.000000    0.000000
+0.000   -3.000   0.000   0.500   0.000     220         1    0.80    10.000000
 xright   yright  zright  chord   epsilon   Bound.Cond.   Airfoil   Hinge   Deflection
-0.000   0.000   0.000   0.700   0.000     220         1   1.000000    0.000000
+0.000   0.000   0.000   0.700   0.000     220         1   0.70    10.000000
 
 Panel #: 3. Number of elements across span n = 2 and chord m = 4
 Neighbouring panels (0 for none) left: 2 right: 4
 xleft    yleft   zleft   chord   epsilon   Bound.Cond.   Airfoil   Hinge   Deflection
-0.000   0.000   0.000   0.700   0.000     220         1    1.000000    0.000000
+0.000   0.000   0.000   0.700   0.000     220         1    0.70    -10.000000
 xright   yright  zright  chord   epsilon   Bound.Cond.   Airfoil   Hinge   Deflection
-0.000   3.000   0.000   0.500   0.000     220         1   1.000000    0.000000
-
+0.000   3.000   0.000   0.500   0.000     220         1   0.80    -10.000000
+s
 Panel #: 4. Number of elements across span n = 2 and chord m = 4
 Neighbouring panels (0 for none) left: 3 right: 0
 xleft    yleft   zleft   chord   epsilon   Bound.Cond.   Airfoil   Hinge   Deflection

@@ -480,15 +480,14 @@ info.surfAREA = 0;
 			//hinge on either side of panel not at lifting line
 			//this will be the lifting line which is the closest to the hinge
 			//at the midspan of the panel  ##changed from left edge GB 1-23-2
-	//		closeLL = round(panelPtr[i].m * panelPtr[i].hinge1);
 			closeLL = round(panelPtr[i].m * (panelPtr[i].hinge1+panelPtr[i].hinge2)*0.5);
 			if (closeLL == 0) closeLL = 1; //cannot move LE
-			else if (closeLL == panelPtr[i].m) closeLL = panelPtr[i].m - 1; //cannot move TE
+			else 
+			if (closeLL == panelPtr[i].m) closeLL = panelPtr[i].m - 1; //cannot move TE
 			//how far to move the LL to have it be at the hinge:
 			//adjust1 = ((double(closeLL) / panelPtr[i].m) - panelPtr[i].hinge1) * -panelPtr[i].c1;
 			//adjust2 = ((double(closeLL) / panelPtr[i].m) - panelPtr[i].hinge2) * -panelPtr[i].c2;
 		}
-
 
 		//loop over number of chordwise elements 'info.m'
 		//removed GB 2-9-20		for (m=0;m<info.m;m++)

@@ -1020,8 +1020,8 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
     //assemble missing data for each strip
 
 	//determining missing information of spanwise strips
-	span=0;
-	index=0;
+	span=0;  //index along wingspan
+	index=0; //index of DVE at TE
 
 	if(info.flagHORZ)   eps = -info.alphaset;
     else eps = 0;
@@ -1042,7 +1042,7 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 
 		for (n = panelPtr[panel].LE1; n <= panelPtr[panel].LE2; n++)
 		{
-			index = n; //setting index to first chordwise DVE of span location			
+			index = n+panelPtr[panel].n*(panelPtr[panel].m-1); //index of DVE at TE			
 			
 			//chords left, center and right of strip
     		spanPtr[span].chord1 = panelPtr[panel].c1+delC*(n-panelPtr[panel].LE1);

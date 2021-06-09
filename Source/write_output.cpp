@@ -1128,6 +1128,8 @@ void SaveSpanDVEInfo(PANEL *panelPtr,DVE *surfacePtr,DVE **wakePtr,STRIP *spanPt
 		 	//srip normal force coefficient is Cf-Cd Warning no sign information
 		 	spanPtr[span].Cn = sqrt(dot(spanPtr[span].Cf,spanPtr[span].Cf)\
 		 						-spanPtr[span].Cd*spanPtr[span].Cd);
+		 	if(spanPtr[span].A*12+spanPtr[span].span*spanPtr[span].span*spanPtr[span].C<0) 
+		 		spanPtr[span].Cn *= -1; //if integrierte circulation of strip < 0 ==> Cn<0
 
         	span++; //next span section
        }

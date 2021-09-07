@@ -324,7 +324,8 @@ int main(int argc, char *argv[])
 //===================================================================//
 printf("reading in airfoils\n");
 
-	if(info.flagCAMBER){ //Skip if flagCAMBER is turned off
+	if(info.flagCAMBER)
+	{ //Skip if flagCAMBER is turned off
 		// Read in the camber data. Subroutines in read_input.cpp
 		Airfoil_or_Camber_Array_Size(info, &cambRow, &cambCol, 2);
 		ALLOC3D(&camberPtr,cambRow,cambCol,2);
@@ -332,7 +333,8 @@ printf("reading in airfoils\n");
 	}
 printf("Done reading in camber information\n");
 
-	if (info.flagVISCOUS){ // Skip if flagVISCOUS is turned off
+	if (info.flagVISCOUS)
+	{ // Skip if flagVISCOUS is turned off
 		// Read in airfoil data. Subroutines in read_input.cpp
 		Airfoil_or_Camber_Array_Size(info, &airfoilRow, &airfoilCol, 1);
 		ALLOC3D(&airfoilPtr,airfoilRow,airfoilCol,5);
@@ -887,7 +889,6 @@ printf("Done reading in aerodynamic characteristics\n");
     //END save to config file if CL iteration
     //===============================================================//
 
-    
     //===============================================================//
 		// Saving info for VoGen
 	//===============================================================//
@@ -925,8 +926,6 @@ printf("Done reading in aerodynamic characteristics\n");
 		// DONESaving info for VoGen
 	//===============================================================//
 
-
-    
 	//free allocated memory
 	FREE1D(&panelPtr,info.nopanel);
 	FREE1D(&surfacePtr,info.noelement);
@@ -934,9 +933,10 @@ printf("Done reading in aerodynamic characteristics\n");
     FREE1D(&spanPtr,info.nospanelement);
     FREE2D(&wakePtr,info.maxtime+1,info.nospanelement);
     FREE1D(&CDi_DVE,info.maxtime+1);
-
-	FREE3D(&camberPtr,cambRow,cambCol,2);
-	FREE3D(&airfoilPtr,airfoilRow,airfoilCol,5);
+	if(info.flagCAMBER) 
+		FREE3D(&camberPtr,cambRow,cambCol,2);
+	if (info.flagVISCOUS)
+		FREE3D(&airfoilPtr,airfoilRow,airfoilCol,5);
 
 	fclose(MomSol);//close output file of trim iteration results
 	fclose(Performance);//close output file of performance calc's

@@ -188,7 +188,7 @@ void DVE_Resultant(const GENERAL info,const PANEL *panelPtr,\
 	imax = panelPtr[panel].n-1;
 
 	//loop over chordwise lift. lines
-      for(m=0;m<panelPtr[panel].m;m++)
+  for(m=0;m<panelPtr[panel].m;m++)
 	{
 	  //checking if left edge is a free tip
 	  if(panelPtr[panel].BC1==110)
@@ -1186,8 +1186,9 @@ void DVE_KinCond(DVE *surfacePtr,const GENERAL info,\
 	//						the same as in the previous part.
 
 int i,j,m,panel,row,col;//counter
-//int k,l,span;
+int k,l,span;
 int imin,imax,element;
+int type;  //DVE type (vortex sheet, LE&TE vortices)
 double a[3],b[3],c[3];			//combined influence coefficients
 double tempS;
 
@@ -1229,17 +1230,25 @@ for(panel=0;panel<info.nopanel;panel++)	//loop over panels
 //##	{
 //##		row=i+2*info.noelement;
 
+		
 		//loop over surface DVE's that induce velocity on element i
-		for(j=0;j<info.noelement;j++)
+//#		for(j=0;j<info.noelement;j++)
+		j=0; //index of DVE that induces
+		for(k=0;k<info.nopanel;k++)	//loop over panels
+	  for(l=0;l<panelPtr[k].m;l++)		//loop over chordwise lift. lines
+	  for(span=0;span<panelPtr[k].n;span++) //loop over panel span
 		{
 			//setting singfct of DVE j temporarily to zero; added 8/16/05 GB
 			tempS = surfacePtr[j].singfct;
 			surfacePtr[j].singfct = 0;
 
+			if(l<panelPtr[k].m-1) type=0; //DVE has TE&LE vortex GB 8/10/21
+			else type = 2; //if DVE is at trailing edge, no TE-vortex
+
  			//computes influence coefficients, a, b, and c, of
 			//DVE j on reference point of DVE element
 			DVE_Influence_Coeff\
-					(surfacePtr[j],info,surfacePtr[element].xo,a,b,c,0);
+					(surfacePtr[j],info,surfacePtr[element].xo,a,b,c,type);
 									//subroutine in induced_velocity.cpp
 
 			//reassigning singfct of DVE j; added 8/16/05 GB
@@ -1252,6 +1261,7 @@ for(panel=0;panel<info.nopanel;panel++)	//loop over panels
 			D[row][col+1]	= dot(b,surfacePtr[element].normal);
 			D[row][col+2]	= dot(c,surfacePtr[element].normal);
 
+			j++;  //increase j
 		}//end loop j, element that induces vel. on element i
 
 /*/!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//

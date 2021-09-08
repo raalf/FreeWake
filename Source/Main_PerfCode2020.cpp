@@ -712,7 +712,10 @@ printf("Done reading in aerodynamic characteristics\n");
 				CLinviscid = CL;	// Creating CLinviscid
 				//When viscous corrections are off dont need to re-assign CL
 			}
-			CLtemp[a] = CF[2]; //storing CL value for iterating 
+			if (info.trimCL == 1)
+			{
+				CLtemp[a] = CF[2]; //storing CL value for iterating 
+			}
 			//===============================================================//
 				//DONE adjusting total CL for stalled sections
 			//===============================================================//

@@ -78,7 +78,7 @@ void LongitudinalTrim(GENERAL &info,PANEL *panelPtr,DVE *surfaceDVEPtr,DVE **wak
 
 
 	//adding zero lift of wing only if camber is turned off
-	if(~info.flagCAMBER){Cm += info.CMoWing;}
+	if(info.flagCAMBER!=1){Cm += info.CMoWing;}
 
 	CM_resid = Cm; //Cm and Cl are global
 	Cl_resid = Cl;
@@ -202,7 +202,7 @@ void LongitudinalTrim(GENERAL &info,PANEL *panelPtr,DVE *surfaceDVEPtr,DVE **wak
                                     //Subroutine in PitchMoment.cpp
 
 		//adding zero lift of wing only if camber is turned off
-		if (~info.flagCAMBER) { Cm += info.CMoWing; } //changed to account for camber, BBB Apr 2020
+		if (info.flagCAMBER!=1) { Cm += info.CMoWing; } //changed to account for camber, BBB Apr 2020
 
 		CM_resid = Cm; //Cm and Cl are global
 		Cl_resid = Cl;

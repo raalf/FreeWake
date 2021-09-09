@@ -22,7 +22,7 @@
 #define RtD 180/Pi
 #define DBL_EPS 1e-14                   //"zero" definition
 #define OUTPUT_PATH "output/"           //directory where output is saved
-#define PROGRAM_VERSION "FreeWake2020_dev V0.4"
+#define PROGRAM_VERSION "FreeWake2020_dev V0.5"
 #define AIRFOIL_PATH "airfoils/"        //directory with airfoils
 #define CAMBER_PATH "inputs/camber/"  //directory with camber data
 #define flagSTARFORCE 1   //flag = 1 skip computing aero laods until end

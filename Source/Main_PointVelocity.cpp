@@ -1,6 +1,6 @@
 #include "general.h"
 #include "PerfCode.h"
-int main()
+main()
 {
 //computes velocity due to time step file generated from Free Wake 2007 at
 //point P
@@ -42,6 +42,7 @@ int main()
 //===================================================================//
 
 	//creates file name for file with point information
+//	sprintf(iofile,"%s%s",OUTPUT_PATH,"pointinfo.txt");
 	sprintf(iofile,"%s%s",OUTPUT_PATH,"pointinfo.txt");
 
 	// checks if input file exists
@@ -65,6 +66,8 @@ printf("%d   %lf   %lf  %lf\n", timestep,P[0],P[1],P[2]);
 //END Step 1 
 //===================================================================//
 
+printf("\n DONE\n");
+scanf("%d",&timestep);
 
 //===================================================================//
 //	START Step 2	
@@ -238,7 +241,6 @@ printf("%d   %lf   %lf  %lf\n", timestep,P[0],P[1],P[2]);
 //===================================================================//
 
 
-
 //===================================================================//
 //START Step 3		
 //computing velocity in P
@@ -247,6 +249,7 @@ printf("%d   %lf   %lf  %lf\n", timestep,P[0],P[1],P[2]);
 	//velocity is induced by all surface and wake DVE's in point P
 	DVE_Induced_Velocity(info,P,surfaceDVE,wakeDVE,timestep,w_ind);
 				 			//subroutine in induced_velocity.cpp
+
 
 
 //computing induced velocity of most right point of each wing.
@@ -281,18 +284,17 @@ printf("%lf  %lf  %lf\n",w_ind[0],w_ind[1],w_ind[2]);
 // Create Output file
 sprintf(iofile,"%s%s",OUTPUT_PATH,"velocityinfo.txt");
 
-	// checks if input file exists  //commented out because it never found it
-	// if ((fp = fopen(iofile, "r"))== NULL)
-	//{
-	//	printf("File could not be opened, stupid:\n");
-	//	exit(1);
-	//}
-// Open output file and write w_ind	//might have to create file manually
+	// checks if input file exists
+	if ((fp = fopen(iofile, "r"))== NULL)
+	{
+		printf("File could not be opened, stupid:\n");
+		exit(1);
+	}
+// Open output file and write w_ind	
  fs = fopen(iofile,"w");
  fprintf(fs,"%1f  %1f  %1f", w_ind[0],w_ind[1],w_ind[2]);
  fclose(fs);
 // End Create Output file
-
 
 printf("\n DONE\n");
 //scanf("%d",&timestep);

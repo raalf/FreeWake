@@ -1,91 +1,476 @@
 //computes total normal force acting on wing
-void DVE_Wing_Normal_Forces(const GENERAL,double **,double [2],double [2],\
-							double &,double &,double &,double &);
+void DVE_Wing_Normal_Forces(const GENERAL,const PANEL *,\
+                            DVE *,const int,double **,\
+                            STRIP *&,double [2],double [2],\
+							double &,double &,double &,double &,double[3]);
 //computes normal forces of surface DVE
 void Surface_DVE_Normal_Forces(const GENERAL,const PANEL *,const int,\
 							   DVE **,DVE *,double **);
-//computes normal forces of elementary wings, fixed wake model
-void Elementary_Wing_Normal_Forces\
-					(const PANEL *,const GENERAL, BOUND_VORTEX *);
-//computes normal forces of wing, fixed wake model
-void Wing_Normal_Forces(const  PANEL* ,const GENERAL,const BOUND_VORTEX*,\
-						double [2],double [2],\
-						double &,double &,double &,double &);
+
 
 //===================================================================//
 		//START FUNCTION DVE_Wing_Normal_Forces
 //===================================================================//
-void DVE_Wing_Normal_Forces(const GENERAL info,double **N_force,\
+void DVE_Wing_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
+                            DVE *surfacePtr,const int time,\
+                            double **N_force,STRIP *&spanPtr,
 							double Nt_free[2], double Nt_ind[2],\
-							double &CL,double &CLi,double &CY,double &CYi)
+							double &CL,double &CLi,double &CY,double &CYi, double XCG[3])
 {
 //this routine adds up the DVE's normal forces in order to compute the
 //total wing normal forces/density and coefficients based on free stream
 //input:
 // info		general information on case
+// panelPtr panel informatin
+// surfacePtr   surface DVE information
+// time     current timestep
 // N_force	normal forces/density of each surface DVE, second index is:
 //			[0]: free stream lift, [1]: induced lift,
 //			[2]: free stream side, [3]: induced side force/density
-
+//          [4]: free stream normal, [5]: induced normal force/density
+//          [6,7,8]: eN_x, eN_y, eN_z in global ref. frame
+// spanPtr  holds strip information
 //
 //ouput:
-// as part of surfacePtr.:
-// N_free	total lift and side forces/density due to free stream flow
-// N_ind	total lift and side forces/density due to induced velocities
 //
-// Nt_free	total lift and side forces/density due to free stream flow
-// Nt_ind	total lift and side forces/density due to induced velocities
+// spanPtr.Span_force   force/density vector across span in wind axis system
+// Nt_free	total lift, side and normal forces/density due to free stream flow
+// Nt_ind	total lift, side and normalforces/density due to induced velocities
 // CL		total lift coefficient
 // CLi		total induced lift coefficient
 // CY		total side-force coefficient
 // CYi		total induced side-force coefficient
 
-  int l=0;									//counter
-  double q=0.5*info.Uinf*info.Uinf*info.S; 	//ref. area* dyn. pressure/density
+    int l,m,n,panel,span,index;				//counter
+    double eN[3],eD[3];         //normal force and drag directions
+    double omega,cosOm,sinOm;               //turn angle
+    double cosPhi,sinPhi;           //bank angles
+	double cosAlpha, sinAlpha;		//alpha angles
+    double tempS,tempA[3],tempVEC[3];
+    double q = 1/(0.5*info.Uinf*info.Uinf*info.S); 	//1/(ref. area* dyn. pressure/density)
+	double qc = 1 / (0.5*info.Uinf*info.Uinf*info.S*info.cmac);
+	double qb = 1 / (0.5*info.Uinf*info.Uinf*info.S*info.b);
+	double q_local;         //1/(ref. area dyn. pressure) of DVE
+	double MY, MX, MZ; //moments in the wind axis
+	//double Cn, Cl, Cm; //nondimensionalized moments
+	double **Moment; //
+	double momarm[3];
+	double lemid[3];
+	double A, B, C; //temp circulation coeffs for moment calc
+	ALLOC2D(&Moment, info.nospanelement, 3);
+//===================================================================//
+                        //span forces
+//===================================================================//
+     if(info.flagCIRC) //total angle turned if turning flight
+     {
+         omega=(info.gradient*info.deltime*(time+1)); //turn angle
+         cosOm = cos(omega);
+         sinOm = sin(omega);
+         
+         cosPhi = cos(info.bank);   //bank angle cosine
+         sinPhi = sin(info.bank);   //bank angle sine
+	 }
+		 cosAlpha = cos(info.alpha);
+		 sinAlpha = sin(info.alpha);
 
-  Nt_free[0]=0;
-  Nt_free[1]=0;
-  Nt_ind[0]=0;
-  Nt_ind[1]=0;
+     
 
-  //loop over number of panels
-  for (l=0;l<info.noelement;l++)
-  {
-	  //adding the normal forces/density of all elementary wings
-	  Nt_free[0]	+=  N_force[l][0];
-	  Nt_free[1]	+=  N_force[l][2];
+    span = 0;       //initializing span index
+    index =0;       //initialzing surface DVE index
+	momarm[0] = 0;
+	momarm[1] = 0;
+	momarm[2] = 0;
 
-	  Nt_ind[0]	+=  N_force[l][1];
-	  Nt_ind[1]	+=  N_force[l][3];;
+	lemid[0] = 0;
+	lemid[1] = 0;
+	lemid[2] = 0;
 
-//#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
-//#printf("NtXi =%lf\t NtZi =%lf\n",Nt_ind[0],Nt_ind[1]);//#
-  }
 
-  if (info.sym==1 && info.beta == 0)
-  {	//twice the force if symmetric geometry
-	  Nt_free[0]*=2;
 
-	  Nt_ind[0]	*=2;
-  	  Nt_ind[1]	*=2;
-//#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
-  }
-  //total lift and side force coefficients
-  CL = (Nt_free[0]+Nt_ind[0])/q;
-  CY = (Nt_free[1]+Nt_ind[1])/q;
+    //loop over panels
+    for(panel=0;panel<info.nopanel;panel++)
+    {
+        //loop over panel span (along leading edge indices)
+		for (n = panelPtr[panel].LE1; n <= panelPtr[panel].LE2; n++)
+		{
+			index = n; //setting index to first chordwise DVE of span location			
 
-  //total induced lift and side force coefficients
-  CLi = Nt_ind[0]/q;
-  CYi = Nt_ind[1]/q;
-  //printf("\n");
-  //printf("CLn = \%f\t",Nt_free[0]/q);
-  //printf("CLi = %f\t",CLi);
-  //printf("CL = %f\t",CL);
-  //printf("\n"); 
-  //printf("CYn = %f\t",Nt_free[1]/q);
-  //printf("CYi = %f\t",CYi);
-  //printf("CY = %f\t",CY);
-//#printf("CL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf\n",CL,CLi,CY,CYi);//#
+			//initializing
+			spanPtr[span].Span_force[0] = 0; 
+			spanPtr[span].Span_force[1] = 0; 
+			spanPtr[span].Span_force[2] = 0;
+			Moment[span][0] = 0;
+			Moment[span][1] = 0;
+			Moment[span][2] = 0;
+
+			//loop over chord of panel
+			for (m = 0; m < panelPtr[panel].m; m++)
+			{
+				
+				//normal force direction
+				// This eN is in the global frame, which rotates during circling flight. 
+				eN[0] = N_force[index][6];
+				eN[1] = N_force[index][7];
+				eN[2] = N_force[index][8];
+
+				//adding normal forces to force
+				tempS = (N_force[index][4] + N_force[index][5]); //total normal force
+
+				tempVEC[0] = eN[0] * tempS;
+				tempVEC[1] = eN[1] * tempS;
+				tempVEC[2] = eN[2] * tempS;
+
+				spanPtr[span].Span_force[0] += tempVEC[0];
+				spanPtr[span].Span_force[1] += tempVEC[1];
+				spanPtr[span].Span_force[2] += tempVEC[2];
+
+				//adding normal force to moment
+				//moment will be FxR
+				//Normal force is located at the LE of each element
+				lemid[0] = (surfacePtr[index].x1[0] + surfacePtr[index].x2[0]) / 2;
+				lemid[1] = (surfacePtr[index].x1[1] + surfacePtr[index].x2[1]) / 2;
+				lemid[2] = (surfacePtr[index].x1[2] + surfacePtr[index].x2[2]) / 2;
+
+				momarm[0] = XCG[0] - lemid[0]; //will be momarm 
+				momarm[1] = XCG[1] - lemid[1];
+				momarm[2] = XCG[2] - lemid[2];
+ 				cross(tempVEC, momarm, tempA);
+ 
+				//contribution of this spanwise strip to the total moment (in the global frame)
+				Moment[span][0] += tempA[0];
+				Moment[span][1] += tempA[1];
+				Moment[span][2] += tempA[2];
+ 
+				//add additional moment due to moment of each element about control point
+				if (m == 0)
+				{
+					A = surfacePtr[index].A;
+					B = surfacePtr[index].B;
+					C = surfacePtr[index].C;
+				}
+				else
+				{
+					A = surfacePtr[index].A - surfacePtr[index - panelPtr[panel].n].A;
+					B = surfacePtr[index].B - surfacePtr[index - panelPtr[panel].n].B;
+					C = surfacePtr[index].C - surfacePtr[index - panelPtr[panel].n].C;
+				}
+
+				tempS = (surfacePtr[index].eta * surfacePtr[index].eta * B) / \
+					(3 * A + surfacePtr[index].eta * surfacePtr[index].eta * C);
+
+				Moment[span][0] += tempVEC[0] * tempS;
+				Moment[span][1] += tempVEC[1] * tempS;
+				Moment[span][2] += tempVEC[2] * tempS;
+
+				index += panelPtr[panel].n; //surfaceDVE indexing down the chord
+			}//next chord element; 'index' should be value of surfaceDVE at trailing edge
+
+			index = index - panelPtr[panel].n; //adjusting surfaceDVE
+
+//################################################
+			// drag force direction
+			if (!info.flagCIRC)
+			{
+				//drag force direction
+				eD[0] = surfacePtr[index].U[0];
+				eD[1] = surfacePtr[index].U[1];
+				eD[2] = surfacePtr[index].U[2];
+			}
+			else
+			{
+				// Added by D.F.B. 03-2020 because of circling flight
+				// If there is circling flight, set the DVE drag
+				// direction to the velocitiy direction at the TE.
+				// This eD is in the global frame, which rotates during circling flight. 
+				tempS = 1 / norm2(surfacePtr[index].uTE[0]);
+				eD[0] = surfacePtr[index].uTE[0][0] * tempS;
+				eD[1] = surfacePtr[index].uTE[0][1] * tempS;
+				eD[2] = surfacePtr[index].uTE[0][2] * tempS;
+			}
+
+			/************************* Quiver output of vectors *************************
+			//save spanwise drag distribution for quiver plot, forces are added in writeoutput.cpp
+			if (span==0)   CreateQuiverFile(surfacePtr[index].xTE, eD,0,1);
+			else 			CreateQuiverFile(surfacePtr[index].xTE, eD,1,1);
+			// *******************************************************************************/
+
+			//adding drag to force 
+			tempVEC[0] = eD[0] * spanPtr[span].D_force;
+			tempVEC[1] = eD[1] * spanPtr[span].D_force;
+			tempVEC[2] = eD[2] * spanPtr[span].D_force;
+
+			spanPtr[span].Span_force[0] += tempVEC[0];
+			spanPtr[span].Span_force[1] += tempVEC[1];
+			spanPtr[span].Span_force[2] += tempVEC[2];
+
+			//adding drag to moment
+			//drag is located at the TE
+			momarm[0] = XCG[0] - surfacePtr[index].xTE[0]; //will be momarm 
+			momarm[1] = XCG[1] - surfacePtr[index].xTE[1];
+			momarm[2] = XCG[2] - surfacePtr[index].xTE[2];
+
+			//contribution of this spanwise strip to the total moment (in the global frame)
+			cross(tempVEC, momarm, tempA);
+			Moment[span][0] += tempA[0];
+			Moment[span][1] += tempA[1];
+			Moment[span][2] += tempA[2];
+
+			//add additional moment due to moment of each element about control point
+			tempS = (surfacePtr[index].eta * surfacePtr[index].eta *surfacePtr[index].B) / \
+				(3 * surfacePtr[index].A + surfacePtr[index].eta * surfacePtr[index].eta * surfacePtr[index].C);
+
+			Moment[span][0] += tempVEC[0] * tempS;
+			Moment[span][1] += tempVEC[1] * tempS;
+			Moment[span][2] += tempVEC[2] * tempS;
+
+
+			/*/* ************************ Quiver output of vectors *************************
+			if (time == info.maxtime && panel == 0 && n == panelPtr[panel].LE1) {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 0, 3);
+			}
+			else {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 3);
+			}
+			CreateQuiverFile(surfacePtr[index].xo, spanPtr[span].Span_force, 1, 3);
+			// *******************************************************************************/
+
+//################################################
+            //At this point, the Span_force vector is alligned with the Normal force (eN)
+			//and the drag force (eD) directions (which can be different for every spanwise
+			//section).  Now we rotate into wind axis system
+            if(info.flagCIRC) //turning flight -> rotate vector to wind-axis frame
+            {   
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
+
+				//rotate by turn angle
+				spanPtr[span].Span_force[0] = tempA[0] * cosOm + tempA[1] * sinOm;
+				spanPtr[span].Span_force[1] = -tempA[0] * sinOm + tempA[1] * cosOm;
+				spanPtr[span].Span_force[2] = tempA[2];
+				
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
+
+				//reassigning and rotation by bank angle
+				spanPtr[span].Span_force[0] = tempA[0];
+				spanPtr[span].Span_force[1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
+				spanPtr[span].Span_force[2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;
+
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
+
+				//rotate by alpha. This also works with horizontal flight because we force alpha = 0
+				//in wing_geometry line 299. This may need a beta rot as well!
+				spanPtr[span].Span_force[0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
+				spanPtr[span].Span_force[1] = tempA[1];
+				spanPtr[span].Span_force[2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
+
+				//also need to rotate moment vector. ENSURE THIS IS THE SAME LOGIC AS ABOVE!
+				tempA[0] = Moment[span][0];
+				tempA[1] = Moment[span][1];
+				tempA[2] = Moment[span][2];
+
+				//rotate by turn angle
+				Moment[span][0] = tempA[0] * cosOm + tempA[1] * sinOm;
+				Moment[span][1] = -tempA[0] * sinOm + tempA[1] * cosOm;
+				Moment[span][2] = tempA[2];
+
+				tempA[0] = Moment[span][0];
+				tempA[1] = Moment[span][1];
+				tempA[2] = Moment[span][2];
+
+				//reassigning and rotation by bank angle
+				Moment[span][0] = tempA[0];
+				Moment[span][1] = tempA[1] * cosPhi + tempA[2] * sinPhi;
+				Moment[span][2] = -tempA[1] * sinPhi + tempA[2] * cosPhi;
+
+				tempA[0] = Moment[span][0];
+				tempA[1] = Moment[span][1];
+				tempA[2] = Moment[span][2];
+
+				//rotate by alpha. This also works with horizontal flight because we force alpha = 0
+				//in wing_geometry line 299. This may need a beta rot as well!
+				Moment[span][0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
+				Moment[span][1] = tempA[1];
+				Moment[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
+
+             }
+			else //still need to rotate by alpha even if not circling flight. Maybe also need Beta. Also this
+				//assumes that bank is 0 and decending flight! 
+			{
+				tempA[0] = spanPtr[span].Span_force[0];
+				tempA[1] = spanPtr[span].Span_force[1];
+				tempA[2] = spanPtr[span].Span_force[2];
+
+				spanPtr[span].Span_force[0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
+				spanPtr[span].Span_force[1] = tempA[1];
+				spanPtr[span].Span_force[2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
+				
+				//rotate moment vector 
+				tempA[0] = Moment[span][0];
+				tempA[1] = Moment[span][1];
+				tempA[2] = Moment[span][2];
+
+				Moment[span][0] = tempA[0] * cosAlpha + tempA[2] * sinAlpha;
+				Moment[span][1] = tempA[1];
+				Moment[span][2] = -tempA[0] * sinAlpha + tempA[2] * cosAlpha;
+			}
+
+			/*/* ************************ Quiver output of vectors *************************
+			if (time == info.maxtime && panel == 0 && n == panelPtr[panel].LE1) {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 0, 4);
+			}
+			else {
+				CreateQuiverFile(surfacePtr[index].xo, Moment[span], 1, 4);
+			}
+			CreateQuiverFile(surfacePtr[index].xo, spanPtr[span].Span_force, 1, 4);
+			// *******************************************************************************/
+
+
+    //NOTE! if body-reference frame required, rotation by alpha needed
+//################################################
+
+//printf("\n%d phi %lf Spanforce %lf  %lf  %lf ",\
+       span,info.bank*RtD, tempA[0],tempA[1],tempA[2]);
+//printf("\n u   %lf  %lf  %lf ",\
+       surfacePtr[index].u[0],surfacePtr[index].u[1],surfacePtr[index].u[2]);
+
+            span++; // increase to next span index
+        }//loop over span (n) of panel
+    } //next panel
+    
+
+
+//===================================================================//
+                      //section loads
+//===================================================================//
+   //assign moment to body coordinates
+   for(span=0;span<info.nospanelement;span++)
+   {
+   		spanPtr[span].Moment[0]= Moment[span][0];
+	 	spanPtr[span].Moment[1]= Moment[span][1];
+	  	spanPtr[span].Moment[2]= Moment[span][2];
+   }
+//===================================================================//
+                    //total forces
+//===================================================================//
+
+    tempA[0] = 0; tempA[1] = 0; tempA[2] = 0; //initialzing aircraft coefficients
+
+	tempVEC[0] = 0; tempVEC[1] = 0; tempVEC[2] = 0;
+
+	//computing CFX,CFY and CFZ, and 3 total moments
+    for(span=0;span<info.nospanelement;span++)
+    {
+      tempA[0] += spanPtr[span].Span_force[0];
+      tempA[1] += spanPtr[span].Span_force[1];
+      tempA[2] += spanPtr[span].Span_force[2];
+
+	  tempVEC[0] += Moment[span][0];
+	  tempVEC[1] += Moment[span][1];
+	  tempVEC[2] += Moment[span][2];
+    }
+
+	CF[0] = tempA[0];
+	CF[1] = tempA[1];
+	CF[2] = tempA[2];
+
+	MX = tempVEC[0];
+	MY = tempVEC[1];
+	MZ = tempVEC[2];
+
+	//will need to double if sym on!
+    if (info.sym == 1 && info.beta == 0 && !info.flagCIRC)
+    {
+        CF[0] *= 2;
+        CF[1] = 0.0;
+        CF[2] *= 2;
+        
+        MX = 0.0;
+        MY *= 2;
+        MZ = 0.0;
+    }
+
+	/*/* ************************ Quiver output of vectors *************************
+	CreateQuiverFile(XCG, tempVEC, 0, 5);
+	CreateQuiverFile(XCG, CF, 1,5 );
+	// *******************************************************************************/
+
+    scalar(CF,q,CF); //non dimensionalize
+	Cl = MX * qb;     // roll  moment
+	Cm = MY * qc;     // pitch moment
+	Cn = MZ * qb;    // yaw   moment
+	
+    //initializing
+    Nt_free[0]=0;
+    Nt_free[1]=0;
+    Nt_free[2]=0;
+    Nt_ind[0]=0;
+    Nt_ind[1]=0;
+    Nt_ind[2]=0;
+
+    //printf("\n");
+    
+    //loop over number of surfaceDVEs
+    for (l=0;l<info.noelement;l++)
+    {
+        //adding the normal forces/density of all elementary wings
+        Nt_free[0]	+=  N_force[l][0];
+        Nt_free[1]	+=  N_force[l][2];
+        Nt_free[2]  +=  N_force[l][4];
+
+        Nt_ind[0]	+=  N_force[l][1];
+        Nt_ind[1]	+=  N_force[l][3];
+        Nt_ind[2]   +=  N_force[l][5];
+//printf("DVE %d  Nx  =%lf\t Ntxind  =%lf  in lift_force\n",l,N_force[l][0],N_force[l][1]);//#
+    //#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
+    //#printf("NtXi =%lf\t NtZi =%lf\n",Nt_ind[0],Nt_ind[1]);//#
+    }
+
+    
+    if (info.sym==1 && info.beta == 0)
+    {	//twice the force if symmetric geometry
+        Nt_free[0]*=2;
+        Nt_free[2]*=2;
+
+        Nt_ind[0]	*=2;
+        Nt_ind[2]	*=2;
+    //#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
+    }
+    //total lift and side force coefficients
+    CL = (Nt_free[0]+Nt_ind[0])*q;
+    CY = (Nt_free[1]+Nt_ind[1])*q;
+
+    //total induced lift and side force coefficients
+    CLi = Nt_ind[0]*q;
+    CYi = Nt_ind[1]*q;
+
+	
+	//printf("\nCl %lf Cm %lf Cn %lf\n", \
+		Cl, Cm, Cn);//#
+    //printf("\nCL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf \nCFX %lf CFY %lf CFZ %lf  |CF| %lf\n",\
+           CL,CLi,CY,CYi,CF[0],CF[1],CF[2],norm2(CF));//#
+
+
+	FREE2D(&Moment, info.nospanelement, 3);
+   //===================================================================//
+    //===================================================================//
+    
+    // N_force    normal forces/density of each surface DVE, second index is:
+    //            [0]: free stream lift, [1]: induced lift,
+    //            [2]: free stream side, [3]: induced side force/density
+    //          [4]: free stream normal, [5]: induced normal force/density
+    //          [6,7,8]: eN_x, eN_y, eN_z in global ref. frame
+    // D_force  drag force/density across span
+    //
+    //ouput:
+    //
+    // Span_force   force/density vector across span in wind axis system
+    // Nt_free    total lift, side and normal forces/density due to free stream flow
+    // Nt_ind    total lift, side and normalforces/density due to induced velocities
 
 }
 //===================================================================//
@@ -125,6 +510,7 @@ void Surface_DVE_Normal_Forces(const GENERAL info,const PANEL *panelPtr,\
 //					[0]: free stream lift, [1]: induced lift,
 //					[2]: free stream side, [3]: induced side force/density
 //					[4]: free stream normal, [5]: induced normal force/density
+//                  [6,7,8]: eN_x, eN_y, eN_z in global ref. frame
 //
 //
 int i,j,k;					//i'th panels
@@ -149,20 +535,26 @@ double R[3];				//resultant ind. force/density of element l
 double N_free;				//magnitude free stream norm. forces/density
 double tempA[3],tempAA[3], tempS;
 double **U1,**Uo,**U2;		//mid-chord velocities of upstream DVE
+double spandir[3];
+double Uxspandir;	
 
-if(info.m>1) //if more than one lifting line
-{	//allocating temporary memory for the induced velocity of upstream DVE
-	//needed for averaging velocity induced at lifting lines
-	ALLOC2D(&U1,info.nospanelement,3);
-	ALLOC2D(&Uo,info.nospanelement,3);
-	ALLOC2D(&U2,info.nospanelement,3);
-}
 
 //loop over number of panels
 for (i=0;i<info.nopanel;i++)
 {
+  //if(panelPtr[i].m>1) //if more than one lifting line
+ // {    //allocating temporary memory for the induced velocity of upstream DVE
+        //needed for averaging velocity induced at lifting lines
+        //added GB 2-9-20. Compiler gives a warning if we only alloc
+		//when m>1, so lets always allocate
+        ALLOC2D(&U1,panelPtr[i].n,3);
+        ALLOC2D(&Uo,panelPtr[i].n,3);
+        ALLOC2D(&U2,panelPtr[i].n,3);
+ // }
+
+
   //loop over number of chordwise elements 'info.m'
-  for (j=0;j<info.m;j++)
+  for (j=0;j<panelPtr[i].m;j++)
   {
 	 //loop over number of spanwise elements 'n'
 	 for (k=0;k<panelPtr[i].n;k++)
@@ -178,7 +570,7 @@ for (i=0;i<info.nopanel;i++)
 		}
 		else
 		{
-			//vector along the bound vortex along LE
+			//vector along the mid chord of DVE, for averaging of DVEs aft of LE
 			tempA[0]=tan(surfacePtr[l].phi0); tempA[1]=1; tempA[2]=0;
 			//transforming into local reference frame
 			Star_Glob(tempA,surfacePtr[l].nu,surfacePtr[l].epsilon,\
@@ -186,33 +578,10 @@ for (i=0;i<info.nopanel;i++)
 								//function in ref_frame_transform.h
 		}
 
+		// S calculation works for circling flight D.F.B. 03-2020
 		eta  = surfacePtr[l].eta;
 		eta8 = eta*0.8;
 
-		//#non-small angles
-		//normal force direction
-		cross(surfacePtr[l].u,S,tempA);			//#	UxS
-		UxS=norm2(tempA);						//	|UxS|
-		scalar(tempA,1/UxS,eN);					//	eN=(UxS)/|UxS|
-
-		//the lift direction  eL=Ux[0,1,0]/|Ux[0,1,0]|
-		tempS = sqrt(surfacePtr[l].u[0]*surfacePtr[l].u[0]\
-		 			+surfacePtr[l].u[2]*surfacePtr[l].u[2]);
-		eL[0] = -surfacePtr[l].u[2]/tempS;
-		eL[1] =  0;
-		eL[2] =  surfacePtr[l].u[0]/tempS;
-
-		//the side force direction eS=UxeL/|UxeL|
-		cross(eL,surfacePtr[l].u,tempA);
-		tempS=1/norm2(tempA);
-		scalar(tempA,tempS,eS);
-
-//#printf(" U = %lf\t%lf\t%lf\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);//#
-//#printf("S = %lf  %lf  %lf  %lf\n",S[0],S[1],S[2],norm2(S));//#
-//#printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#
-//#printf("eL= %lf\t%lf\t%lf\t%lf\n",eL[0],eL[1],eL[2],norm2(eL));//#
-//#printf("eS= %lf\t%lf\t%lf\t%lf\n",eS[0],eS[1],eS[2],norm2(eS));//#
-//#printf("UXS= %lf\n",(UxS));//#
 
 		if(j==0)
 		{	//most forward bound vortex
@@ -227,11 +596,6 @@ for (i=0;i<info.nopanel;i++)
 			C = surfacePtr[l].C - surfacePtr[l-panelPtr[i].n].C;
 		}
 
-//*****************************************************************************
-		//computing magnitude of normal force/density due to free stream
-//*****************************************************************************
-		N_free = (A*2*eta + C/3*2*eta*eta*eta)*UxS;
-//#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
 
 //*****************************************************************************
 		 //computing the induced force/density
@@ -245,11 +609,11 @@ for (i=0;i<info.nopanel;i++)
 		if(j==0)
 		{
 			//computing the leading edge midpoint
-				//first the vector to leading edge
-				tempA[0]=-surfacePtr[l].xsi;tempA[1]=0;tempA[2]=0;
-				//transforming into local reference frame
-				Star_Glob(tempA,surfacePtr[l].nu,surfacePtr[l].epsilon,\
-												surfacePtr[l].psi,tempAA);
+            //first the vector to leading edge
+            tempA[0]=-surfacePtr[l].xsi;tempA[1]=0;tempA[2]=0;
+            //transforming into local reference frame
+            Star_Glob(tempA,surfacePtr[l].nu,surfacePtr[l].epsilon,\
+                                            surfacePtr[l].psi,tempAA);
 										//function in ref_frame_transform.h
 			xoLE[0] = surfacePtr[l].xo[0] + tempAA[0];
 			xoLE[1] = surfacePtr[l].xo[1] + tempAA[1];
@@ -275,7 +639,7 @@ for (i=0;i<info.nopanel;i++)
 			DVE_Induced_Velocity(info,tempA,surfacePtr,wakePtr,timestep,w2);
 					 					//subroutine in induced_velocity.cpp
 
-			if(info.m>1)//if more than one lifting line, compute and store
+            if(panelPtr[i].m>1)//if more than one lifting line, compute and store
 			{			//velocities at half-chord loaction for averaging later
 			  xoLE[0] = surfacePtr[l].xo[0];
 			  xoLE[1] = surfacePtr[l].xo[1];
@@ -295,7 +659,7 @@ for (i=0;i<info.nopanel;i++)
 			//###################################
 
 			  //computing the ind. velocity at left (1) edge of bound vortex
-			  scalar(tempAA,-eta8,tempA);
+			  scalar(tempAA,-eta8,X);
 			  vsum(xoLE,X,tempA);
 			  DVE_Induced_Velocity\
 			   					(info,tempA,surfacePtr,wakePtr,timestep,U1[k]);
@@ -366,11 +730,21 @@ for (i=0;i<info.nopanel;i++)
 			w2[2] = (U2[k][2]+tempAA[2])*0.5; U2[k][2] = tempAA[2];
 
 		}//done computing the velocities that are induced at the bound vortex.
+         
+        //correction of vector along LE for DVEs aft of LE row
+        if(j>0)
+        {
+             //vector along the bound vortex along LE
+             tempA[0]=tan(surfacePtr[l].phiLE); tempA[1]=1; tempA[2]=0;
+             //transforming into local reference frame
+             Star_Glob(tempA,surfacePtr[l].nu,surfacePtr[l].epsilon,\
+                                                 surfacePtr[l].psi,S);
+                                 //function in ref_frame_transform.h
+        }
 
 	  //Integration of induced forces with Simpson's Rule
 	  //Integration requires overhanging edges!!
 	  //See also KHH linees 2953 - 2967, A23SIM
-
 		//Kutta-Joukowski at left (1) edge
 		cross(w1,S,tempA);				// w1xS
 		gamma1  = A-B*eta8+C*eta8*eta8;//gamma1
@@ -403,12 +777,93 @@ for (i=0;i<info.nopanel;i++)
 		R[1] += (7*R1[1]-8*Ro[1]+7*R2[1])*(eta-eta8)/3;//Ry
 		R[2] += (7*R1[2]-8*Ro[2]+7*R2[2])*(eta-eta8)/3;//Rz
 //#printf("R[%d] %lf %lf %lf ",l,R[0],R[1],R[2]);//#
+         
+//*****************************************************************************
+    //computing normal force vector
+//*****************************************************************************
+
+        //#non-small angles
+        //normal force direction
+        cross(surfacePtr[l].u,S,tempA);            //#    UxS
+        UxS=norm2(tempA);                        //    |UxS|
+        scalar(tempA,1/UxS,eN);                    //    eN=(UxS)/|UxS|
+
+        //*** Calculated lift direction based on the freestream velocity direction
+        //        Changed by D.F.B. 03-2020
+        //vector along the bound vortex along LE
+        tempA[0]=0; tempA[1]=1; tempA[2]=0;
+        //transforming into gobal reference frame
+        Star_Glob(tempA,0,surfacePtr[l].epsilon,surfacePtr[l].psi,spandir); //is this supposed to be zero? consider roll angle vs dihedral/winglet. 
+
+        cross(surfacePtr[l].u,spandir,tempA);        //#    UxS
+        Uxspandir=norm2(tempA);                        //    |UxS|
+        scalar(tempA,1/Uxspandir,eL);                //    eL=(UxS)/|UxS|
+
+ //        printf("eL\t%f %f %f\n",eL[0],eL[1],eL[2]);
+ //        printf("spandir\t%f %f %f\n",spandir[0],spandir[1],spandir[2]);
+ //       printf("DVEu\t%f %f %f\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);
+          
+
+         //***Removed by D.F.B. 03-2020
+         //the lift direction  eL=Ux[0,1,0]/|Ux[0,1,0]|
+         /*tempS = sqrt(surfacePtr[l].u[0]*surfacePtr[l].u[0]\
+                     +surfacePtr[l].u[2]*surfacePtr[l].u[2]);
+         eL[0] = -surfacePtr[l].u[2]/tempS;
+         eL[1] =  0;
+         eL[2] =  surfacePtr[l].u[0]/tempS;*/
+//         printf("\neL\t%f %f %f\n",eL[0],eL[1],eL[2]);
+//         printf("eN\t%f %f %f\n",eN[0],eN[1],eN[2]);
+         
+
+
+         //the side force direction eS=UxeL/|UxeL|
+         // cross(eL,surfacePtr[l].u,tempA);  \\ Removed by D.F.B. 03-2020
+         // Original FW use eL x U... Changed to U x eL :
+         cross(surfacePtr[l].u,eL,tempA);
+         tempS=1/norm2(tempA);
+         scalar(tempA,tempS,eS);
+		 
+		 /* ************************ Quiver output of vectors *************************
+		 if (timestep == info.maxtime && i==0 && j==0 && k==0) 
+		 {
+			 CreateQuiverFile(surfacePtr[l].xo, eN, 0, 1);
+			 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 0, 2);
+		 }
+		 else 
+		 {
+			 CreateQuiverFile(surfacePtr[l].xo, eN, 1, 1);
+			 CreateQuiverFile(surfacePtr[l].xo, surfacePtr[l].u, 1, 2);
+		 }
+		 //CreateQuiverFile(surfacePtr[l].xo, eL, 1, 1);
+		 //CreateQuiverFile(surfacePtr[l].xo, eS, 1, 1);
+		 // ************************* Quiver output of vectors *************************/
+
+
+
+ //#printf(" U = %lf\t%lf\t%lf\n",surfacePtr[l].u[0],surfacePtr[l].u[1],surfacePtr[l].u[2]);//#
+ //#printf("S = %lf  %lf  %lf  %lf\n",S[0],S[1],S[2],norm2(S));//#
+ //printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#
+ //printf("eL= %lf\t%lf\t%lf\t%lf\n",eL[0],eL[1],eL[2],norm2(eL));//#
+ //printf("eS= %lf\t%lf\t%lf\t%lf\n",eS[0],eS[1],eS[2],norm2(eS));//#
+ //printf("UXS= %lf\n",(UxS));//#
+
+
+//*****************************************************************************
+     //computing magnitude of normal force/density due to free stream
+//*****************************************************************************
+        N_free = (A*2*eta + C/3*2*eta*eta*eta)*UxS;
+     // N_free calculation works for circling flight D.F.B. 03-2020
+
 //*****************************************************************************
 		 //the NORMAL FORCE/density
 //*****************************************************************************
 		//free stream lift
 		N_force[l][4] = N_free;
 		N_force[l][5] = dot(R,eN);			//induced normal force
+         
+         N_force[l][6] = eN[0];         //saving normal force vector
+         N_force[l][7] = eN[1];
+         N_force[l][8] = eN[2];
 
 //*****************************************************************************
 		 //the LIFT FORCE/density is the normal force in the x-z plane or
@@ -419,6 +874,15 @@ for (i=0;i<info.nopanel;i++)
 
 		N_force[l][1] = dot(R,eL);			//induced lift
 //#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
+	
+
+/************************ Quiver output of normal vector ************************
+	//	scalar(eN, N_free / (info.Uinf*info.Uinf), tempA);
+
+		if(i==0 && j==0 && k ==0)
+                CreateQuiverFile(surfacePtr[l].xo, tempA,0,0);
+		else    CreateQuiverFile(surfacePtr[l].xo, tempA,1,0);
+//  ************************* Quiver output of normal vector *************************/
 
 //*****************************************************************************
 	  	 //the SIDE FORCE/density is the force in y-direction or N*eN[y]
@@ -427,337 +891,19 @@ for (i=0;i<info.nopanel;i++)
 		N_force[l][3] = dot(R,eS);		//inducd side force
 
 		l++; //increment elementary wing index l=0..(noelement-1)
-	 }	//End loop over k
-  }	//End loop over j
-} //End loop over i
-
-if(info.m>1)
-{	//temporary variable of induced velocity of upstream DVE
-	FREE2D(&U1,info.nospanelement,3);
-	FREE2D(&Uo,info.nospanelement,3);
-	FREE2D(&U2,info.nospanelement,3);
-}
-
+	 }	//End loop over k - loop over span of panel
+  }	//End loop over j - loop over chord of panel
+    
+  //if(panelPtr[i].m>1)
+  //{    //temporary variable of induced velocity of upstream DVE
+      // added GB 2-9-20
+        FREE2D(&U1,panelPtr[i].n,3);
+        FREE2D(&Uo,panelPtr[i].n,3);
+        FREE2D(&U2,panelPtr[i].n,3);
+  //}
+} //End loop over i - loop over panels
+    
 }
 //===================================================================//
 		//END FUNCTION Surface_DVE_Normal_Forces
-//===================================================================//
-
-//===================================================================//
-		//FUNCTION Elementary_Wing_Normal_Forces
-		//computes lift and side force/density acting on elem. wings
-//===================================================================//
-void Elementary_Wing_Normal_Forces(const PANEL* panelPtr, const GENERAL info,\
-								   BOUND_VORTEX* elementPtr)
-{
-//Function computes normal forces/density for each elementary wing
-//to do this, Kutta-Joukowski's theorem is applied at both edges and the
-//center of the elementary wing in order to get the local lift forces. These
-//values are integrated, using Simpson's rule (with overhang), in order to
-//get the lift force/density for the complete elementary wing.
-//Note: the velocities are not computed directly at the edges, but
-//(1-delta)/2 of the elementary span further towards the center.
-//Otherwise, the computed induced velocity would become singular at that
-//point due to the next neighboring elementary wing influence.
-//
-//input:
-// 	panel		-panel info, especially number of chord and span devisions
-//	info		-general information on case
-// 	elementPtr	-pointer to elementary-wing information
-//	l			-index of elementary wing whose forces are being computed
-//				 incremented by one at end of loop 'k' over number of
-//				 spanwise elementary wings. Hence, l = 0 .. (noelement-1)
-//
-//ouput:
-// as part of elementPtr.:
-//	N_free		-lift and side forces/density due to free stream flow
-//	N_ind		-lift and side forces/density due to induced velocities
-
-int i,j,k;					//i'th panels
-							//j'th chordwise lifting line, j=0..(info.m-1)
-							//k'th spanwise elementary wing, k=0..(n-1)
-int l=0;					//index of elementary wing whose forces are computed
-							//index is incremented by one at end of loop
-							//'k' over number of spanwise elementary wings.
-							// Hence, l = 0 .. (noelement-1)
-double A, B, C;				//vorticity distribution coefficient of el. l
-double eta, eta8;			//half span of elementary wing l, 90% value of eta
-double sbeta=sin(info.beta),\
-	   cbeta=cos(info.beta);//sine and cosine of beta
-double X[3];				//vector from bound vortex of elementary wing mid point
-							//to its edge; x1=xo-x and x2=xo+x
-double S[3];				//vector of bound vortex
-double UxS;					//abs. value of U x S
-double eN[3];				//normal force direction
-double eL[3],eS[3];			//lift force and side force direction
-double w1[3],wo[3],w2[3];	//ind. vel. at bound vortex sides and center
-double gamma1,gammao,gamma2;//vorticity at bound vortex sides and center
-double R1[3],Ro[3],R2[3]; 	//resultant ind. force at bound vortex sides and center
-double R[3];				//resultant ind. force/density of element l
-double N_free;				//magnitude free stream norm. forces/density
-double tempA[3], tempS;
-
-//loop over number of panels
-for (i=0;i<info.nopanel;i++)
-{
-  //loop over number of chordwise elements 'info.m'
-  for (j=0;j<info.m;j++)
-  {
-	 eta  =	elementPtr[l].eta;
-	 eta8=eta*0.8;
-	 //vector of bound vortex, KHH eq. 66
-	 S[0] =	tan(elementPtr[l].phi);
-	 S[1] = cos(elementPtr[l].nu);
-	 S[2] = sin(elementPtr[l].nu);
-
-	 //loop over number of spanwise elements 'n'
-	 for (k=0;k<panelPtr[i].n;k++)
-	 {
-	/*##################################################
-	//#############taken out 6/20/03 G.B. ##############
-	//##################################################
-	///////////////////////////////////////////////////
-		 //#non-small angles, non-linear theory
-	//////////////////////////////////////////////////
-		 if (info.linear==0)
-		 {
-
-			 //normal force direction
-			 cross(elementPtr[l].u,S,tempA);			//#	UxS
-			 UxS=norm2(tempA);							//	|UxS|
-			 scalar(tempA,1/UxS,eN);					//	eN=(UxS)/|UxS|
-
-			 //the lift direction  eL=Ux[0,1,0]/|Ux[0,1,0]|
-			 tempS = sqrt(elementPtr[l].u[0]*elementPtr[l].u[0]\
-			 			 +elementPtr[l].u[2]*elementPtr[l].u[2]);
-			 eL[0] = -elementPtr[l].u[2]/tempS;
-			 eL[1] =  0;
-			 eL[2] =  elementPtr[l].u[0]/tempS;
-
-			 //the side force direction eS=UxeL/|UxeL|
-			 cross(eL,elementPtr[l].u,tempA);
-			 tempS=1/norm2(tempA);
-			 scalar(tempA,tempS,eS);
-		 }
-		 else
-	//////////////////////////////////////////////////
-		 //small angle approach, linear theory
-	///////////////////////////////////////////////////
-	//##################################################//
-	//##################################################//
-	//##################################################*/
-		 {
-
-			 //#small angle approach as done by KHHH
-			 tempS=norm2(elementPtr[l].u);
-			 tempA[0] =  tempS * sbeta*S[2];			//# UxS
-			 tempA[1] = -tempS * cbeta*S[2];			//#
-			 tempA[2] =  tempS *(cbeta*S[1]-sbeta*S[0]);//#
-			 UxS=norm2(tempA);							//	|UxS|
-			 scalar(tempA,1/UxS,eN);					//	eN=(UxS)/|UxS|
-
-			 //lift force direction
-			 eL[0] =  0;
-			 eL[1] =  0;
-			 eL[2] =  1;
-
-			 //side force direction
-			 eS[0] =  0;
-			 eS[1] =  1;
-			 eS[2] =  0;
-//#			 printf("small angle approximation for lift computation!\n");
-		 }
-
-//#printf("U = %lf\t%lf\t%lf\n",elementPtr[l].u[0],elementPtr[l].u[1],elementPtr[l].u[2]);//#
-//#printf("S = %lf\t%lf\t%lf\t%lf\n",S[0],S[1],S[2],norm2(S));//#
-//#printf("eN= %lf\t%lf\t%lf\t%lf\n",eN[0],eN[1],eN[2],norm2(eN));//#
-//#printf("eL= %lf\t%lf\t%lf\t%lf\n",eL[0],eL[1],eL[2],norm2(eL));//#
-//#printf("eS= %lf\t%lf\t%lf\t%lf\n",eS[0],eS[1],eS[2],norm2(eS));//#
-//#printf("UxS= %lf\n",(UxS));//#
-//#printf("phi= %lf\t%lf\tnu= %lf\n",(elementPtr[l].phi*RtD),elementPtr[l].phi*RtD/cos(elementPtr[l].nu),(elementPtr[l].nu*RtD));//#
-
-
-		 A	  =	elementPtr[l].A;
-		 B	  =	elementPtr[l].B;
-		 C	  =	elementPtr[l].C;
-//#vorticity at right and left edge, as well as center of elementary wing
-//#printf("%lf\t%lf\t%lf\t\n",(A-B*eta+C*eta*eta)/2,A/2,(A+B*eta+C*eta*eta)/2);//#
-//#printf("A = %lf\tC = %lf\teta = %lf\n",A,C,eta);//#
-
-//*****************************************************************************
-		 //computing magnitude of normal force/density due to free stream
-//*****************************************************************************
-		 N_free = (A*2*eta + C/3*2*eta*eta*eta)*UxS;
-//#printf("N_free =%lf\t L_free =%lf\n",N_free,2*N_free*sqrt(eN[0]*eN[0]+eN[2]*eN[2]));//#
-
-//*****************************************************************************
-		 //computing the induced force/density
-//*****************************************************************************
-		 //computing the ind. velocity at left (1) edge of bound vortex
-		 //vector from mid point of elementary wing bound vortex
-		 //to edge (1) of bound vortex; x1=xo-x and x2=xo+x
-		 //due to singular behavior of velocity at element edge
-		 //velocity is computed 0.1eta away from edge (hence factor 0.8)
-		 scalar(S,-eta8,X);
-		 vsum(elementPtr[l].xo,X,tempA);
-		 Induced_Velocity(elementPtr,info,tempA,w1);
-		 					//subroutine in induced_velocity.cpp
-//printf("x1 %2.5lf %2.5lf %2.5lf\n",tempA[0],tempA[1],tempA[2]);//#
-
-	 	 //computing the ind. velocity at center (0) of bound vortex
-		 Induced_Velocity(elementPtr,info,elementPtr[l].xo,wo);
-		 					//subroutine in induced_velocity.cpp
-
-		//saving induced velocity at center of bound vortex //added 7-20-05 G.B.
-		elementPtr[l].uind[0] = wo[0];
-		elementPtr[l].uind[1] = wo[1];
-		elementPtr[l].uind[2] = wo[2];
-
-		 //computing the ind. velocity at right (2) edge of bound vortex
-		 //vector from mid point of elementary wing bound vortex
-		 //to edge (2) of bound vortex; x1=xo-x and x2=xo+x
-		 //due to singular behavior of velocity at element edge
-		 //velocity is computed 0.1eta away from edge (hence factor 0.8)
-		 scalar(S,eta8,X);
-		 vsum(elementPtr[l].xo,X,tempA);
-		 Induced_Velocity(elementPtr,info,tempA,w2);
-		 					//subroutine in induced_velocity.cpp
-//printf("x1 %2.5lf %2.5lf %2.5lf\n",tempA[0],tempA[1],tempA[2]);//#
-
-//printf("w1= %lf\t%lf\t%lf\n",w1[0],w1[1],w1[2]);//#
-//printf("wo= %lf\t%lf\t%lf\n",wo[0],wo[1],wo[2]);//#
-//printf("w2= %lf\t%lf\t%lf\n",w2[0],w2[1],w2[2]);//#
-//printf("w1= %.3lf\tw0= %.3lf\tw2= %.3lf\n",w1[2],wo[2],w2[2]);//#
-
-	  //Integration of induced forces with Simpson's Rule
-	  //Integration requires overhanging edges!!
-	  //See also KHH linees 2953 - 2967, A23SIM
-
-		 //Kutta-Joukowski at left (1) edge
-		 cross(w1,S,tempA);				// w1xS
-		 gamma1  = A-B*eta8+C*eta8*eta8;//gamma1
-		 scalar(tempA,gamma1,R1);
-
-		 //Kutta-Joukowski at center
-		 cross(wo,S,tempA);				// woxS
-		 gammao  =	A;
-		 scalar(tempA,gammao,Ro);
-
- 		 //Kutta-Joukowski at right (2) edge
- 		 cross(w2,S,tempA);				// w2xS
-		 gamma2  =	A+B*eta8+C*eta8*eta8;
-		 scalar(tempA,gamma2,R2);
-
-//#printf("gamma %lf\t%lf\t%lf\n",gamma1,gammao,gamma2);//#
-//#printf("R1     %lf\t%lf\t%lf\n",R1[0],R1[1],R1[2]);//#
-//#printf("Ro     %lf\t%lf\t%lf\n",Ro[0],Ro[1],Ro[2]);//#
-//#printf("R2     %lf\t%lf\t%lf\n",R2[0],R2[1],R2[2]);//#
-
-		 //The resultierende induced force of element l is
-		 //determined by numerically integrating forces acros element
-		 //using Simpson's Rule with overhaning parts
-		 R[0]  = (R1[0]+4*Ro[0]+R2[0])*eta8/3;			//Rx
-		 R[1]  = (R1[1]+4*Ro[1]+R2[1])*eta8/3;			//Ry
-		 R[2]  = (R1[2]+4*Ro[2]+R2[2])*eta8/3;			//Rz
-
-		 //plus overhanging parts
-		 R[0] += (7*R1[0]-8*Ro[0]+7*R2[0])*(eta-eta8)/3;//Rx
-		 R[1] += (7*R1[1]-8*Ro[1]+7*R2[1])*(eta-eta8)/3;//Ry
-		 R[2] += (7*R1[2]-8*Ro[2]+7*R2[2])*(eta-eta8)/3;//Rz
-//#printf("R %lf\t%lf\t%lf\n",R[0],R[1],R[2]);//#
-//*****************************************************************************
-		 //the LIFT FORCE/density is the normal force in the x-z plane or
-//*****************************************************************************
-		 elementPtr[l].N_free[0] = N_free * sqrt(eN[0]*eN[0]+eN[2]*eN[2]);
-		 //neg. if resultend is downward
-		 if (eN[2]<0)  elementPtr[l].N_free[0] *= -1;
-		 elementPtr[l].N_ind[0] = dot(R,eL);
-//*****************************************************************************
-	  	 //the SIDE FORCE/density is the force in y-direction or N*eN[y]
-//*****************************************************************************
-		 elementPtr[l].N_free[1] = N_free * eN[1];
-		 elementPtr[l].N_ind[1]  = dot(R,eS);
-
-
-//#printf("CLfree =%lf\tCYfree =%lf\n",2*elementPtr[l].N_free[0],elementPtr[l].N_free[1]);//#
-//#printf("CLi =%lf\tCYi =%lf\n",2*elementPtr[l].N_ind[0],elementPtr[l].N_ind[1]);//#
-
-		 l++; //increment elementary wing index l=0..(noelement-1)
-	 }	//End loop over k
-  }	//End loop over j
-} //End loop over i
-}
-//===================================================================//
-		//END FUNCTION Elementary_Wing_Normal_Forces
-//===================================================================//
-
-//===================================================================//
-		//START FUNCTION Wing_Normal_Forces
-//===================================================================//
-void Wing_Normal_Forces(const  PANEL* panelPtr, const GENERAL info,\
-						const BOUND_VORTEX* elementPtr, \
-						double Nt_free[2], double Nt_ind[2],\
-						double &CL,double &CLi,double &CY,double &CYi)
-{
-	//input:
-	// panel		-panel info, especially number of chord and span devisions
-	// info			-general information on case
-	// elementPtr	-pointer to elementary-wing information
-	//
-	//ouput:
-	// as part of elementPtr.:
-	// N_free	-total lift and side forces/density due to free stream flow
-	// N_ind	-total lift and side forces/density due to induced velocities
-	//
-	// Nt_free	-total lift and side forces/density due to free stream flow
-	// Nt_ind	-total lift and side forces/density due to induced velocities
-	// CL		-total lift coefficient
-	// CLi		-total induced lift coefficient
-	// CY		-total side-force coefficient
-	// CYi		-total induced side-force coefficient
-	// CDi		-total induced drag computed at lifting lines
-
-  int l=0;								 //counter
-  double q=1/(0.5*info.Uinf*info.Uinf*info.S); //ref. area* dyn. pressure/density
-
-  Nt_free[0]=0;
-  Nt_free[1]=0;
-  Nt_ind[0]=0;
-  Nt_ind[1]=0;
-
-  //loop over number of panels
-  for (l=0;l<info.noelement;l++)
-  {
-	  //adding the normal forces/density of all elementary wings
-	  Nt_free[0]	+=  elementPtr[l].N_free[0];
-	  Nt_free[1]	+=  elementPtr[l].N_free[1];
-
-	  Nt_ind[0]	+=  elementPtr[l].N_ind[0];
-	  Nt_ind[1]	+=  elementPtr[l].N_ind[1];
-
-//#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
-//#printf("NXi =%lf\t NZi =%lf\n",elementPtr[l].N_ind[0],elementPtr[l].N_ind[1]);//#
-//#printf("NtXi =%lf\t NtZi =%lf\n",Nt_ind[0],Nt_ind[1]);//#
-  }
-
-  if (info.sym==1 && info.beta == 0)
-  {	//twice the lift force if symmetric geometry
-	  Nt_free[0]*=2;
-
-	  Nt_ind[0]	*=2;
-//#printf("NtX  =%lf\t NtZ  =%lf\n",Nt_free[0],Nt_free[1]);//#
-  }
-  //total lift and side force coefficients
-  CL = (Nt_free[0]+Nt_ind[0])*q;
-  CY = (Nt_free[1]+Nt_ind[1])*q;
-
-  //total induced lift and side force coefficients
-  CLi = Nt_ind[0]*q;
-  CYi = Nt_ind[1]*q;
-
-//#printf("CL=%lf\tCLi=%lf\tCY=%lf\tCYi=%lf\n",CL,CLi,CY,CYi);//#
-
-}
-//===================================================================//
-		//END FUNCTION Wing_Normal_Forces
 //===================================================================//

@@ -1,6 +1,6 @@
 #include "general.h"
 #include "PerfCode.h"
-main()
+int main()
 {
 //This program plots the wake of a wake step.
 //	1. user input of timestep and width intervalls that are to be plotted
@@ -100,9 +100,9 @@ tmin = timestep;
 	//find the ':'-sign in input file before number of span-elements
 	do	ch = fgetc(fp);
 	while (ch!=':');
-	fscanf(fp,"%d", &nochord);
+	fscanf(fp,"%d", &nosurface);
 
-	nosurface = nospan*nochord;  //no. of surface DVEs
+	// removed GB 2-25-20 nosurface = nospan*nochord;  //no. of surface DVEs
 
 	//find the first '#'-sign at end of header of surface elements
 	do	ch = fgetc(fp);

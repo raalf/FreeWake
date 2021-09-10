@@ -2,7 +2,7 @@
 double Induced_DVE_Drag(const GENERAL,const PANEL*,DVE*,DVE**,\
 												const int,double*);
 //computes section drag of surface DVE
-double SectionDrag(double [600][5], double,double &,int,double &,const int);
+double SectionDrag(double ***, double,double &,int,double &,const int);
 
 //===================================================================//
 	//START Induced_DVE_Drag computation - Drag along trailing edge
@@ -10,7 +10,7 @@ double SectionDrag(double [600][5], double,double &,int,double &,const int);
 	//computes induced drag at trailing edge
 double Induced_DVE_Drag(const GENERAL info,const PANEL* panelPtr,\
 						DVE* surfacePtr,DVE** wakePtr,\
-						const int rightnow,double* D_force)
+						const int rightnow,STRIP *&spanPtr)
 {
 //This function is the DVE expansion of the function Induced_Eppler_Drag
 //that computes the induced drag at the trailing edge, where
@@ -41,8 +41,8 @@ double Induced_DVE_Drag(const GENERAL info,const PANEL* panelPtr,\
 //	rightnow	- current time step
 //
 //output:
-//	CDi			- total drag coefficient
-//  D_force 	- local drag force/density along span
+//	CDi					- total drag coefficient
+//  spanPtr.D_force 	- local drag force/density along span
 
 int panel,p,span,s,time,k,wing;
 int	index;					//span index of surface DVEs along trailing edge
@@ -60,40 +60,12 @@ double gamma1,gammao,gamma2;//vorticity at trailing edge edges and center
 double R1[3],Ro[3],R2[3]; 	//res. ind. force at trail. edge edges and center
 double R[3];				//resultant ind. force/density of element i
 double CDi = 0,CLi=0,CYi=0;	//total induced drag at trailind edge
-double tempA[3],tempB[3],tempS;
+double tempA[3],tempB[3],tempS,tempD,tempE[3];
+double tempC[3][3];
 double tempProj[3],tempTE[3];
 int type;					//type of wake DVE
 DVE tempDVE;				//temporary DVE
-Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 
-
-	ALLOC1D(&FluegelPtr,info.nowing);
-
-//===================================================================//
-		//START determining first and last panel of each wing
-		//also first and last DVE index of each wing
-//===================================================================//
-// Fluegel/Wing routine was added for multiple wing configurations
-// Not too efficient to redo it everytime drag is computed, but it is
-//late February 2006 and my son is due in about two months and I need
-//to get this god damn thesis done!!  G.B.
-
-	index=0;		//initializing
-
-	for(wing=0;wing<info.nowing;wing++)
-	{
-		//the first DVE index of current wing
-		FluegelPtr[wing].dve1 = index;
-		index += (info.wing2[wing] - info.wing1[wing]+1)*info.m;
-
-		//the last DVE index of current wing
-		FluegelPtr[wing].dve2 = index-1;
-	}//next wing
-
-//===================================================================//
-		//DONE determining first and last panel of each wing
-		//also first and last DVE index of each wing
-//===================================================================//
 
 //#############################################################################
 //							FORCE LOOP - START
@@ -113,25 +85,26 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 	for (index = panelPtr[panel].TE1; index <= panelPtr[panel].TE2; index++)
 	{
 		//increase wing index to next wing
-		if(index>FluegelPtr[wing].dve2) wing++;
+        if(index>info.dve2[wing]) wing++;
 
-		//drag force direction
-		eD[0] = surfacePtr[index].U[0];
-		eD[1] = surfacePtr[index].U[1];
-		eD[2] = surfacePtr[index].U[2];
-
-	//#########################################################################
-		//the lift direction  eL={U x [0,1,0]}/|U x [0,1,0]|
-		tempS = 1/sqrt(surfacePtr[index].U[0]*surfacePtr[index].U[0]\
-		 				+surfacePtr[index].U[2]*surfacePtr[index].U[2]);
-		eL[0] = -surfacePtr[index].U[2]*tempS;
-		eL[1] =  0;
-		eL[2] =  surfacePtr[index].U[0]*tempS;
-
-		//the side force direction eS=UxeL/|UxeL|
-		cross(eL,surfacePtr[index].U,tempA);
-		tempS=1/norm2(tempA);
-		scalar(tempA,tempS,eS);
+        if(!info.flagCIRC)
+        {
+        	//###
+			//drag force direction
+			eD[0] = surfacePtr[index].U[0];
+			eD[1] = surfacePtr[index].U[1];
+			eD[2] = surfacePtr[index].U[2];
+		}
+        else
+        {
+			// Added by D.F.B. 03-2020 because of circling flight
+			// If there is circling flight, set the DVE drag direction to the
+			// velocitiy direction at the TE 
+			tempS = 1 / norm2(surfacePtr[index].uTE[0]);
+			eD[0] = surfacePtr[index].uTE[0][0] * tempS;
+			eD[1] = surfacePtr[index].uTE[0][1] * tempS;
+			eD[2] = surfacePtr[index].uTE[0][2] * tempS;
+		}
 
 	//#########################################################################
 		A =	surfacePtr[index].A;
@@ -167,6 +140,10 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 				   						//Subroutine in wake_geometry.cpp
 		//X0 = (X1+X2)/2
 		vsum(X[1],X[2],tempA);		scalar(tempA,0.5,X[0]);
+
+		//if(index == panelPtr[panel].TE1){CreateQuiverFile(X[1], eD,0);}
+		//else{CreateQuiverFile(X[1], eD,1);}
+
 
 //printf("\nx0 %2.3lf  %2.3lf  %2.3lf ",X[0][0],X[0][1],X[0][2]);  //#
 //printf("x1 %2.3lf  %2.3lf  %2.3lf ",X[1][0],X[1][1],X[1][2]);  //#
@@ -206,8 +183,7 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 		  //loop over trailing edge elements of current panel
 		  for (s = panelPtr[p].TE1; s <= panelPtr[p].TE2; s++)
 		  {
-
-			if(s>=FluegelPtr[wing].dve1 && s<=FluegelPtr[wing].dve2)
+             if(s>=info.dve1[wing] && s<=info.dve2[wing])
 			{
 			//DVE 's' (the inducer) and DVE 'index' (the induced one) are
 			//of the same wing
@@ -225,7 +201,7 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 				tempB[1] = 0;
 				tempB[2] = 0;
 
-				//make temp B global, call it tempA
+				//make tempB global, call it tempA
 				Star_Glob(tempB,surfacePtr[s].nu,surfacePtr[s].epsilon,\
 													  surfacePtr[s].psi,tempA);
 
@@ -241,22 +217,37 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 				delX[1] = X[k][1] - tempTE[1];
 				delX[2] = X[k][2] - tempTE[2];
 
-				//delX projected into the freestream direction (magnitude)
-				tempS=dot(delX,surfacePtr[index].U);
 
-				//vector from TE of s(inducer) to TE of index (induced) projected into the freestream direction (with direction) to make tempB
-				scalar(surfacePtr[index].U,tempS,tempB);
+				if(info.flagCIRC){ //Added by D.F.B. 03-2020 for circling flight
+					// NOTE: Move *induced point* in its own velocity direction
+
+					tempD = 1 / norm2(surfacePtr[index].uTE[k]); //nondimensionalize the direction. BBB April 2020
+					tempE[0] = surfacePtr[index].uTE[k][0] * tempD;
+					tempE[1] = surfacePtr[index].uTE[k][1] * tempD;
+					tempE[2] = surfacePtr[index].uTE[k][2] * tempD;
+
+					tempS = dot(delX, tempE);
+					scalar(tempE,tempS,tempB);
+
+				} else{ // if not circling flight, move pts in freestream direction (U)
+					//delX projected into the freestream direction (magnitude)
+					tempS=dot(delX,surfacePtr[index].U);
+					
+					//vector from TE of s(inducer) to TE of index (induced) projected into the freestream direction (with direction) to make tempB
+					scalar(surfacePtr[index].U,tempS,tempB);
+				}
 
 				// (X[k] - tempB) should be global origin to new point of interest
 				Xstar[0] = X[k][0] - tempB[0];
 				Xstar[1] = X[k][1] - tempB[1];
 				Xstar[2] = X[k][2] - tempB[2];
+
 						
-				}
+            }
 			else
 			{
 			//DVE 's' (the inducer) and DVE 'index' (the induced one) are
-			//of different wigns
+			//of different wings
 
 				Xstar[0] = X[k][0];
 				Xstar[1] = X[k][1];
@@ -396,13 +387,17 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 	//#########################################################################
 		//the DRAG FORCE/density is the induce force in eD direction
 	//#########################################################################
-		D_force[i] = dot(R,eD);
+		spanPtr[i].D_force = dot(R,eD);
 
 		//add all partial drag/lift/side values [force/density]
-		CDi += D_force[i];
+		CDi += spanPtr[i].D_force;
 
+//  printf("\nspan %d  eD %2.8lf %2.8lf %2.8lf span %d D %lf cos %lf sin %lf Drag\n",\
+//         i,eD[0],eD[1],eD[2],i,spanPtr[i].D_force,cos(info.gradient*info.deltime*(rightnow-1)),sin(info.gradient*info.deltime*(rightnow-1)));  //###
+        
 		i++;	//advanicing span index of wake DVEs
 	}//end loop over trailing edge surface DVEs and over panels
+
 //#############################################################################
 //							FORCE LOOP - END
 //#############################################################################
@@ -416,44 +411,6 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 		CDi*=2;//sym. geometry and flow, twice the drag
 	}
 
-	///////////////////////////////////////////////////////////////////////
-	//Drag-force contribution to total forces and moments of DVE
-	//Moments are with respect to info.RefPt.
-	//G.B. 11-24-06
-
-	span = 0; //initializing D_force index
-	//loop over panels
-	for(panel=0;panel<info.nopanel;panel++)
-	{
-		//smallest index of panel-1
-		index=panelPtr[panel].TE2-panelPtr[panel].n*info.m;
-
-	  	//loop over trailing edge elements of current panel
-	  	for(k=panelPtr[panel].TE1;k<=panelPtr[panel].TE2;k++)
-	  	{
-			//drag per DVE is saved in tempS
-			tempS = D_force[span]*info.density/info.m;
-
-			//loop over elements of one span location, from TE to LE
-			for(i=k;i>index;i-=panelPtr[panel].n)
-			{
-				//the drag vector of each DVE is stored in R[3]
-				R[0] = surfacePtr[i].U[0]*tempS;
-				R[1] = surfacePtr[i].U[1]*tempS;
-				R[2] = surfacePtr[i].U[2]*tempS;
-
-				//surfacePtr[i].Force was initialized in
-				//Surface_DVE_Normal_Forces in lift_force.cpp
-				surfacePtr[i].Force[0] += R[0];
-				surfacePtr[i].Force[1] += R[1];
-				surfacePtr[i].Force[2] += R[2];
-
-			}//end loop i, chordwise elements
-			span++;  //increase span index
-
-	  	}//end loop k, spanwise elements
-	}//end loop panel, loop over panels
-///////////////////////////////////////////////////////////////////////
 
 //#	printf(" L=%lf  Y=%lf",CLi,CYi);
 	return CDi;
@@ -465,14 +422,14 @@ Wing *FluegelPtr;			//max. five Fluegel (German for wing), struct. Wing
 //================================================================================================================
 // SectionDrag
 //================================================================================================================
-double SectionDrag(double profiledata[600][5], double Re,double &cl,int rows,\
+double SectionDrag(double **profiledata, double Re,double &cl,int airfoilCol,\
 					double &cm,const int section)
 {
 	//input:
 	//profiledata	airfoil data of airfoil in use
 	//Re			Re# of interest
 	//cl			cl of interest
-	//rows			number of rows in airfoil data input file
+	//airfoilCol	max number of rows in airfoil data file
 	//section		index of wing section whose profile drag is computed
 	//
 	//
@@ -490,16 +447,30 @@ double SectionDrag(double profiledata[600][5], double Re,double &cl,int rows,\
 
 	//HiRe,LoRe max and min Re# of airfoil data
 
+	// Updated 2-14-20 by D.F.B. in Braunschweig, Germany
+	// 	Now uses the new airfoil format and doesn't need number of rows
+
 	int index,index1,index2;				//index of largest CL of Re#<RE, index of CL>cl of Re#<RE
 											//index of CL>cl of Re#>RE
 	double Re1,Re2;							//Re# above and below Re of interest
 	//High and low Re in input file
+
+	// Calcualte how many rows in the airfoil file	
+	int rows = 0;
+	for(int i = 0; i<airfoilCol;++i){
+		if (profiledata[i][3] < DBL_EPS){break;}
+		++rows;
+	}
+
 	double HiRe=profiledata[rows-1][3];
 	double LoRe=profiledata[0][3];
 	double m,cd,cd1,cd2;			//interpolation slope, overall and part interpolation results
 	double cm1,cm2;				//moment coefficients for interpolation
 	double tempS;
 //###
+
+
+
 //printf("rows %d lowRen %lf HighRe %lf\n",rows,LoRe,HiRe);
 		if(LoRe<Re && HiRe>Re)  //Re# of interest falls into interval of available airfoil data
 		{

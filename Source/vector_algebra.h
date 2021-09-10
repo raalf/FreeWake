@@ -4,6 +4,8 @@ void cross(const double v1[3],const double v2[3],double result[3]);
 void vsum(const double v1[3],const double v2[3],double result[3]);
 void scalar(const double v1[3],const double v2,double result[3]);
 void rotateX(const double v1[3],const double alpha, double result[3]);
+void rotateY(const double v1[3],const double alpha, double result[3]);
+void rotateZ(const double v1[3],const double alpha, double result[3]);
 
 
 /***************************************************************************/
@@ -52,5 +54,24 @@ void rotateX(const double v1[3],const double alpha, double result[3])
 result[0] = v1[0];
 result[1] = v1[1]*cos(alpha)+v1[2]*sin(alpha);
 result[2] = -v1[1]*sin(alpha)+v1[2]*cos(alpha);
+}
+/***************************************************************************/
+void rotateY(const double v1[3],const double alpha, double result[3])
+{
+//transforms vector v1 in new co-system that is rotated by alpha
+//around y-axis (RHS!)
+result[0] = v1[0]*cos(alpha)-v1[2]*sin(alpha);
+result[1] = v1[1];
+result[2] = v1[0]*sin(alpha)+v1[2]*cos(alpha);
+}
+/***************************************************************************/
+/***************************************************************************/
+void rotateZ(const double v1[3],const double alpha, double result[3])
+{
+//transforms vector v1 in new co-system that is rotated by alpha
+//around z-axis (RHS!)
+result[0] = v1[0]*cos(alpha)-v1[1]*sin(alpha);;
+result[1] = v1[0]*sin(alpha)+v1[1]*cos(alpha);
+result[2] = v1[2];
 }
 /***************************************************************************/

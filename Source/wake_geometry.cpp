@@ -1,12 +1,13 @@
 //creates new wake DVE right aft of trailing edge
 void Squirt_out_Wake(const GENERAL,const PANEL *,DVE *,DVE *);
 //relaxing the wake
-void Relax_Wake(const GENERAL,const int,const DVE*,DVE**);
+void Relax_Wake(const GENERAL,const PANEL *,const int,const DVE*,DVE**);
 //computes point along the edge of a DVE
 void Edge_Point(const double [3],const double,const double,const double,\
 				const double,const double,const double,double [3]);
 //computes new circulation&voritcity coefficients of stretched wake DVE
 void New_vorticity_coefficients(const GENERAL,const PANEL *,DVE *,const DVE*);
+void Update_wake_vorticity(const GENERAL,const PANEL *,DVE *,const DVE*);
 
 //===================================================================//
 		//START FUNCTION Squirt_out_Wake
@@ -41,7 +42,8 @@ void Squirt_out_Wake(const GENERAL info,const PANEL *panelPtr,\
 	for(k=0;k<info.nopanel;k++)
 	{
 		//forwards surface-DVE index to trailing egde elements
-		element += panelPtr[k].n*(info.m-1);
+//removed GB 2-9-20		element += panelPtr[k].n*(info.m-1);
+        element += panelPtr[k].n*(panelPtr[k].m-1);
 
 		//loop over number of spanwise elements of current panel
 		for(j=0;j<panelPtr[k].n;j++)
@@ -176,18 +178,35 @@ void Squirt_out_Wake(const GENERAL info,const PANEL *panelPtr,\
 			wakePtr[span].B = surfacePtr[element].B;
 			wakePtr[span].C = surfacePtr[element].C;
 
-			//total circulation of DVE, stays constant despite stretching
-			wakePtr[span].K = surfacePtr[element].A \
-							+ surfacePtr[element].eta\
-							* surfacePtr[element].eta/3\
-							* surfacePtr[element].C;
+            //Values retained for computing constant average circulation
+            //across each wake element during relaxation GB 2/6/20
+            wakePtr[span].A_old = surfacePtr[element].A;
+            wakePtr[span].B_eta =\
+                            surfacePtr[element].eta*surfacePtr[element].B;
+            wakePtr[span].Csqeta = surfacePtr[element].eta\
+                            *surfacePtr[element].eta*surfacePtr[element].C;
+
+            //superseded by A_old, B_Eta and CsqEta  GB 2/6/20
+            //total circulation of DVE, stays constant despite stretching
+            //wakePtr[span].K = surfacePtr[element].A \
+            //                + surfacePtr[element].eta\
+            //                * surfacePtr[element].eta/3\
+            //                * surfacePtr[element].C;
+
 
 			//computes point halfway along left edge of DVE
 			Edge_Point(wakePtr[span].xo,wakePtr[span].nu,\
 					   wakePtr[span].epsilon,wakePtr[span].psi,\
 					   wakePtr[span].phi0,-wakePtr[span].eta,\
-					   0,wakePtr[span].xleft);
+					   0,wakePtr[span].x1);
 				 					//subroutine in wake_geometry.cpp
+
+            //computes point halfway along right edge of DVE added GB 3/20/20
+            Edge_Point(wakePtr[span].xo,wakePtr[span].nu,\
+                       wakePtr[span].epsilon,wakePtr[span].psi,\
+                       wakePtr[span].phi0,wakePtr[span].eta,\
+                       0,wakePtr[span].x2);
+                                     //subroutine in wake_geometry.cpp
 
 			//updatin surface DVE's trailing edge center point
 			surfacePtr[element].xTE[0]=xTE[0];
@@ -218,29 +237,30 @@ wakePtr[span].xleft[0],wakePtr[span].xleft[1],wakePtr[span].xleft[2]);
 		}	//end loop over j, DVE's along trailing edge
 	}	// end loop k over nopanel
 
-	//##this part has been added 2/9/05 G.B.
-	//decaying factor for added singularity at wing tip
-	for(wing=0;wing<info.nowing;wing++)
-	{
-		//is the wing symmetrical or not?
-		if(info.sym == 1)//decay factor is 1% of tip-element half-span
-			tempS = 0.01*wakePtr[info.wing2[wing]].eta;
-		else//wing has two tips, possibly different in geometry
-		{	//in that case, decay factor is 1% of the shorter half-span
-			if(wakePtr[info.wing1[wing]].eta < wakePtr[info.wing2[wing]].eta)
-						tempS = 0.01*wakePtr[info.wing1[wing]].eta;
-			else 		tempS = 0.01*wakePtr[info.wing2[wing]].eta;
-		}
-		//loop over wale DVEs of current timestep
-		for(span=info.wing1[wing];span<=info.wing2[wing];span++)
-			wakePtr[span].singfct = tempS;  //assigning decay factor
-	}//next wing
-
-
-//DELETED AND REPLACEd WITH ROUTINE IN MAIN 5/27/2005 G.B.
-	//adjusting circulation for changed span
-//	New_vorticity_coefficients(info,panelPtr,wakePtr,wakePtr);
-		 							//subroutine in wake_geometry.cpp
+    //NEW NEW NEW NEW GB   3/28/20
+    //routine to find decay factor based on halfspan of shortes tip element
+    //decay factor (singfct) is 1% of smalles tip span.
+    tempS = wakePtr[0].eta; //temp variable for holding shortest eta
+                            //initialzied using the eta of DVE[0]
+    for(k=0;k<info.nopanel;k++)
+    {
+        if(panelPtr[k].BC1==100) //edge 1 is a free end
+        {
+           span = panelPtr[k].dve1;
+           if(wakePtr[span].eta<tempS)
+               tempS = wakePtr[span].eta;
+        }
+        else if(panelPtr[k].BC2==100) // edge 2 is a free end
+        {
+            span = panelPtr[k].dve2;
+            if(wakePtr[span].eta<tempS)
+                tempS = wakePtr[span].eta;
+        }
+    }
+    tempS = 0.01*tempS; //singfct is 1% of shortest halfspan at tip
+    //loop over wake DVEs of current timestep, assigning value
+    for(span=0;span<info.nospanelement;span++)
+        wakePtr[span].singfct = tempS;
 }
 //===================================================================//
 		//END FUNCTION Squirt_out_Wake
@@ -250,7 +270,7 @@ wakePtr[span].xleft[0],wakePtr[span].xleft[1],wakePtr[span].xleft[2]);
 		//FUNCTION Relax_Wake
 		//relaxes wake
 //===================================================================//
-void Relax_Wake(const GENERAL info,const int rightnow,\
+void Relax_Wake(const GENERAL info,const PANEL *panelPtr,const int rightnow,\
 				const DVE* surfacePtr,DVE** wakePtr)
 {
 	//relaxing the wake:
@@ -290,74 +310,133 @@ void New_eta_nu_eps_psi_xsi(DVE &,const DVE);
 //computes new ref. pt, roll, pitch, yaw, half chord, xleft of first wake DVE
 void New_wakeDVE0(const GENERAL,DVE *,const DVE *);
 
-int time,span,wing,j,k;		//loop counters
+int time,span,wing,j,k,n;	//loop counters
+int panel;                  //panel counter
 int element;				//index of surface elements along trailing edge
+int DVEright,DVEleft;              //index of DVE that is to the right of current panel
 double tempS,tempA[3];
-double ***xright,***uright;	//location and local velocity on right edge of a wing
-
+    
 //##########################################
 //FILE *fp;														//#
 //fp = fopen("output\\test.txt", "a");									//#
 //fprintf(fp,"timestep %d\n",rightnow);//#
 //###########################################################################
 
-
-//allocating memory
-ALLOC3D(&xright,info.nowing,rightnow+1,3);
-ALLOC3D(&uright,info.nowing,rightnow+1,3);
-
 //*****************************************************************************
 //	1. computes local induced velocity at side edges of DVEs
-
+   
+    //Rewritten March 25, 2020 GB, in order to account for junctions.
+    //  loop over DVEs of panel and compute velocities at left edge.
+    //  also cover right tip of panel
+    // ii. compare whether tips have common LE points, thus same displacement velocity
+    // As defined in read_input.cpp,
+    //panelPtr.dve1 and panelPtr.dve2: span indices at left and right edge of panel
+    //panelPtr.dveL and panelPtr.dveR are the span indices of DVEs to left and right of panel
+    //if panelPtr.dveL or panelPtr.dveR < 0 --> current panel attaches to side 1 or 2 of neighboring dve
+    //
+    
 //&&	for(time=0;time<=rightnow;time++)
 	for(time=1;time<=rightnow;time++)	//&&
 	{
-		//computing the locally induced velocities at left edge points
-		for(span=0;span<info.nospanelement;span++)
-		{
-			DVE_Induced_Velocity(info,wakePtr[time][span].xleft,\
-						surfacePtr,wakePtr,rightnow,wakePtr[time][span].u);
-				 						//subroutine in induced_velocity.cpp
-		}//next span element
-
-		//computing induced velocity of most right point of each wing.
-		//right wingtip points are stored in xright and the velocity in uright
-		for(wing=0;wing<info.nowing;wing++)
-		{
-			//span index of DVE that is the most right on of current wing
-			span = info.wing2[wing];
-
-			//find point halfway along right edge
-			//computes point halfway along left edge of element
-			//temporarily stored in .normal of most right DVE
-			Edge_Point(wakePtr[time][span].xo,wakePtr[time][span].nu,\
-					   wakePtr[time][span].epsilon,wakePtr[time][span].psi,\
-					   wakePtr[time][span].phi0,wakePtr[time][span].eta,\
-					   0,xright[wing][time]);
-					 					//subroutine in wake_geometry.cpp
-
-			//computing velocity induced at right tip of wing
-			DVE_Induced_Velocity(info,xright[wing][time],surfacePtr,wakePtr,\
-								rightnow,uright[wing][time]);
-				 						//subroutine in induced_velocity.cpp
+        span = 0; //span index set to zero
+        for(panel=0;panel<info.nopanel;panel++)
+        {
+            //compute induced velocity at x1 of first DVE of panel
+            DVE_Induced_Velocity(info,wakePtr[time][span].x1,\
+                        surfacePtr,wakePtr,rightnow,wakePtr[time][span].u1);
+                                        //subroutine in induced_velocity.cpp
+            span++; //increase span index
+            
+            for(n=1;n<panelPtr[panel].n;n++) //counting over panel span
+            {   //compute u1 at x1
+                DVE_Induced_Velocity(info,wakePtr[time][span].x1,\
+                            surfacePtr,wakePtr,rightnow,wakePtr[time][span].u1);
+                                           //subroutine in induced_velocity.cpp
+                //u1 of span = u2 of span-1
+                wakePtr[time][span-1].u2[0]=wakePtr[time][span].u1[0];
+                wakePtr[time][span-1].u2[1]=wakePtr[time][span].u1[1];
+                wakePtr[time][span-1].u2[2]=wakePtr[time][span].u1[2];
+                span++; //increase span index
+            }//done with looping over panel
+        }  //END loop over panels
+        
+        //finishing up with right edges of panels
+        for(panel=0;panel<info.nopanel;panel++)
+        {
+            span = panelPtr[panel].dve2;
+            if(panelPtr[panel].dveR == 999)  //there is not a panel attached to the right
+                {   //compute u2 at x2
+                    DVE_Induced_Velocity(info,wakePtr[time][span].x2,\
+                                surfacePtr,wakePtr,rightnow,wakePtr[time][span].u2);
+                                               //subroutine in induced_velocity.cpp
+                }
+            else //there is a DVE to the right
+            {
+                DVEright = panelPtr[panel].dveR;
+                if(DVEright <= 0) //Panel 'panel' attaches to edge 1 of next DVE
+                {
+                    wakePtr[time][span].u2[0]=wakePtr[time][-DVEright].u1[0];
+                    wakePtr[time][span].u2[1]=wakePtr[time][-DVEright].u1[1];
+                    wakePtr[time][span].u2[2]=wakePtr[time][-DVEright].u1[2];
+                    //forcing edge points together
+                    wakePtr[time][span].x2[0]=wakePtr[time][-DVEright].x1[0];
+                    wakePtr[time][span].x2[1]=wakePtr[time][-DVEright].x1[1];
+                    wakePtr[time][span].x2[2]=wakePtr[time][-DVEright].x1[2];
+                }
+                else  //Panel 'panel' attahes to edge 2 of next DVE
+                {
+                    wakePtr[time][span].u2[0]=wakePtr[time][DVEright].u2[0];
+                    wakePtr[time][span].u2[1]=wakePtr[time][DVEright].u2[1];
+                    wakePtr[time][span].u2[2]=wakePtr[time][DVEright].u2[2];
+                    //forcing edge points together
+                    wakePtr[time][span].x2[0]=wakePtr[time][DVEright].x2[0];
+                    wakePtr[time][span].x2[1]=wakePtr[time][DVEright].x2[1];
+                    wakePtr[time][span].x2[2]=wakePtr[time][DVEright].x2[2];
+                }
+            } //end else
+        } // end loop over panels
+        
+        //forcing left edge together
+        for(panel=0;panel<info.nopanel;panel++)
+        {
+           span = panelPtr[panel].dve1;
+           if(panelPtr[panel].dveL != 999)  //there is not a panel attached to the right
+           {
+               DVEleft = panelPtr[panel].dveL;
+               if(DVEleft < 0) //Panel 'panel' attaches to edge 1 of next DVE
+               {
+                   wakePtr[time][span].u1[0]=wakePtr[time][-DVEleft].u1[0];
+                   wakePtr[time][span].u1[1]=wakePtr[time][-DVEleft].u1[1];
+                   wakePtr[time][span].u1[2]=wakePtr[time][-DVEleft].u1[2];
+                   //forcing edge points together
+                   wakePtr[time][span].x1[0]=wakePtr[time][-DVEleft].x1[0];
+                   wakePtr[time][span].x1[1]=wakePtr[time][-DVEleft].x1[1];
+                   wakePtr[time][span].x1[2]=wakePtr[time][-DVEleft].x1[2];
+               }
+               else
+                //Panel 'panel' attaches to edge 2 of next DVE
+               {
+                   wakePtr[time][span].u1[0]=wakePtr[time][DVEleft].u2[0];
+                   wakePtr[time][span].u1[1]=wakePtr[time][DVEleft].u2[1];
+                   wakePtr[time][span].u1[2]=wakePtr[time][DVEleft].u2[2];
+                   //forcing edge points together
+                   wakePtr[time][span].x1[0]=wakePtr[time][DVEleft].x2[0];
+                   wakePtr[time][span].x1[1]=wakePtr[time][DVEleft].x2[1];
+                   wakePtr[time][span].x1[2]=wakePtr[time][DVEleft].x2[2];
+               }
+           } //end if panell exists to the left
+        } //end loop over panels
+     }//next spanwise strip in wake (next time)
 
 //computing induced velocity of wake DVE [time][span] on point P.
 //Single_DVE_Induced_Velocity(info,wakePtr[time][span],xright[wing][time],tempA,1);
 				 						//subroutine in induced_velocity.cpp
-//uright[wing][time][0] -= tempA[0];
-//uright[wing][time][1] -= tempA[1];
-//uright[wing][time][2] -= tempA[2];
 
 //##########################################
-//fprintf(fp,"xright: %lf %lf %lf ",xright[wing][time][0],xright[wing][time][1],xright[wing][time][2]);//#
 //fprintf(fp," %lf %lf %lf ",tempA[0],tempA[1],tempA[2]);//#
-//fprintf(fp," %lf %lf %lf\n",uright[wing][time][0],uright[wing][time][1],uright[wing][time][2]);//#
 //fprintf(fp,"c3: %lf\t%lf\t%lf\tC %lf\n",c3[0],c3[1],c3[2],DVelement.C);//#
 //###########################################################################
 
-
-		}//next wing
-	}//next spanwise strip in wake (next time)
 
 //##########################################
 //fclose (fp);														//#
@@ -366,70 +445,57 @@ ALLOC3D(&uright,info.nowing,rightnow+1,3);
 //*****************************************************************************
 //	2. displaces of side edges of DVEs
 
-//&&	for(time=1;time<rightnow;time++)
-	for(time=2;time<rightnow;time++)	//&&
-	{
-		//displacing left edge points
-		for(span=0;span<info.nospanelement;span++)
-		{
-			Displace_Point(info,rightnow,wakePtr[time-1][span].u,\
-							wakePtr[time][span].u,wakePtr[time+1][span].u,\
-								   				wakePtr[time][span].xleft);
-		}//next span element		//subroutine in wake_geometry.cpp
-
-		//displacing edge points along right wing tip
-		for(wing=0;wing<info.nowing;wing++)
-		{
-			Displace_Point(info,rightnow,uright[wing][time-1],\
-							uright[wing][time],uright[wing][time+1],\
-							xright[wing][time]);
-										//subroutine in wake_geometry.cpp
-		}//next wing
-	}//next spanwise strip in wake (next time)
+    for(time=2;time<rightnow;time++)
+    {
+        for(span=0;span<info.nospanelement;span++)
+        {
+            //displacing left edge point
+            Displace_Point(info,rightnow,wakePtr[time-1][span].u1,\
+                            wakePtr[time][span].u1,wakePtr[time+1][span].u1,\
+                                                   wakePtr[time][span].x1);
+                                            //subroutine in wake_geometry.cpp
+            //This can be optimized since several x1 and x2 are identical
+            //displacing right edge point
+            Displace_Point(info,rightnow,wakePtr[time-1][span].u2,\
+                            wakePtr[time][span].u2,wakePtr[time+1][span].u2,\
+                                                   wakePtr[time][span].x2);
+        }//next span element                //subroutine in wake_geometry.cpp
+    }
+    
 
 	//the zero vector
 	tempA[0] = 0; tempA[1] = 0; tempA[2] = 0;
 
-	//displacing left edge points of first and last row of wake DVE's
-//&	//(time index = rightnow and 0)
-	//(time index = rightnow and 1)		//&
+	//displacing left and right edge points of first and second last row of wake DVE's
+    // oldest row (timestep=0 is not displaced
 	for(span=0;span<info.nospanelement;span++)
 	{
-		//post trailing edge
+		//post trailing edge, left edge point
 		Displace_Point(info,rightnow,\
-						wakePtr[rightnow][span].u,\
+						wakePtr[rightnow][span].u1,\
 						tempA,\
-						wakePtr[rightnow-1][span].u,\
-						wakePtr[rightnow][span].xleft);
+						wakePtr[rightnow-1][span].u1,\
+						wakePtr[rightnow][span].x1);
 							//subroutine in wake_geometry.cpp
+       
+        //post trailing edge, right  edge point
+        Displace_Point(info,rightnow,\
+                        wakePtr[rightnow][span].u2,\
+                        tempA,\
+                        wakePtr[rightnow-1][span].u2,\
+                        wakePtr[rightnow][span].x2);
+                            //subroutine in wake_geometry.cpp
 
-		//second oldest row of DVE's		//&&
-		Displace_Point(info,rightnow,wakePtr[1][span].u,wakePtr[1][span].u,\
-						wakePtr[1][span].u,wakePtr[1][span].xleft);		//&&
+		//second oldest row of DVEs, left edge
+		Displace_Point(info,rightnow,wakePtr[1][span].u1,wakePtr[1][span].u1,\
+						wakePtr[1][span].u1,wakePtr[1][span].x1);
 								//subroutine in wake_geometry.cpp
-		//very first row of DVE's
-//&&		Displace_Point(info,rightnow,wakePtr[0][span].u,wakePtr[0][span].u,\
-//&&						wakePtr[0][span].u,wakePtr[0][span].xleft);
+        //second oldest row of DVEs, right edge
+        Displace_Point(info,rightnow,wakePtr[1][span].u2,wakePtr[1][span].u2,\
+                        wakePtr[1][span].u2,wakePtr[1][span].x2);
+                                //subroutine in wake_geometry.cpp
 	}//next span element		//subroutine in wake_geometry.cpp
 
-	//displacing edge points along right wing tip
-	for(wing=0;wing<info.nowing;wing++)
-	{
-		//post trailing edge
-		Displace_Point(info,rightnow,\
-						uright[wing][rightnow],\
-						tempA,\
-						uright[wing][rightnow-1],\
-						xright[wing][rightnow]);
-									//subroutine in wake_geometry.cpp
-		//second oldest row of wake DVEs	//&&
-		Displace_Point(info,rightnow,uright[wing][1],uright[wing][1],\
-						uright[wing][1],xright[wing][1]);	//&&
-		//first row of wake DVEs
-//&&		Displace_Point(info,rightnow,uright[wing][0],uright[wing][0],\
-//&&						uright[wing][0],xright[wing][0]);
-									//subroutine in wake_geometry.cpp
-	}//next wing
 
 //*****************************************************************************
 //	3. computes new reference point location and vector between the two
@@ -438,23 +504,16 @@ ALLOC3D(&uright,info.nowing,rightnow+1,3);
 //     location along the DVEs trailing edges
 
 //&&	for(time=0;time<=rightnow;time++)
-	for(time=1;time<=rightnow;time++)		//&&
+	for(time=1;time<=rightnow;time++)
+    {
 	//loop over number of wings
-	for(wing=0;wing<info.nowing;wing++)
-	{
-		//loop across span of current wing, up to one before wingtip
-		for(span=info.wing1[wing];span<info.wing2[wing];span++)
-		{
-			New_xo(info,wakePtr[time][span],wakePtr[time][span].xleft,\
-											wakePtr[time][span+1].xleft);
-	 									//subroutine in wake_geometry.cpp
-		}
-		//and now the right wing tip
-		span=info.wing2[wing];
-		New_xo(info,wakePtr[time][span],wakePtr[time][span].xleft,\
-				xright[wing][time]);	//subroutine in wake_geometry.cpp
-	}
-
+        for(span=0;span<info.nospanelement;span++)
+        {
+            New_xo(info,wakePtr[time][span],wakePtr[time][span].x1,\
+                                            wakePtr[time][span].x2);
+                                        //subroutine in wake_geometry.cpp
+        }
+    }
 //*****************************************************************************
 //  4. computes new eta, nu, epsilon, and psi, as well as new xsi
 
@@ -466,7 +525,8 @@ ALLOC3D(&uright,info.nowing,rightnow+1,3);
 	for(k=0;k<info.nopanel;k++)
 	{
 		//forwards surface-DVE index to trailing egde elements
-		element += panelPtr[k].n*(info.m-1);
+//removed GB 2-9-20		element += panelPtr[k].n*(info.m-1);
+        element += panelPtr[k].n*(panelPtr[k].m-1);
 
 		//loop over number of spanwise elements of current panel
 		for(j=0;j<panelPtr[k].n;j++)
@@ -490,7 +550,6 @@ ALLOC3D(&uright,info.nowing,rightnow+1,3);
 //	4a. same as 3. and 4, just for the first row of wake DVEs (time index = 0)
 //		these are aligned with the free stream velocity vector
 
-	//&&&&
 	New_wakeDVE0(info,wakePtr[0],wakePtr[1]);
 
 //*****************************************************************************
@@ -509,7 +568,7 @@ ALLOC3D(&uright,info.nowing,rightnow+1,3);
 //	}
 
 //*****************************************************************************
-//	6. computes new singularity factor
+//	6. computes new singularity factor  -- might need a do-over GB 3.25.20
 
 	//loop over timesteps
 	for(time=0;time<=rightnow;time++)
@@ -530,11 +589,8 @@ ALLOC3D(&uright,info.nowing,rightnow+1,3);
 		for(span=info.wing1[wing];span<=info.wing2[wing];span++)
 			wakePtr[time][span].singfct = tempS;  //assigning decay factor
 	}//next wing
-
-//*///****************************************************************************
-//freeing allocated memory
-FREE3D(&xright,info.nowing,rightnow+1,3);
-FREE3D(&uright,info.nowing,rightnow+1,3);
+//****************************************************************************
+    
 }
 //===================================================================//
 		//END FUNCTION Relax_Wake
@@ -793,7 +849,7 @@ void New_eta_nu_eps_psi_xsi(DVE &wakeDVE,const DVE US_DVE)
 	//if everything works => delXSI[2] = 0
 	if(delXSI2[1] < 0)
 	{
-		printf(" ohwei! around line 788, wake_geometry.cpp\n %2.2lf %2.16lf\n",delXSI2[1],delXSI2[2]);
+		printf(" ohwei! around line 805, wake_geometry.cpp\n %2.2lf %2.16lf\n",delXSI2[1],delXSI2[2]);
 				exit(0);
 	}
 
@@ -940,6 +996,52 @@ void New_wakeDVE0(const GENERAL info,DVE *wakeDVE0,const DVE *wakeDVE1)
 		//END FUNCTION New_wakeDVE0
 //===================================================================//
 
+//===================================================================//
+        //START FUNCTION Update_wake_vorticity
+//===================================================================//
+void Update_wake_vorticity(const GENERAL info,const PANEL *panePtr,\
+                                DVE *wakeDVE,const DVE *newestDVE)
+{
+//NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW
+//replaces New_vorticity_coefficients, more efficient GB 2/6/20
+// adjusts vorticity distribution in wake strips in order to compensate
+//for stretching of wake DVE's.  In an irrotational flwow, the average
+//circulation remains constant in the wake.
+//1/2eta_i*Int{(A+eta*B+eta^2*C) dy} = const !!!
+//This also means that Gamma1 and Gamma2 (left and right edge) remain constant!
+//This means A remains constant, B and C scale with eta and eta^2, respectively
+//
+//input:
+//    info         - general information
+//    wakeDVE      - wake DVE of one timestep
+//    newestDVE    - if steady airloads, the integrated ciruculation, the k-value,
+//                  has the uniform value of the first post-trailing edge element
+//                  for all DVEs  of one span location.
+//
+//output:
+// updated circulation and vorticity coefficients of stretched wakeDVE
+
+
+    int i;              //span indices of DVEs
+    double tempS;       //temporary scalar
+    
+    //assign new coefficients
+     for(i=0;i<info.nospanelement;i++)
+     {
+         tempS = 1/wakeDVE[i].eta;
+         wakeDVE[i].A = newestDVE[i].A_old;
+         wakeDVE[i].B = newestDVE[i].B_eta*tempS;
+         wakeDVE[i].C = newestDVE[i].Csqeta*tempS*tempS;
+    }
+
+ 
+
+}
+//===================================================================//
+        //END FUNCTION Update_wake_vorticity
+//===================================================================//
+
+/*/ NOT USED ANYMORE GB 2/6/20
 //===================================================================//
 		//START FUNCTION New_vorticity_coefficients
 //===================================================================//
@@ -1154,31 +1256,7 @@ void New_vorticity_coefficients(const GENERAL info,const PANEL *panePtr,\
 	}//loop over panels
 
 
-/*//////////////////
-char filename[133];	//file path and name
- FILE *fp;
 
-	//creates file name timestep##.txt ## is number of timestep
-	sprintf(filename,"%s%s",OUTPUT_PATH,"test.txt");
-
-	 fp = fopen(filename, "a");
-
-	fprintf(fp, "\n");
-
-	for(row=0;row<size;row++)
- 	{
-		 //row number
-		fprintf(fp, "\n%d\t",row);
-		for(col=0;col<size;col++)
-		{
-			fprintf(fp, "%.10lf\t",D[row][col]);
-		}
- 		//n-th element of R
-		fprintf(fp, "\t\t%.10lf \t%.10lf \t%.10lf \t%.10lf",R[row],wakeDVE[row/2].eta,wakeDVE[row/2].K,newestDVE[row/2].K);
- 	}
-// 	fclose(fp);
-
-//*/////////////////
 
 	//solving equation system with gaussian elimination
  	GaussSolve(D,R,size,BC);	//subroutine in gauss.cpp
@@ -1193,31 +1271,13 @@ char filename[133];	//file path and name
 					   					wakeDVE[i].eta*wakeDVE[i].eta;
 	}
 
-/*//////////////////
-//char filename[133];	//file path and name
-// FILE *fp;
-
-	//creates file name timestep##.txt ## is number of timestep
-//	sprintf(filename,"%s%s",OUTPUT_PATH,"test.txt");
-//
-//	 fp = fopen(filename, "a");
-
-	fprintf(fp, "\n");
-
-	for(i=0;i<info.nospanelement;i++)
- 	{
-			fprintf(fp, "A %.10f\tB %.10lf\tC %.10lf\n",wakeDVE[i].A,wakeDVE[i].B,wakeDVE[i].C);
-	}
- 	fclose(fp);
-
-//*/////////////////
-
 	//Free memory
 	FREE2D(&D,size,size);
 	FREE1D(&R,size);
 	FREE1D(&BC,size);
 
 }
+*/
 //===================================================================//
 		//END FUNCTION New_vorticity_coefficients
 //===================================================================//

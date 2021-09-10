@@ -13,6 +13,13 @@ void VT_Fus_Info(GENERAL &,double [5],double [5], int [5],\
 //This subroutine reads in the data of a particular timestep
 void Read_Timestep(int,DVE *,DVE **);
 
+//reads in the camber data from the inputs/camber folder
+void Read_Airfoil_or_Camber(GENERAL &, double ***, int &, int &, const int);
+
+//computes array size for camberPtr
+void Airfoil_or_Camber_Array_Size(GENERAL &,int *,int *, const int);
+
+
 //===================================================================//
 		//START OF General_Info_from_File
 //===================================================================//
@@ -31,16 +38,17 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	FILE *fp;		//input file
 
 	char ch;		//generic character
+	int tempI;		//temporary integer
 
 	// checks if input file exists
-	if ((fp = fopen("input.txt", "r"))== NULL) {
+	if ((fp = fopen(info.inputfilename, "r"))== NULL) {
 		printf("Input file could not be opened:\n");
 		scanf("%c",&ch);
 		exit(1);
 	}
-
+	
 	//opens input file
-	fp = fopen("input.txt", "r");
+	fp = fopen(info.inputfilename, "r");
 
 //=============================================================================
 
@@ -59,6 +67,22 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	while (ch!='=');
 	//reads flag for steady/unsteady aerodynamics
 	fscanf(fp,"%d", &info.steady);
+
+	//read viscous (=1)/inviscid (=0) flow flag  added GB 2-18-20
+	//find the '='-sign in input file before steady flag
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads flag for viscous aerodynamics
+	fscanf(fp,"%d",&tempI);
+	info.flagVISCOUS=tempI;
+
+	//read camber (=1)/no camber (=0) flag  added D.F.B. 2-18-20
+	//find the '='-sign in input file before steady flag
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads flag for camber
+	fscanf(fp,"%d",&tempI);
+	info.flagCAMBER=tempI;
 
 	// read symmetrical geometry flag
 	//(sym =1 -> symmetrical conditions, =0 -> asymmetrical)
@@ -79,7 +103,22 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	do	ch = fgetc(fp);
 	while (ch!='=');
 	//reads symmetry flag
-	fscanf(fp,"%d", &info.trim);
+	fscanf(fp,"%d", &info.trimPITCH);
+
+	// read roll/lateral trim flag
+//(trim =1 -> aircraft is trimmed, trim=0 -> no trim)
+//find the '='-sign in input file before sym
+	do	ch = fgetc(fp);
+	while (ch != '=');
+	//reads symmetry flag
+	fscanf(fp, "%d", &info.trimROLL);
+
+	// read lift trim flag
+//find the '='-sign in input file before sym
+	do	ch = fgetc(fp);
+	while (ch != '=');
+	//reads symmetry flag
+	fscanf(fp, "%d", &info.trimCL);
 
 	//read max. number of time steps
 	//find the '='-sign in input file before maxtime
@@ -133,11 +172,42 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	fscanf(fp,"%lf", &info.beta);
 	info.beta *=DtR;	//changes deg. to radians
 
-	//computes free stream velocity vector
-	info.U[0]=info.Uinf*cos(alpha1)*cos(info.beta);
-	info.U[1]=info.Uinf			*sin(info.beta);
-	info.U[2]=info.Uinf*sin(alpha1)*cos(info.beta);
-	//computes free stream velocity vector
+	//=============================================================================
+	// Read circling flight params - Added D.F.B. 02.2020
+
+	// Read circling flag (1 on, 0 off)
+	//find the '='-sign in input file before circling flag
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads read circling flight flag 
+	fscanf(fp,"%d",&tempI);
+	info.flagCIRC=tempI;
+
+	//read flag for flight in horizontal plane, if 0 a/c descends, 1 remains in x-y plane
+	//find the '='-sign in input file before beta
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads sideslip
+	fscanf(fp,"%d", &tempI);
+	info.flagHORZ=tempI;
+
+	//read bank angle
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	fscanf(fp,"%lf", &info.bank);
+	info.bank *= DtR;
+
+	//read upwind velocity
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	fscanf(fp,"%lf", &info.Ws);
+
+
+	//read velocity gradient
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	fscanf(fp,"%lf", &info.gradient);
+	//=============================================================================
 
 	//read density
 	//find the '='-sign in input file before beta
@@ -216,21 +286,14 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	//reads
 	fscanf(fp,"%d", &info.nopanel);
 
+	//removed GB 2-18-20
+	info.m = -1; //default value will cause error message
 	// read number of chordwise lifting lines
 	//find the '='-sign in input file before m
-	do	ch = fgetc(fp);
-	while (ch!='=');
+//	do	ch = fgetc(fp);
+//	while (ch!='=');
 	//reads number of chordwise lifting lines
-	fscanf(fp,"%d", &info.m);
-	if(info.trim==1)   //longitudinal trim routine
-	{
-		info.m=1;
-	  printf("Running Longitudinal Trim Version \n ");
-	  printf("\t\t\t\tThat means m=1!!\n");
-	  printf("\n\n\t\t\t!!!ONLY TWO WINGSS!!\n");
-	  printf("\t\tThat means one main wing and one horizontal tail!!\n");
-	}
-
+//	fscanf(fp,"%d", &info.m);
 	
 	// read number of airfoils
 	//find the '='-sign in input file before m
@@ -238,8 +301,6 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	while (ch!='=');
 	//reads number of airfoils
 	fscanf(fp,"%d", &info.noairfoils);
-
-//=============================================================================
 
 	//closes input file
 	fclose(fp);
@@ -268,20 +329,21 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 	//					1 - zero slope in circulation change
 	//					2 - circulation slope equal to neighboring elementary wing
 
-	FILE *fp;		//input file
-	char ch;		//generic character
-	int i;			//loop counter
+	FILE *fp;		                //input file
+	char ch;		                //generic character
+	int i;			                //loop counter
+    int span,panel,pLeft,pRight;    //span and panel counter, panel to the left
 
 
 	// checks if input file exists
-	if ((fp = fopen("input.txt", "r"))== NULL) {
+	if ((fp = fopen(info.inputfilename, "r"))== NULL) {
 		printf("Input file could not be opened:\n");
 		scanf("%c",&ch);
 		exit(1);
 	}
 
 	//opens input file
-	fp = fopen("input.txt", "r");
+	fp = fopen(info.inputfilename, "r");
 
 	//read in loop over number of panels (info.nopanel)
 	for (i=0;i<info.nopanel;i++)
@@ -289,20 +351,29 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 		//find the '#'-sign at beginning of panel info
 		do	ch = fgetc(fp);
 		while (ch!='#');
+        
+        //find the '='-sign in first line of panel info
+        do    ch = fgetc(fp);
+        while (ch!='=');
+        //reads number of spanwise elements n
+        fscanf(fp,"%d", &(panelPtr[i].n));
 
-		//find the '='-sign in first line of panel info
+		//find the '='-sign in first line of panel info  added GB 2-9-20
 		do	ch = fgetc(fp);
 		while (ch!='=');
-		//reads number of spanwise elements n
-		fscanf(fp,"%d", &(panelPtr[i].n));
+		//reads number of chordwise elements m
+		fscanf(fp,"%d", &(panelPtr[i].m));
+//        panelPtr[i].m = info.m;  //temporary
 
+//removed 2-18-20 GB
 		//find nest '='-sign in first line of panel info
-		do	ch = fgetc(fp);
-		while (ch!='=');
+//		do	ch = fgetc(fp);
+//		while (ch!='=');
 		//reads number of airfoil used for this panel
-		fscanf(fp,"%d", &(panelPtr[i].airfoil));
-			panelPtr[i].airfoil--; //adjust index
-		
+//		fscanf(fp,"%d", &(panelPtr[i].airfoil));
+//			panelPtr[i].airfoil--; //adjust index
+		panelPtr[i].airfoil = -1; //default, should cause error
+
 		//find the first ':'-sign in second line of panel info
 		do	ch = fgetc(fp);
 		while (ch!=':');
@@ -332,6 +403,22 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 			&(panelPtr[i].BC1));
 		panelPtr[i].eps1 *=DtR;	//changes deg. to radians
 
+		//read in airfoil on edge 1 GB 2-14-20
+		fscanf(fp," %d",&(panelPtr[i].airfoil1));
+			panelPtr[i].airfoil1--; //adjust index
+		//panelPtr[i].airfoil1 = panelPtr[i].airfoil; // temporary airfoil asigment GB 2-14-2
+
+		//read in hinge as %chord on edge 1 DFB 2-25-20
+		fscanf(fp," %lf",&(panelPtr[i].hinge1));
+		fscanf(fp, "%lf", &(panelPtr[i].deflect1));
+//printf("line 414  defelction %lf\n", panelPtr[i].deflect1);
+	if (fabs(panelPtr[i].deflect1) > 90)
+	{//GB 5/8/21
+		printf("line 414  defelction %lf\n", panelPtr[i].deflect1);
+		exit(0);
+	}
+		panelPtr[i].deflect1 *= DtR;	//changes deg. to radians
+
 		panelPtr[i].u1[0]=0; panelPtr[i].u1[1]=0; panelPtr[i].u1[2]=0;
 
 		//find the beginning of the fifth line of panel info
@@ -350,7 +437,23 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 			&(panelPtr[i].BC2));
 		panelPtr[i].eps2 *=DtR;						//changes deg. to radians
 
-			panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;
+		//read in airfoil on edge 2 GB 2-14-20
+		fscanf(fp," %d",&(panelPtr[i].airfoil2));
+			panelPtr[i].airfoil2--; //adjust index
+		//panelPtr[i].airfoil2 = panelPtr[i].airfoil; // temporary airfoil asigment GB 2-14-20
+	
+		//read in hinge as %chord on edge 2 DFB 2-25-20
+		fscanf(fp," %lf",&(panelPtr[i].hinge2));
+		fscanf(fp, "%lf", &(panelPtr[i].deflect2));
+//printf("line 414  defelction %lf\n", panelPtr[i].deflect2);
+	if (fabs(panelPtr[i].deflect2) > 90)
+	{//GB 5/8/21
+		printf("line 414  defelction %lf\n", panelPtr[i].deflect2);
+		exit(0);
+	}
+		panelPtr[i].deflect2 *= DtR;	//changes deg. to radians
+
+		panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;
 
 		vsum(panelPtr[i].u1,info.U,panelPtr[i].u1);	//adds undisturbed free
 		vsum(panelPtr[i].u2,info.U,panelPtr[i].u2);	//stream vel.
@@ -365,18 +468,109 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 	//corner of the panels.  added 8/12/05 G.B.
 
 	//the first panel
-	panelPtr[0].TE1 = panelPtr[0].n*(info.m-1);			//the left DVE @ TE
+//GB2-9-20	panelPtr[0].TE1 = panelPtr[0].n*(info.m-1);	//the left DVE @ TE
+    panelPtr[0].TE1 = panelPtr[0].n*(panelPtr[0].m-1);  //the left DVE @ TE
 	panelPtr[0].TE2 = panelPtr[0].TE1 + panelPtr[0].n-1;//the right DVE @ TE
+  
 
 	//loop over number of panels (info.nopanel)
 	for (i=1;i<info.nopanel;i++)
 	{
 		//the left DVE @ TE
-		panelPtr[i].TE1 = panelPtr[i-1].TE2 + 1 + panelPtr[i].n*(info.m-1);
+//GB 2-9-20	panelPtr[i].TE1 = panelPtr[i-1].TE2 + 1 + panelPtr[i].n*(info.m-1);
+        panelPtr[i].TE1 = panelPtr[i-1].TE2 + 1 + panelPtr[i].n*(panelPtr[i].m-1);
 		//the right DVE @ TE
 		panelPtr[i].TE2 = panelPtr[i].TE1 + panelPtr[i].n-1;
 	}
+
+    //loop over number of panels (info.nopanel)
+    for (i=0;i<info.nopanel;i++)
+    {   //DVE indices at left and right LE of panel
+        panelPtr[i].LE1 = panelPtr[i].TE1 - panelPtr[i].n*(panelPtr[i].m-1);
+        panelPtr[i].LE2 = panelPtr[i].LE1 + panelPtr[i].n-1;
+    }
+    
 //#############################################################################
+    //indentivy span indices across one panel. Later used for wake relaxation
+    span =0; //span index intialized
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        panelPtr[panel].dve1 = span;    //span index at left edge
+        span += panelPtr[panel].n;
+        panelPtr[panel].dve2 = span-1;    //span index at right edge
+        //span++;
+    }
+
+//#############################################################################
+
+    //   Identify span index of wakeDVEs coming off neighboring panels
+    //this seems redundant with input of input file, but had to be done
+    //in order to account for junction
+    //Hierarchy:
+    //          - variables PanelLeft and PanelRight are span index of neighboring DVEs
+    //          - of panel next to current panel
+    //          - (999) - no neighboring panel
+    //          - negative value is that DVE attaches to edge 1 of neighboring DVE
+    //          -
+
+    //initailzing with default values (999) which is no neighboring element
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        panelPtr[panel].dveL = 999;       //no wakedve to the left
+        panelPtr[panel].dveR = 999;       //no wakedve to the right
+    }
+
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+    {
+        //identifying span index of wakeDVE to the left of this panel
+        for(pLeft=0;pLeft<info.nopanel;pLeft++)
+        {
+            if( (pLeft!=panel) && (panelPtr[panel].dveL == 999))
+            {//not itself and no identified neighbor
+                if((panelPtr[panel].x1[0]==panelPtr[pLeft].x2[0]) && \
+                   (panelPtr[panel].x1[1]==panelPtr[pLeft].x2[1]) &&  \
+                   (panelPtr[panel].x1[2]==panelPtr[pLeft].x2[2]))
+                {   //assigning span index of wakeDVE to the left
+                    panelPtr[panel].dveL = panelPtr[pLeft].dve2;
+                }
+                else if((panelPtr[panel].x1[0]==panelPtr[pLeft].x1[0]) && \
+                        (panelPtr[panel].x1[1]==panelPtr[pLeft].x1[1]) &&  \
+                        (panelPtr[panel].x1[2]==panelPtr[pLeft].x1[2]))
+                {   //assigning span index of wakeDVE to the left
+                    panelPtr[panel].dveL = -panelPtr[pLeft].dve1;
+                }
+            }
+        } //end loop over panels to left
+
+        //identifying span index of wakeDVE to the right of this panel
+        for(pRight=0;pRight<info.nopanel;pRight++)
+        {
+            if( (pRight!=panel) && (panelPtr[panel].dveR == 999))
+            {//not itself and no identified neighbor
+                if((panelPtr[panel].x2[0]==panelPtr[pRight].x2[0]) && \
+                   (panelPtr[panel].x2[1]==panelPtr[pRight].x2[1]) &&  \
+                   (panelPtr[panel].x2[2]==panelPtr[pRight].x2[2]))
+                {   //assigning span index of wakeDVE to the right
+                    panelPtr[panel].dveR = panelPtr[pRight].dve2;
+                }
+                else if((panelPtr[panel].x2[0]==panelPtr[pRight].x1[0]) && \
+                        (panelPtr[panel].x2[1]==panelPtr[pRight].x1[1]) &&  \
+                        (panelPtr[panel].x2[2]==panelPtr[pRight].x1[2]))
+                {   //assigning span index of wakeDVE to the right
+                    panelPtr[panel].dveR = -panelPtr[pRight].dve1;
+                }
+            }
+        } //end loop over panels to right
+    } //end loop over panel
+    
+    
+    /*/Test output
+    for(panel=0;panel<info.nopanel;panel++)            //loop over panels
+      {
+          printf("panel %d dve1 %d dve2 %d  dveL %d  dveR  %d\n", \
+                 panel,panelPtr[panel].dve1,panelPtr[panel].dve2,\
+                 panelPtr[panel].dveL,panelPtr[panel].dveR);
+      }//*/
 }
 //===================================================================//
 		//END OF Panel_Info_from_File
@@ -407,14 +601,14 @@ void VT_Fus_Info(GENERAL &info,\
 
 
 	// checks if input file exists
-	if ((fp = fopen("input.txt", "r"))== NULL) {
+	if ((fp = fopen(info.inputfilename, "r"))== NULL) {
 		printf("Input file could not be opened:\n");
 		scanf("%c",&ch);
 		exit(1);
 	}
 
 	//opens input file
-	fp = fopen("input.txt", "r");
+	fp = fopen(info.inputfilename, "r");
 	
 	//find the '%'-sign at beginning of V-tail info
 	do	ch = fgetc(fp);
@@ -509,7 +703,9 @@ void VT_Fus_Info(GENERAL &info,\
 		//END OFVT_Fuselage_Info File
 //===================================================================//
 
-//===================================================================//
+/* Taken out no function GB 2/6/20
+ 
+ /===================================================================//
 		//START OF Read_Timestep
 //===================================================================//
 void Read_Timestep(const int timestep,DVE *surfaceDVE,DVE **wakeDVE)
@@ -717,6 +913,231 @@ void Read_Timestep(const int timestep,DVE *surfaceDVE,DVE **wakeDVE)
 	fclose(fp);
 
 }
-//===================================================================//
+//===================================================================*///
 		//END OF Read_Timestep
+//===================================================================//
+
+//===================================================================//
+		//START OF Read_Airfoil_or_Camber
+//===================================================================//
+
+void Read_Airfoil_or_Camber(GENERAL &info, double ***dataPtr, int &Row,\
+			int &Col,int idxFOILCAMB)
+{
+	// The function Read_Airfoil_or_Camber reads the airfoil or camber files
+	// indicated in the input file. 
+	// 
+	// File format:
+	// 		The first line of the camber file is a header
+	// 		The header file is only for user info and not used by the program.
+	// 		There must not be extra lines that the end of the file!
+	//
+	//
+	//	Airfoil file format:
+	// 		The airfoil file should have columns AoA, cl, cd, Re, cm
+	//		Please do not include extra columns
+	//
+	// Camber file format:
+	// 		The camber file should be a list of x/c and y/c from x/c = 0 to y/c = 1.
+	//		The filename should be camber#.camb where # matches the airfoil number
+
+	// Function inputs: 
+	//		General info structure for the panelPtr
+	//		dataPtr - 3D array pointer for airfoil or camber data
+	//		Row - integer of the first dimension of dataPtr
+	//		Col - integer of the second dimension of dataPtr
+	//		idxFOILCAMB - indicated if this is looking at airfoil data or camber data
+	//					idxFOILCAMB = 1 for Airfoil, idxFOILCAMB = 2 for Camber
+
+	//
+	// Airfoil data ouput:
+	//	
+	// 	dataPtr[Row][Col][0-5]
+	//	dataPtr[][][0] = angle of attack
+	//	dataPtr[][][1] = cl
+	//	dataPtr[][][2] = cd
+	//	dataPtr[][][3] = Re
+	//	dataPtr[][][4] = cm,
+	//
+	//	
+	// Camber data output:
+	// 		The camber data is formated in the same way as the airfoil data is
+	// 		to be consistant.
+	// 	dataPtr[Row][Col][0 or 1]
+	//	dataPtr[][][0] = camberline x locations
+	//	dataPtr[][][1] = camberline y location
+	//
+	//	Note that only the camber data of the airfoils specified in the input are read
+	// 	in and the rest of the data is set to 0.
+	//	
+	// D.F.B. in Braunschweig, Germany, Feb. 2020
+
+	FILE *fp;		//input file pointer
+
+	int i,j,k,q;	//generic counters
+	char ch; 		//generic character
+	double temp;	//generic double
+	char filename[126]; //char for filename (max 126 length)
+	int tempI,edge;	//temporary int and counter of edge 1 and edge 2
+	
+
+	// Initialize the dataPtr array with all zeros
+	for (i = 0; i < Row; ++i)
+    {
+		for (j = 0; j < Col; ++j)
+        {
+				dataPtr[i][j][0] = 0;
+				dataPtr[i][j][1] = 0;
+		}
+	}
+
+
+	// ---- Read in the data and assigned to dataPtr array ----
+	// Iterate through each panel (only grabing data that is needed)
+	for (q=0;q<info.nopanel;q++)
+	{ 
+		for(edge=0;edge<2;edge++)
+		{
+			//working along edge 1 and edge 2 of panel
+			if(edge==0) tempI=panelPtr[q].airfoil1;
+			else tempI=panelPtr[q].airfoil2;
+
+			j = 0;
+			k = 0;
+
+			// Create the appropriate filename
+			if (idxFOILCAMB == 1)
+			{
+				sprintf(filename,"%s%s%d%s",AIRFOIL_PATH,"airfoil",tempI+1,".dat");}
+			else if (idxFOILCAMB == 2){
+				sprintf(filename,"%s%s%d%s",CAMBER_PATH,"camber",tempI+1,".camb");}
+			else{
+				printf("Function Camber_Array_Size need 1 or 2.\n 1: airfoils, 2: camber");
+				exit(1);
+			}
+
+			// Check if file exists
+			if ((fp = fopen(filename, "r"))== NULL) 
+			{
+				printf("Camber file '%s' could not be opened.\n",filename);
+				scanf("%c",&ch);
+				exit(1);
+			}
+
+			// Open file
+			fp = fopen(filename, "r");
+
+			// Skip the header
+			do	
+			ch = fgetc(fp);
+			while (ch!='\n');
+
+			// Apply data to the dataPtr
+			for (i = 0; fscanf(fp, "%lf", &temp) != EOF; i++)
+			{
+				if (idxFOILCAMB == 1)
+				{
+					if (j == 5){j = 0;k++;} // 5 columns if reading in airfoil data
+					if (j == 0){temp*=DtR;} // convert aoa to radians			
+				} 
+				else if (idxFOILCAMB == 2)
+				{
+					if (j == 2){j = 0;k++;}
+				} // 2 columns if reading in camber data
+				dataPtr[tempI][k][j] = temp;
+				j++;
+			}
+			fclose(fp); // Close camber file	
+		}
+	}
+}
+//===================================================================//
+		//END OF Read_Airfoil_or_Camber
+//===================================================================//
+
+//===================================================================//
+		//START OF Airfoil_or_Camber_Array_Size
+//===================================================================//
+
+void Airfoil_or_Camber_Array_Size(GENERAL &info,int *dataRow,int *dataCol, int idxFOILCAMB)
+{
+	// The function Airfoil_or_Camber_Array_Size determines the size of the array
+	// needed to hold all the airfoil or camber data. This assumes that there is a
+	// camber file associated with each airfoil file.
+	//
+	// Function inputs:
+	//		General info structure for the panelPtr
+	//		*dataRow - integer point of the first dimension of dataPtr
+	//		*dataCol - integer pointer of the second dimension of dataPtr
+	//		idxFOILCAMB - indicated if this is looking at airfoil data or camber data
+	//					idxFOILCAMB = 1 for Airfoil, idxFOILCAMB = 2 for Camber
+	//
+	// Function outputs:
+	//		Updated *dataRow and *dataCol with the required array size for the airfoil
+	//		or camber data.
+
+	// D.F.B. in Braunschweig, Germany, Feb. 2020
+
+	FILE *fp;		//input file pointer
+
+	int i,j,q;		//generic counters
+	char ch; 		//generic character
+	char filename[126];
+	int row = 0;	//row counter
+	int col = 0;	//column counter
+	int tempI;		//temp int, holds edge 1 or edge 2
+
+	// For loop to iterate over each panel
+	for (q=0;q<info.nopanel;q++){
+		for(i=0;i<2;i++)  //loop over edge 1 and edge 2 of panel
+		{
+
+		j = 0;
+
+		//tempI assigns whether edge 1 or edge 2 of panel
+		if(i==0) tempI=panelPtr[q].airfoil1;
+		else tempI=panelPtr[q].airfoil2;
+
+		// Create the appropriate filename
+		if (idxFOILCAMB == 1){
+			sprintf(filename,"%s%s%d%s",AIRFOIL_PATH,"airfoil",tempI+1,".dat");}
+		else if (idxFOILCAMB == 2){
+			sprintf(filename,"%s%s%d%s",CAMBER_PATH,"camber",tempI+1,".camb");}
+		else{
+			printf("Function Camber_Array_Size need 1 or 2.\n 1: airfoils, 2: camber");
+			exit(1);
+		}
+
+		// Determine the number of rows required
+		if (tempI>row){row = tempI;}
+
+		// Checks if the file exists
+		if ((fp = fopen(filename, "r"))== NULL) {	
+			scanf("%c",&ch);
+			printf("Could not file the file: %s",filename);
+			exit(1);
+		}
+
+		// Open the file and count the rows of data (including header)
+		fp = fopen(filename, "r");
+		do	{
+			ch = fgetc(fp);
+			if(ch == '\n'){
+			j++;}
+			}
+		while (ch!=EOF);
+
+		// Set the column size to the length of the largest camber file
+		if (j>col){col=j;}
+		fclose(fp);
+		}
+	}
+
+	// Assign pointer values for output
+	*dataCol = col;
+	*dataRow = row+1;		
+}
+
+//===================================================================//
+		//END OF Airfoil_or_Camber_Array_Size
 //===================================================================//

@@ -61,7 +61,7 @@ a = new Etype[m];
 GLOBAL_VAR_FOR_ALLOCATION += 1.0*m*sizeof(Etype);
 if (a == NULL)
 	{
-	 printf("ALLOC1D: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype)*m);
+	 printf("ALLOC1D: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype)*m);
 //	 cout << "ALLOC1D: Insufficient memory, could not allocate " << sizeof(Etype)*m << " bytes!" << endl;
 	 exit(-1);
 	}
@@ -83,7 +83,7 @@ GLOBAL_VAR_FOR_ALLOCATION += 1.0*m*sizeof(Etype*);
 
 if (a == NULL)
 	{
-	 printf("ALLOC2D: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype*)*m);
+	 printf("ALLOC2D: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype*)*m);
 //	 cout << "ALLOC2D: Insufficient memory, could not allocate " << sizeof(Etype*)*m << " bytes!" << endl;
 	 exit(-1);
 	}
@@ -103,7 +103,7 @@ GLOBAL_VAR_FOR_ALLOCATION += 1.0*m*sizeof(Etype**);
 
 if (a == NULL)
 	{
-	 printf("ALLOC3*D: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype**)*m);
+	 printf("ALLOC3*D: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype**)*m);
 //	 cout << "ALLOC3D: Insufficient memory, could not allocate " << sizeof(Etype**)*m << " bytes!" << endl;
 	 exit(-1);
 	}

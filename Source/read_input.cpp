@@ -31,6 +31,7 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	FILE *fp;		//input file
 
 	char ch;		//generic character
+	int tempI;		//temporary integer
 
 	// checks if input file exists
 	if ((fp = fopen("input.txt", "r"))== NULL) {
@@ -59,6 +60,14 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	while (ch!='=');
 	//reads flag for steady/unsteady aerodynamics
 	fscanf(fp,"%d", &info.steady);
+
+	//read viscous (=1)/inviscid (=0) flow flag  added GB 2-18-20
+	//find the '='-sign in input file before steady flag
+	do	ch = fgetc(fp);
+	while (ch!='=');
+	//reads flag for viscous aerodynamics
+	fscanf(fp,"%d",&tempI);
+	info.flagVISCOUS=tempI;
 
 	// read symmetrical geometry flag
 	//(sym =1 -> symmetrical conditions, =0 -> asymmetrical)
@@ -240,7 +249,6 @@ void General_Info_from_File(GENERAL &info,double &alpha1,double &alpha2,double &
 	fscanf(fp,"%d", &info.noairfoils);
 
 //=============================================================================
-
 	//closes input file
 	fclose(fp);
 }
@@ -296,12 +304,14 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 		//reads number of spanwise elements n
 		fscanf(fp,"%d", &(panelPtr[i].n));
 
+//removed 2-18-20 GB
 		//find nest '='-sign in first line of panel info
-		do	ch = fgetc(fp);
-		while (ch!='=');
+//		do	ch = fgetc(fp);
+//		while (ch!='=');
 		//reads number of airfoil used for this panel
-		fscanf(fp,"%d", &(panelPtr[i].airfoil));
-			panelPtr[i].airfoil--; //adjust index
+//		fscanf(fp,"%d", &(panelPtr[i].airfoil));
+//			panelPtr[i].airfoil--; //adjust index
+		panelPtr[i].airfoil = -1; //default, should cause error
 		
 		//find the first ':'-sign in second line of panel info
 		do	ch = fgetc(fp);
@@ -332,6 +342,10 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 			&(panelPtr[i].BC1));
 		panelPtr[i].eps1 *=DtR;	//changes deg. to radians
 
+		//read in airfoil on edge 1 GB 2-14-20
+		fscanf(fp," %d",&(panelPtr[i].airfoil1));
+			panelPtr[i].airfoil1--; //adjust index
+
 		panelPtr[i].u1[0]=0; panelPtr[i].u1[1]=0; panelPtr[i].u1[2]=0;
 
 		//find the beginning of the fifth line of panel info
@@ -350,6 +364,10 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 			&(panelPtr[i].BC2));
 		panelPtr[i].eps2 *=DtR;						//changes deg. to radians
 
+		//read in airfoil on edge 2 GB 2-14-20
+		fscanf(fp," %d",&(panelPtr[i].airfoil2));
+			panelPtr[i].airfoil2--; //adjust index
+
 			panelPtr[i].u2[0]=0; panelPtr[i].u2[1]=0; panelPtr[i].u2[2]=0;
 
 		vsum(panelPtr[i].u1,info.U,panelPtr[i].u1);	//adds undisturbed free
@@ -359,6 +377,18 @@ void Panel_Info_from_File(PANEL *panelPtr, const GENERAL info)
 
 	//closes input file
 	fclose(fp);
+
+	//debug output
+//	for (i=0;i<info.nopanel;i++)
+//	{
+//		printf("pnale %d x1 y1 z1 (%lf,%lf,%lf)  c1 %lf eps1 %lf, BC1 %d airf1 %d\n",\
+//			i,panelPtr[i].x1[0],panelPtr[i].x1[1],panelPtr[i].x1[2],\
+//			panelPtr[i].c1,panelPtr[i].eps1,panelPtr[i].BC1,panelPtr[i].airfoil1);
+//		printf("pnale %d x2 y2 z2 (%lf,%lf,%lf)  c2 %lf eps2 %lf, BC2 %d airf2 %d\n",\
+//			i,panelPtr[i].x2[0],panelPtr[i].x2[1],panelPtr[i].x2[2],\
+//			panelPtr[i].c2,panelPtr[i].eps2,panelPtr[i].BC2,panelPtr[i].airfoil2);
+//	}
+
 
 //#############################################################################
 	//determining indiceses of elements at the left and right trailing edge

@@ -22,11 +22,14 @@ struct GENERAL
 						//of do-while loop in main program.
 						//set 0 if only time stepping is desired
 
+//Flags
+    bool flagVISCOUS; // Turn on/off viscous corrections (O = OFF, 1 = ON)
 	int sym;			//symmetrical geometry flag (=1 sym. 0= assym.)
 	int linear;			//linear theory flag (=1 applied, 0= not applied)
 	int steady;			//steady (=1)/unsteady (default) aerodynamics flag
 	int relax;			//relaxed wake in time stepping scheme (=1 applied, 0=not)
 	int trim;			//longitudinal trim flag (=1 for trimming, =0 no trim; =1 m=1!)
+
 	int nowing;			//number of separated wings
 	int wing1[5],wing2[5];//span index of edges 1 (left) and 2 (right) of wing
 	int panel1[5], panel2[5];//indices of panels at left and right edge of wing
@@ -49,11 +52,13 @@ struct PANEL
     double c1, eps1;	//panel side 1 chord and incident angle
     double u1[3];		//free stream velocity variation at panel side 1
 	int BC1;			//boundary condition at panel side 1
+    int airfoil1;       //airfoil at panel side 1  added GB 2-14-20
 
     double x2[3];		//panel side 2 leading edge coordinates
     double c2, eps2;	//panel side 2 chord and incident angle
     double u2[3];		//free stream velocity variation at panel side 2
 	int BC2;			//boundary condition at panel side 2
+    int airfoil2;       //airfoil at panel side 2  added GB 2-14-20
 
 	int left, right;	//left and right panel neighbors. 0 -> free end
     int n;				//number of spanwise elementary wings
@@ -145,7 +150,8 @@ struct DVE
 	double u1[3],u2[3];	//freestream velocities in x1 and x2  added 10-29-06 G.B.
 	double xTE[3],TEvc[3]; //center point at and vector along trailing edge of previous
 						//timestep
-	int airfoil;		//airfoil file number G.B. 8-9-07
+	int airfoil[2];		//airfoil file number G.B. 8-9-07; two airfoiils of panel edges 1 and 2 GB 2-14-20
+	double ratio;		//interpolation ratio from left (=0) to right side (=1) GB 2-14-20
 };
 
 // definition of type wing//

@@ -116,7 +116,7 @@ void Surface_DVE_Vel_Induction(const GENERAL info,const double P[3],\
 //output:
 // w_surface		induced velocity in point P
 
-	int j=0;		//counter over number of surface DVE's
+	int j; 						//counter over number of surface DVE's
 	int k,l,span,type; 	//counter over number of surface DVE's, DVE type
 	double w_ind[3];			//delta induced velocities
 
@@ -130,21 +130,20 @@ void Surface_DVE_Vel_Induction(const GENERAL info,const double P[3],\
 //#	for(j=0;j<info.noelement;j++)
 	j = 0; //index of DVE that induces
 	for(k=0;k<info.nopanel;k++)	//loop over panels
-	for(l=0;l<panelPtr[k].m;l++)		//loop over chordwise lift. lines
+	for(l=0;l<info.m;l++)		//loop over chordwise lift. lines
 	for(span=0;span<panelPtr[k].n;span++) //loop over panel span
 	{
-		if(l<panelPtr[k].m-1) type=0; //DVE has TE&LE vortex GB 8/10/21
+		if(l<info.m-1) type=0; //DVE has TE&LE vortex GB 8/10/21
 		else type = 2; //if DVE is at trailing edge, no TE-vortex
 
 		//computing induced velocity of j-th surface DVE on point P.
 		Single_DVE_Induced_Velocity(info,surfacePtr[j],P,w_ind,type);
 
-		//adding delta velocities
-		w_surface[0] += w_ind[0];
-		w_surface[1] += w_ind[1];
-		w_surface[2] += w_ind[2];
+			//adding delta velocities
+			w_surface[0] += w_ind[0];
+			w_surface[1] += w_ind[1];
+			w_surface[2] += w_ind[2];
 
-		j++;
 //#fprintf(test,"P %2.3lf\t%2.3lf\t%2.3lf",P[0],P[1],P[2]);//#
 //#fprintf(test,"  j = %d w_ind %lf\t%lf\t%lf\n",j,w_ind[0],w_ind[1],w_ind[2]);//#
 	}
@@ -193,6 +192,7 @@ void Wake_DVE_Vel_Induction(const GENERAL info,const double P[3],\
 //#GB 8/10/2021		if(timestep<1)
 //#			Single_DVE_Induced_Velocity(info,wakePtr[0][span],P,w_ind,-3);
 //#		else		//changed to simple wake DVE, G.B,. 11-5-06
+			//"starting" element is a semi infinite sheet
 			Single_DVE_Induced_Velocity(info,wakePtr[0][span],P,w_ind,3);
 //			Single_DVE_Induced_Velocity(info,wakePtr[0][span],P,w_ind,1);
 
@@ -200,22 +200,11 @@ void Wake_DVE_Vel_Induction(const GENERAL info,const double P[3],\
 		w_wake[0] += w_ind[0];
 		w_wake[1] += w_ind[1];
 		w_wake[2] += w_ind[2];
-
-		//computing ind. vel. at P due to wake DVE just aft of trailing edge
-		//These DVEs have a vortex filament only at their leading edge
-//#		if(timestep>=1)
-//#		{
-//#			Single_DVE_Induced_Velocity(info,wakePtr[timestep][span],P,w_ind,2);
-
-//#			//adding "starting" DVE influence
-//#			w_wake[0] += w_ind[0];
-//#			w_wake[1] += w_ind[1];
-//#			w_wake[2] += w_ind[2];
-//#		}
 	}
 
 	//loop over wake DVE's, time and span dependent
-	for(time=1;time<timestep;time++)
+//	for(time=1;time<timestep;time++)
+	for(time=1;time<=timestep;time++)  //inlcudes all except for "starting" DVE row
 	for(span=0;span<info.nospanelement;span++)
 	{
 		//computing induced velocity of wake DVE [time][span] on point P.

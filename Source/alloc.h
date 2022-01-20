@@ -41,7 +41,7 @@ GLOBAL_VAR_FOR_ALLOCATION += 1.0*n*sizeof(Etype);
 
 if (a == NULL)
 	{
-	 printf("MY_MALLOC: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype)*n);
+	 printf("MY_MALLOC: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype)*n);
 	 exit(-1);
 	}
 
@@ -54,14 +54,14 @@ inline void ALLOC1D(Etype **ptr, int m = 1)
 Etype *a = NULL;
 
 #ifdef ANIDEBUG
-printf("Allocating %d x %d = %d bytes\n",m,sizeof(Etype),m*sizeof(Etype));
+printf("Allocating %d x %d = %lu bytes\n",m,sizeof(Etype),m*sizeof(Etype));
 #endif
 
 a = new Etype[m];
 GLOBAL_VAR_FOR_ALLOCATION += 1.0*m*sizeof(Etype);
 if (a == NULL)
 	{
-	 printf("ALLOC1D: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype)*m);
+	 printf("ALLOC1D: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype)*m);
 //	 cout << "ALLOC1D: Insufficient memory, could not allocate " << sizeof(Etype)*m << " bytes!" << endl;
 	 exit(-1);
 	}
@@ -83,7 +83,7 @@ GLOBAL_VAR_FOR_ALLOCATION += 1.0*m*sizeof(Etype*);
 
 if (a == NULL)
 	{
-	 printf("ALLOC2D: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype*)*m);
+	 printf("ALLOC2D: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype*)*m);
 //	 cout << "ALLOC2D: Insufficient memory, could not allocate " << sizeof(Etype*)*m << " bytes!" << endl;
 	 exit(-1);
 	}
@@ -103,7 +103,7 @@ GLOBAL_VAR_FOR_ALLOCATION += 1.0*m*sizeof(Etype**);
 
 if (a == NULL)
 	{
-	 printf("ALLOC3*D: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype**)*m);
+	 printf("ALLOC3*D: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype**)*m);
 //	 cout << "ALLOC3D: Insufficient memory, could not allocate " << sizeof(Etype**)*m << " bytes!" << endl;
 	 exit(-1);
 	}
@@ -123,7 +123,7 @@ GLOBAL_VAR_FOR_ALLOCATION += 1.0*m*sizeof(Etype***);
 
 if (a == NULL)
 	{
-	 printf("ALLOC4D: Insufficient memory, could not allocate %d bytes!\n",sizeof(Etype***)*m);
+	 printf("ALLOC4D: Insufficient memory, could not allocate %lu bytes!\n",sizeof(Etype***)*m);
 //	 cout << "ALLOC4D: Insufficient memory, could not allocate " << sizeof(Etype***)*m << " bytes!" << endl;
 	 exit(-1);
 	}

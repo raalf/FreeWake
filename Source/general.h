@@ -14,7 +14,7 @@
 #define RtD 180/Pi
 #define DBL_EPS 1e-14
 #define OUTPUT_PATH "output/"
-#define PROGRAM_VERSION "FreeWake2015_beta"
+#define PROGRAM_VERSION "FreeWake2018_Omega"
 #define AIRFOIL_PATH "airfoils/"
 
 

@@ -193,12 +193,12 @@ void DVE_Resultant(const GENERAL info,const PANEL *panelPtr,\
 	  if(panelPtr[panel].BC1==110)
 	  {	//kinematic condition is not being satisfied at the tips, but
 	  	//gamma'= 0, see boundary conditions
-		R[element] 					= 0;
-		R[element+info.noelement]	= 0;
-		R[element+n2]				= 0;
+			R[element] 					= 0;
+			R[element+info.noelement]	= 0;
+			R[element+n2]				= 0;
 
-	 	//increase DVE index
-	 	element ++;
+	 		//increase DVE index
+	 		element ++;
 	  }
 	  else
 	  {	//compute the velocity induced at suface DVE by wake and free stream
@@ -229,48 +229,8 @@ void DVE_Resultant(const GENERAL info,const PANEL *panelPtr,\
 
 	  for(i=1;i<imax;i++)	//loop over spanwise elements-1
 	  {
-		//compute the velocity of ith suface DVE control point that
-		//is induced by wake with
-		if(timestep<0)
-		{
-			w_extern[0]=surfacePtr[element].u[0];
-			w_extern[1]=surfacePtr[element].u[1];
-			w_extern[2]=surfacePtr[element].u[2];
-		}
-		else
-		{
-			Wake_DVE_Vel_Induction\
-			(info,surfacePtr[element].xo,wakePtr,timestep,w_wake);
-								//Subroutine in induced_velocity
-
-			//add wake induced vel. and free stream
-			vsum(w_wake,surfacePtr[element].u,w_extern);
-		}
-		//upper two-thirds are zero
-		R[element] 				  = 0;
-		R[element+info.noelement] = 0;
-		//computing the external velocity normal component
-		R[element+n2] = 4*Pi*dot(w_extern,surfacePtr[element].normal);
-
-	    //increase DVE index to next one
-	    element ++;
-	  }//done with loop over spanwise elements -1
-
-	  if(panelPtr[panel].n > 1)	//panel has more than one spanwise element
-		//checking if right edge is a free tip
-	  	if(panelPtr[panel].BC2==110)
-	  	{	//kinematic condition is not being satisfied at the tips, but
-	  		//gamma'= 0, see boundary conditions
-			R[element] 					= 0;
-			R[element+info.noelement]	= 0;
-			R[element+n2]				= 0;
-
-	 		//increase DVE index
-	 		element ++;
-
-	 	}
-	  	else
-	  	{	//compute the velocity ind. at suface DVE by wake and free stream
+			//compute the velocity of ith suface DVE control point that
+			//is induced by wake with
 			if(timestep<0)
 			{
 				w_extern[0]=surfacePtr[element].u[0];
@@ -287,25 +247,65 @@ void DVE_Resultant(const GENERAL info,const PANEL *panelPtr,\
 				vsum(w_wake,surfacePtr[element].u,w_extern);
 			}
 			//upper two-thirds are zero
-			R[element] 				 = 0;
-			R[element+info.noelement]= 0;
+			R[element] 				  = 0;
+			R[element+info.noelement] = 0;
 			//computing the external velocity normal component
 			R[element+n2] = 4*Pi*dot(w_extern,surfacePtr[element].normal);
+
+	    //increase DVE index to next one
+	    element ++;
+	  }//done with loop over spanwise elements -1
+
+	  if(panelPtr[panel].n > 1)	//panel has more than one spanwise element
+		{
+			//checking if right edge is a free tip
+	  	if(panelPtr[panel].BC2==110)
+	  	{	//kinematic condition is not being satisfied at the tips, but
+	  		//gamma'= 0, see boundary conditions
+				R[element] 					= 0;
+				R[element+info.noelement]	= 0;
+				R[element+n2]				= 0;
+
+		 		//increase DVE index
+		 		element ++;
+		 	}
+	  	else
+	  	{	//compute the velocity ind. at suface DVE by wake and free stream
+				if(timestep<0)
+				{
+					w_extern[0]=surfacePtr[element].u[0];
+					w_extern[1]=surfacePtr[element].u[1];
+					w_extern[2]=surfacePtr[element].u[2];
+				}
+				else
+				{
+					Wake_DVE_Vel_Induction\
+					(info,surfacePtr[element].xo,wakePtr,timestep,w_wake);
+										//Subroutine in induced_velocity
+
+					//add wake induced vel. and free stream
+					vsum(w_wake,surfacePtr[element].u,w_extern);
+				}
+				//upper two-thirds are zero
+				R[element] 				 = 0;
+				R[element+info.noelement]= 0;
+				//computing the external velocity normal component
+				R[element+n2] = 4*Pi*dot(w_extern,surfacePtr[element].normal);
 				//used to be dot(w_extern,surfacePtr[i].normal),
 				//don't know why,but sometimes doesnt work with i.
 				//G.B. 2-11-06
 
-		 	//increase DVE index
-		 	element ++;
-		}//done with right side edge
-
-    }//done loop over m, next chord location
+		 		//increase DVE index
+		 		element ++;
+		 	}//done with right side edge
+		}
+  }//done loop over m, next chord location
   }//done panel, next panel
 //##########################################
 //#control output of R
 //FILE *fp;														//#
-//fp = fopen("output\\test.txt", "a");									//#
-//fprintf(fp,"R:");				//#
+//fp = fopen("test.txt", "a");									//#
+//fprintf(fp,"R: timestep %d ",timestep);				//#
 //for(i=0;i<info.Dsize;i++)	//#
 //	fprintf(fp,"%lf  ",R[i]);		//#
 //fprintf(fp,"\n");				//#
@@ -769,6 +769,7 @@ int k,l,span;
 int imin,imax,element;
 double a[3],b[3],c[3];			//combined influence coefficients
 double tempS;
+int type;  //DVE type (vortex sheet, LE&TE vortices)
 
 //###!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
 //###	Removed: 4/29/04, G. Bramesfeld										 //
@@ -808,19 +809,18 @@ for(panel=0;panel<info.nopanel;panel++)	//loop over panels
 //##	{
 //##		row=i+2*info.noelement;
 
-
-	//loop over surface DVE's that induce velocity on element i
-//#		for(j=0;j<info.noelement;j++)
+		//loop over surface DVE's that induce velocity on element i
+	//#		for(j=0;j<info.noelement;j++)
 		j=0; //index of DVE that induces
 		for(k=0;k<info.nopanel;k++)	//loop over panels
-	  for(l=0;l<panelPtr[k].m;l++)		//loop over chordwise lift. lines
+	  for(l=0;l<info.m;l++)		//loop over chordwise lift. lines
 	  for(span=0;span<panelPtr[k].n;span++) //loop over panel span
 		{
 			//setting singfct of DVE j temporarily to zero; added 8/16/05 GB
 			tempS = surfacePtr[j].singfct;
 			surfacePtr[j].singfct = 0;
 
-			if(l<panelPtr[k].m-1) type=0; //DVE has TE&LE vortex GB 8/10/21
+			if(l<info.m-1) type=0; //DVE has TE&LE vortex GB 8/10/21
 			else type = 2; //if DVE is at trailing edge, no TE-vortex
 
  			//computes influence coefficients, a, b, and c, of
@@ -828,6 +828,10 @@ for(panel=0;panel<info.nopanel;panel++)	//loop over panels
 			DVE_Influence_Coeff\
 					(surfacePtr[j],info,surfacePtr[element].xo,a,b,c,type);
 									//subroutine in induced_velocity.cpp
+					
+//printf("ind %d PoI %d %lf  %lf %lf\n",j,element,a[0],a[1],a[2]);
+//printf("ind %d PoI %d %lf  %lf %lf\n",j,element,b[0],b[1],b[2]);
+//printf("ind %d PoI %d %lf  %lf %lf\n\n",j,element,c[0],c[1],c[2]);
 
 			//reassigning singfct of DVE j; added 8/16/05 GB
 			surfacePtr[j].singfct = tempS;
@@ -838,56 +842,10 @@ for(panel=0;panel<info.nopanel;panel++)	//loop over panels
 			D[row][col]		= dot(a,surfacePtr[element].normal);
 			D[row][col+1]	= dot(b,surfacePtr[element].normal);
 			D[row][col+2]	= dot(c,surfacePtr[element].normal);
+//printf("row %d col %d %lf  %lf %lf\n",row,col,D[row][col],D[row][col+1],D[row][col+2]);
 
-			j++;  //increase j
+			j++; //next DVE that induces
 		}//end loop j, element that induces vel. on element i
-
-/*/!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
-//		Removed: 4/29/04, G. Bramesfeld										 //
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
-//
-//not done for vortex-lattice method.  It is assumed that the most aft row of
-//surface DVEs hangs slightly over into wake.
-//
-//If this section is removed, also remove Squirt_out_Wake call further above!
-//
-		//the first wake DVE's after the trailing edge have the same A,B,C
-		//coefficients as the surface DVE's that are along the trailing edge.
-		//Thus, there influence can and must be included in the D matrix as
-		//an addition to the most aft surface elements.
-		j=0;		//index of wake DVE along trailing edge
-		span=0;		//index of surface DVE along trailing edge
-
-		//loop over panels
-		for(k=0;k<info.nopanel;k++)
-		{
-			//first trailing edge location of k-th panel
-			span += panelPtr[k].n*(info.m-1);
-
-			//loop along k-th panel trailing edge
-			for(l=0;l<panelPtr[k].n;l++)
-			{
-	 			//computes influence coefficients, a, b, and c, of j-th wake
-				//DVE that is right aft of t.e. on reference point
-				//of element-th DVE
-				DVE_Influence_Coeff(tempDVE[j],info,surfacePtr[element].xo,a,b,c);
-										//subroutine in induced_velocity.cpp
-
-				col = 3*span;  //first column of D-matrix
-
-				//Horstmann Eq.43
-				D[row][col]		+= dot(a,surfacePtr[element].normal);
-				D[row][col+1]	+= dot(b,surfacePtr[element].normal);
-				D[row][col+2]	+= dot(c,surfacePtr[element].normal);
-
-				span++;	//next index of trailing edge element of surface
-				j++;	//next index of wake element
-			}//end loop l, along trailing edge elements of k-th panel
-		}//end loop k, over panels
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
-//							Removed: 4/29/04, G. Bramesfeld					 //
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*///
-
 		element++; //next element index
 	}	//end loop i, number of spanwise elements
 	//increase index by one if right edge is a free tip
@@ -906,7 +864,7 @@ for(panel=0;panel<info.nopanel;panel++)	//loop over panels
  //writes header line
  fprintf(fp, "\t");
  for(m=0; m<info.noelement*3; m++)
- fprintf(fp, "%ld\t",m);
+ fprintf(fp, "%d\t",m);
  fprintf(fp, "\t\tR");
  for(n=0; n<info.noelement*3; n++)
  {
@@ -916,7 +874,7 @@ for(panel=0;panel<info.nopanel;panel++)	//loop over panels
  	for(m=0; m<info.noelement*3; m++)
  	fprintf(fp, "%lf\t",D[n][m]);
  	//n-th element of R
-	fprintf(fp, "\t\t%lf",R[n]);
+//	fprintf(fp, "\t\t%lf",R[n]);
  }
  fclose(fp);
  //###########################################################//*/

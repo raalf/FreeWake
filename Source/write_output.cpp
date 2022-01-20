@@ -720,7 +720,7 @@ char filename[133];	//file path and name
 	 //writes header line
 	 fprintf(fp, "\t");
 	 for(m=0; m<info.Dsize; m++)
-		 fprintf(fp, "%ld\t",m);
+		 fprintf(fp, "%d\t",m);
 	 fprintf(fp, "\t\tR");
 
 	for(n=0; n<info.Dsize; n++)

@@ -143,7 +143,8 @@ void Surface_DVE_Vel_Induction(const GENERAL info,const double P[3],\
 			w_surface[0] += w_ind[0];
 			w_surface[1] += w_ind[1];
 			w_surface[2] += w_ind[2];
-
+			
+		j++;
 //#fprintf(test,"P %2.3lf\t%2.3lf\t%2.3lf",P[0],P[1],P[2]);//#
 //#fprintf(test,"  j = %d w_ind %lf\t%lf\t%lf\n",j,w_ind[0],w_ind[1],w_ind[2]);//#
 	}

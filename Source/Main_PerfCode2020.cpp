@@ -442,8 +442,12 @@ printf("Done reading in aerodynamic characteristics\n");
 		CLtemp[0] = 0;
 		CLtemp[1] = 0;
 	}
-	else CLtarget = 10; //if we aren't trimming for lift we need some logic here
-	
+    else
+    {
+        CLtarget = 10; //if we aren't trimming for lift we need some logic here
+        alphastep = 1.0;  //best logic GB 2/4/2025
+    }
+
     //===================================================================//
     //iterate until CL changes less than this much
     //===================================================================//

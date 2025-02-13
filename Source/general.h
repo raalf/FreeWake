@@ -21,11 +21,23 @@
 #define DtR Pi/180
 #define RtD 180/Pi
 #define DBL_EPS 1e-14                   //"zero" definition
-#define OUTPUT_PATH "output/"           //directory where output is saved
+
+// WB FEB 13, 2025 - added if statements to detect which OS is being used
+// --- \\ for windows and / for everything else
+
+#ifdef _WIN32
+	#define OUTPUT_PATH "output\\"
+	#define AIRFOIL_PATH "airfoils\\"
+	#define CAMBER_PATH "inputs\\camber\\"
+#else
+	#define OUTPUT_PATH "output/"           //directory where output is saved
+	#define AIRFOIL_PATH "airfoils/"        //directory with airfoils
+	#define CAMBER_PATH "inputs/camber/"  //directory with camber data
+#endif
+
 #define PROGRAM_VERSION "FreeWake2020_dev V0.5"
-#define AIRFOIL_PATH "airfoils/"        //directory with airfoils
-#define CAMBER_PATH "inputs/camber/"  //directory with camber data
 #define flagSTARFORCE 1   //flag = 1 skip computing aero laods until end
+
 
 
 //global Variables

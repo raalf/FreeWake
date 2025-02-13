@@ -150,15 +150,15 @@ int main(int argc, char *argv[])
 	{//no input name: assume input.txt in the working dir
 		//changed to save default input.txt results to output/inputs/... D.F.B. 5-2021
         sprintf(info.inputfilename, "%s.txt", "input");
-        sprintf(info.output, "%s%s/", OUTPUT_PATH,"input");
-        sprintf(info.config, "%s%s_cfg.txt", info.output,"input");
+        sprintf(info.output, "%s%s", OUTPUT_PATH,"input");
+        sprintf(info.config, "%s\\%s_cfg.txt", info.output,"input");
 	}
 	else if(argc ==2)//with an input filename: use it. 
 	{
 		 //argv[0] will be the .exe, argv[1] will be the filename
 		sprintf(info.inputfilename, "%s.txt", argv[1]);
-        sprintf(info.output, "%s%s/", OUTPUT_PATH,argv[1]);
-        sprintf(info.config, "%s%s_cfg.txt", info.output,argv[1]);
+        sprintf(info.output, "%s%s", OUTPUT_PATH,argv[1]);
+        sprintf(info.config, "%s\\%s_cfg.txt", info.output,argv[1]);
 
 
 
@@ -173,21 +173,41 @@ int main(int argc, char *argv[])
 
 	// mkdir is moved out of if (argc == 2) statement D.F.B. 5-2021 
 		int nError = 0; //check which OS we are compiling on
+		// changed from _WIN32 TO WIN64
+
 #if defined(_WIN32)
-		nError=_mkdir(info.output);//create output directory in output/
+	{
+		//nError=_mkdir(info.output);//create output directory in output/
+		//if (mkdir(info.output) == 0){
+		printf("#######\n");
+		printf("info.output = %s\n", info.output);
+		
+		// WB - FEB 13, 2025 - Added this part to manually make the output folder
+		if (_mkdir(OUTPUT_PATH) == 0){
+			nError = 0;
+			printf("Error making folder 1\n");
+		}
+
+		if (_mkdir(info.output) == 0){
+			nError = 0;
+			printf("Error making folder 2\n");
+		}
+	}
 #else 
 		nError=mkdir(info.output, 0777); // can be used on non-Windows
 #endif
-		/*if (nError != 0) {
+		if (nError != 0) {
 			printf("error creating output directory\n"); 
 			scanf("%c", &answer); 
 			exit(1);
-		}*/
+		}
 
     printf("\nInput Filename : %s\n", info.inputfilename);
     printf("Output directory : %s\n", info.output);
     
     //saves input file to output directory
+    printf("sourcefile = %s\n", info.inputfilename);
+
     Save_Input_File(info.inputfilename,info.output);//in write_output.cpp
     
 

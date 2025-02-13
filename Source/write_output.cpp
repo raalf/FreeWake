@@ -487,21 +487,35 @@ void Save_Input_File(const char sourcefile[126],const char targetdir[126])
     char ch,targetfile[126];
 
     source = fopen(sourcefile, "r");
+    printf("source = %s\n", sourcefile);
 
     if (source == NULL)
     {
-       printf(" couldn't copy input file\nPress any key to exit...\n");
-       exit(EXIT_FAILURE);
+    	printf("ERROR IS IN LINE 494 [write_output.cpp]\n\n");
+       	printf(" couldn't copy input file\nPress any key to exit...\n");
+		exit(EXIT_FAILURE);
     }
 
-    sprintf(targetfile, "%s%s",targetdir,sourcefile);
+    // WB - FEB 13, 2025 - added the backslashes
+    char path_separator = '/';
+    #ifdef _WIN32
+    	path_separator = '\\';
+    #endif
+    sprintf(targetfile, "%s%c%s",targetdir, path_separator, sourcefile);
+    
+    //sprintf(targetfile, "%s%s",targetdir,sourcefile);
+    //printf("Attempting to write to: %s\n", targetfile);
+	//printf("targetdir = %s\n", targetdir);
+	//printf("targetfile = %s\n", targetfile);
 
     target = fopen(targetfile, "w");
 
     if (target == NULL)
     {
        fclose(source);
+       printf("ERROR IS IN LINE 517 [write_output.cpp]\n\n");
        printf(" couldn't copy input file\nPress any key to exit...\n");
+       
        exit(EXIT_FAILURE);
     }
 

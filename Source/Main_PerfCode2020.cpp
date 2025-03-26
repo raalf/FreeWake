@@ -151,17 +151,22 @@ int main(int argc, char *argv[])
 		//changed to save default input.txt results to output/inputs/... D.F.B. 5-2021
         sprintf(info.inputfilename, "%s.txt", "input");
         sprintf(info.output, "%s%s", OUTPUT_PATH,"input");
-        sprintf(info.config, "%s\\%s_cfg.txt", info.output,"input");
+		#if defined(_WIN32)
+        	sprintf(info.config, "%s\\%s_cfg.txt", info.output,"input");
+    	#else
+        	sprintf(info.config, "%s/%s_cfg.txt", info.output,"input");
+    	#endif
 	}
 	else if(argc ==2)//with an input filename: use it. 
 	{
 		 //argv[0] will be the .exe, argv[1] will be the filename
 		sprintf(info.inputfilename, "%s.txt", argv[1]);
         sprintf(info.output, "%s%s", OUTPUT_PATH,argv[1]);
-        sprintf(info.config, "%s\\%s_cfg.txt", info.output,argv[1]);
-
-
-
+		#if defined(_WIN32)
+    	    sprintf(info.config, "%s\\%s_cfg.txt", info.output,argv[1]);
+    	#else
+        	sprintf(info.config, "%s/%s_cfg.txt", info.output,argv[1]);
+    	#endif
 	}
 	else
 	{
@@ -170,6 +175,8 @@ int main(int argc, char *argv[])
 		scanf("%c", &answer);
 		exit(1);
 	}
+
+
 
 	// mkdir is moved out of if (argc == 2) statement D.F.B. 5-2021 
 		int nError = 0; //check which OS we are compiling on

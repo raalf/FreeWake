@@ -867,7 +867,10 @@ info.surfAREA = 0;
 
 	fprintf(fp,"mpl.rcParams['legend.fontsize'] = 10\n");
 	fprintf(fp,"fig = plt.figure()\n");
-	fprintf(fp,"ax = fig.gca(projection='3d')\n");
+//	fprintf(fp,"ax = fig.gca(projection='3d')\n");
+	fprintf(fp,"ax = fig.add_subplot(111, projection='3d')\n");
+
+
 	fprintf(fp,"ax.set_aspect('equal')\n\n");
 
 	// Plot labels 
@@ -948,7 +951,7 @@ info.surfAREA = 0;
 	// run python script 
 	//system("python geometryCheck.py");
 
-	printf("\nTo check geometry type: \"python geometryCheck.py\"\n\n");
+	printf("\nTo check geometry type: \"python3 geometryCheck.py\"\n\n");
 
 
 	//DONE with geometry check 

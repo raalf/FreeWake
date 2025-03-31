@@ -36,8 +36,8 @@ int main()
 
 //	1. user input of timestep and intervalls that is to be plotted
 	printf("\nThis is the wake-plotting program for %s\n\n",PROGRAM_VERSION);
-	printf("The timestep file needs to be located in the ");
-	printf("current directory.\n");
+	printf("The TDVE file needs to be located in the ");
+	printf("output directory.\n");
 	printf("The user must have python installed as this used matplotlib.\n\n");
 //	printf("Please enter number of timestep ");
 //	printf("whose wake needs to be plotted: ");
@@ -211,6 +211,7 @@ sprintf(iofile,"%s","wakeplot.py");
 //sprintf(iofile,"%s","wakeplot.m");
 	//opens input file
 	fp = fopen(iofile, "w");
+	printf("plotting file is %s\n",iofile);
 
 // writing Header
 	fprintf(fp,"#Plotting wake results that were generated with ");
@@ -244,7 +245,8 @@ sprintf(iofile,"%s","wakeplot.py");
 
 	fprintf(fp,"mpl.rcParams['legend.fontsize'] = 10\n");
 	fprintf(fp,"fig = plt.figure()\n");
-	fprintf(fp,"ax = fig.gca(projection='3d')\n");
+//	fprintf(fp,"ax = fig.gca(projection='3d')\n");
+	fprintf(fp,"ax = fig.add_subplot(111, projection='3d')\n");
 	fprintf(fp,"ax.set_aspect('equal')\n\n");
 
 	// Plot labels 
@@ -383,10 +385,10 @@ sprintf(iofile,"%s","wakeplot.py");
 	FREE2D(&wakePtr,timestep+1,nospan);
 
 	// run python script
-	system("python wakeplot.py");
+	system("python3 wakeplot.py");
 	
 	//Delete wakeplot.py after done with it D.F.B. 5-2021
-	remove("wakeplot.py");
+//	remove("wakeplot.py");
 
 	printf("\nIt's all done here folks.\n");
 

@@ -27,11 +27,11 @@
 
 #ifdef _WIN32
 	#define OUTPUT_PATH "output\\"
-	#define AIRFOIL_PATH "airfoils\\"
+	#define AIRFOIL_PATH "inpts\\airfoils\\"
 	#define CAMBER_PATH "inputs\\camber\\"
 #else
 	#define OUTPUT_PATH "output/"           //directory where output is saved
-	#define AIRFOIL_PATH "airfoils/"        //directory with airfoils
+	#define AIRFOIL_PATH "inputs/airfoils/"        //directory with airfoils
 	#define CAMBER_PATH "inputs/camber/"  //directory with camber data
 #endif
 

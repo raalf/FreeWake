@@ -922,12 +922,31 @@ void CreateQuiverFile(const double pos[3], const double vec[3], const int idx, c
 	if (filenum == 0) 
 	{
 		// Either open file or add to file
-		if (idx == 0) { fp = fopen("output/quiver.txt", "w"); }
-		else { fp = fopen("output/quiver.txt", "a"); }
+		if (idx == 0) 
+		{ 
+			#if defined(_WIN32) 
+				fp = fopen("output\\quiver.txt", "w"); 
+		    #else 
+				fp = fopen("output/quiver.txt", "w"); 
+		    #endif
+		}
+		else 
+		{ 
+			#if defined(_WIN32) 
+				fp = fopen("output\\quiver.txt", "a"); 
+		    #else 
+				fp = fopen("output/quiver.txt", "a"); 
+		    #endif
+		}
 	}
 	else 
 	{
-		sprintf(filename, "%s%d%s","output/quiver", filenum, ".txt");
+		#if defined(_WIN32) 
+			sprintf(filename, "%s%d%s","output\\quiver", filenum, ".txt"); 
+	    #else 
+			sprintf(filename, "%s%d%s","output/quiver", filenum, ".txt");
+	    #endif
+
 		if (idx == 0) { fp = fopen(filename, "w"); }
 		else { fp = fopen(filename, "a"); }
 	}

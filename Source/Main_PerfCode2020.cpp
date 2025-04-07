@@ -380,7 +380,11 @@ printf("Done reading in aerodynamic characteristics\n");
 
 	//Trim itereation
 	//creates file "TrimSol.txt in directory "output"
-    sprintf(filename,"%s%s",info.output,"TrimSol.txt");
+ 	#if defined(_WIN32)
+	   sprintf(filename,"%s\\%s",info.output,"TrimSol.txt");
+    #else
+	   sprintf(filename,"%s/%s",info.output,"TrimSol.txt");
+    #endif
 	//open output file
 	MomSol = fopen(filename, "w");
 
@@ -390,9 +394,16 @@ printf("Done reading in aerodynamic characteristics\n");
 	fprintf(MomSol,"alpha      eps      CL        CDi      ");
 	fprintf(MomSol,"CMresid      CLht     CMoWing\n");
 
+	
+	
 	//Performance results
 	//creates file "Performance.txt in directory "output"
-	sprintf(filename,"%s%s",info.output,"Performance.txt");
+	#if defined(_WIN32)
+		sprintf(filename,"%s\\%s",info.output,"Performance.txt");
+    #else
+		sprintf(filename,"%s/%s",info.output,"Performance.txt");
+    #endif
+
 	//open output file
 	Performance = fopen(filename, "w");
 
@@ -646,6 +657,7 @@ printf("Done reading in aerodynamic characteristics\n");
 			//===============================================================//
 				//START computing vertical-tail profile drag
 			//===============================================================//
+/*	V-tail implicit in previous profile-drag routine		
 			Dvt = 0;	//initialize profile drag variables
 
 			if (info.flagVISCOUS) {
@@ -665,7 +677,7 @@ printf("Done reading in aerodynamic characteristics\n");
 				}
 				Dvt *= q_inf;  //multiplying with dyn. pressure
 			}
-
+*/
 			//===============================================================//
 				//END computing vertical-tail profile drag
 			//===============================================================//

@@ -69,8 +69,12 @@ int main()
 	//creates file name timestep##.txt ## is number of timestep
 //	sprintf(iofile,"%s%s%d%s",OUTPUT_PATH,"timestep",timestep,".txt");
 //	sprintf(iofile,"%s%d%s","timestep",timestep,".txt");
-	sprintf(iofile,"%s%s%s%s%s%d%s","output/",tempiofile,"/",tempiofile,"_TDVE#",runnum,".txt"); //D.F.B. 5-2021
-//	printf("Test\n");
+
+	#if defined(_WIN32)
+       sprintf(iofile,"%s%s%s%s%s%d%s","output\\",tempiofile,"\\",tempiofile,"_TDVE#",runnum,".txt"); //D.F.B. 5-2021
+    #else
+       sprintf(iofile,"%s%s%s%s%s%d%s","output/",tempiofile,"/",tempiofile,"_TDVE#",runnum,".txt"); //D.F.B. 5-2021
+    #endif
 	printf("Output filename: %s\n",iofile);
 
 	// checks if input file exists
